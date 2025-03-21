@@ -9,17 +9,21 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSortedMap;
 
 /**
- * A basic unit of display
+ * A basic unit of display.
+ * 
+ * It has a tag string and a content string, as well as a map of string to
+ * string of attributes
  */
 public interface Taggable extends Serializable {
     /**
      * The tag name, like in xml {@code
      * 
     <h1>} or {@code
-      * 
+       * 
+      
      
     <p>
-      * }, but with no alligators. This is not limited to html tags, it can be
+       * }, but with no alligators. This is not limited to html tags, it can be
      * anything legal in xml.
      * 
      * @return tag

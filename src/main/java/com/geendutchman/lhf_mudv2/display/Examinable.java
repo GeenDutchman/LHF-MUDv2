@@ -9,6 +9,9 @@ import com.google.common.collect.ImmutableSortedMap;
 
 /**
  * A unit of display that can further describe itself.
+ * 
+ * It has a string name, an optional RichOutput description and all the things a
+ * taggable has
  */
 public interface Examinable extends Taggable {
     /**

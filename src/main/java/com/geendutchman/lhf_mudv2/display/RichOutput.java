@@ -1,11 +1,21 @@
 package com.geendutchman.lhf_mudv2.display;
 
 import java.io.Serializable;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -38,8 +48,8 @@ public abstract class RichOutput implements Serializable {
                 .setTag(Optional.of("output")).setIsAndLast(false);
     }
 
-    public final static String SEQUENCE_NAME_PATTERN = "^\\w+";
-    public final static String TAG_PATTERN = "^\\w{3}[\\w_-]+\\w$";
+    public final static Pattern SEQUENCE_NAME_PATTERN = Pattern.compile("^\\w+");
+    public final static Pattern TAG_PATTERN = Pattern.compile("^\\w{3}[\\w_-]+\\w$");
 
     @AutoValue.Builder
     public abstract static class Builder implements Serializable {
@@ -99,9 +109,10 @@ public abstract class RichOutput implements Serializable {
         public final RichOutput build() {
             RichOutput output = autoBuild();
             Preconditions.checkState(
-                    output.sequenceName().isEmpty() || output.sequenceName().get().matches(SEQUENCE_NAME_PATTERN),
+                    output.sequenceName().isEmpty()
+                            || output.sequenceName().get().matches(SEQUENCE_NAME_PATTERN.pattern()),
                     "sequence name must match: %s", SEQUENCE_NAME_PATTERN);
-            Preconditions.checkState(output.tag().isEmpty() || output.tag().get().matches(TAG_PATTERN),
+            Preconditions.checkState(output.tag().isEmpty() || output.tag().get().matches(TAG_PATTERN.pattern()),
                     "tag must match: %s", TAG_PATTERN);
             return output;
         }
@@ -144,4 +155,29 @@ public abstract class RichOutput implements Serializable {
 
         return document;
     }
+
+    public final void writeXml(Writer writer) throws ParserConfigurationException, TransformerException {
+        final Document document = this.xmlDocument();
+        Transformer transformer = TransformerFactory.newDefaultInstance().newTransformer();
+        for (Map.Entry<String, String> entry : Map.of(OutputKeys.INDENT, "no", OutputKeys.OMIT_XML_DECLARATION, "yes")
+                .entrySet()) {
+            if (entry == null) {
+                continue;
+            }
+            final String key = entry.getKey();
+            final String value = entry.getValue();
+            if (key == null || value == null) {
+                continue;
+            }
+            transformer.setOutputProperty(key, value);
+        }
+        transformer.transform(new DOMSource(document), new StreamResult(writer));
+    }
+
+    public final String xmlString() throws ParserConfigurationException, TransformerException {
+        StringWriter writer = new StringWriter();
+        this.writeXml(writer);
+        return writer.toString();
+    }
+
 }
