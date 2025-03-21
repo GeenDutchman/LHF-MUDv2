@@ -82,6 +82,10 @@ public abstract class RichOutput implements Serializable {
             return this.addElement(RichOutputElement.ofTaggable(tagged));
         }
 
+        public final Builder addExaminable(Examinable examinable) {
+            return this.addElement(RichOutputElement.ofExaminable(examinable));
+        }
+
         public final Builder addSignal(String signal) {
             elementsBuilder().add(RichOutputElement.ofSignal(signal));
             return this;

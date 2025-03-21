@@ -8,6 +8,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import com.geendutchman.lhf_mudv2.display.Examinable.BasicExaminable;
 import com.geendutchman.lhf_mudv2.display.RichOutput.OutputBuilderConversionError;
 import com.geendutchman.lhf_mudv2.display.Taggable.BasicTaggable;
 import com.google.auto.value.AutoValue;
@@ -26,18 +27,52 @@ public abstract class RichOutputElement implements Serializable {
      */
     abstract void xmlNode(final Document nodeFactory, final Node parent) throws OutputBuilderConversionError;
 
+    /**
+     * Creates an element that is only a string
+     * 
+     * @param charSequence
+     * @return RichOutputElement
+     */
     public static RichOutputElement ofString(String charSequence) {
         return new AutoValue_RichOutputElement_StringElement(charSequence);
     }
 
+    /**
+     * Returns an element that holds a taggable
+     * 
+     * @param taggable
+     * @return
+     */
     public static RichOutputElement ofTaggable(Taggable taggable) {
-        return new AutoValue_RichOutputElement_TaggableElement(Taggable.basicTaggable(taggable));
+        return new AutoValue_RichOutputElement_TaggableElement(taggable.basicTaggable());
     }
 
+    /**
+     * Returns an element that holds an examinable
+     * 
+     * @param examinable
+     * @return
+     */
+    public static RichOutputElement ofExaminable(Examinable examinable) {
+        return new AutoValue_RichOutputElement_ExaminableElement(examinable.basicExaminable());
+    }
+
+    /**
+     * Makes a metasignal that is not usually rendered
+     * 
+     * @param signal
+     * @return
+     */
     public static RichOutputElement ofSignal(String signal) {
         return new AutoValue_RichOutputElement_SignalElement(signal);
     }
 
+    /**
+     * Nests a RichOutput in an element
+     * 
+     * @param output
+     * @return
+     */
     public static RichOutputElement ofOutput(RichOutput output) {
         return new AutoValue_RichOutputElement_NestedElement(output);
     }
@@ -95,6 +130,66 @@ public abstract class RichOutputElement implements Serializable {
                     throw new OutputBuilderConversionError(
                             String.format("Error setting attribute '%s=%s' for Taggable %s", entry.getKey(),
                                     entry.getValue(), taggable.content()),
+                            e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Holds an examinable
+     */
+    @AutoValue
+    public static abstract class ExaminableElement extends RichOutputElement {
+        public abstract BasicExaminable examinable();
+
+        @Override
+        final void xmlNode(final Document nodeFactory, final Node parent) throws OutputBuilderConversionError {
+            final BasicExaminable examined = this.examinable();
+            Element myElement = null;
+            try {
+                myElement = nodeFactory.createElement(!examined.tag().isBlank() ? examined.tag() : "Examinable");
+                parent.appendChild(myElement);
+            } catch (DOMException e) {
+                throw new OutputBuilderConversionError(String.format(
+                        "Error either creating element (with the Examinable TagName of '%s') or appending it to the current node",
+                        examined.tag()), e);
+            }
+
+            if (!examined.name().equals(examined.content())) {
+                final RichOutputElement nameTaggable = RichOutputElement.ofTaggable(
+                        BasicTaggable.customTaggable("name", examined.name(), Taggable.produceBasicTagAttributes()));
+                try {
+                    nameTaggable.xmlNode(nodeFactory, myElement);
+                    myElement.appendChild(nodeFactory.createTextNode(examined.content()));
+                } catch (OutputBuilderConversionError e) {
+                    throw new OutputBuilderConversionError(
+                            String.format("Error accepting name Taggable '%s' for the Examinable", nameTaggable), e);
+                }
+            } else {
+                try {
+                    myElement.appendChild(nodeFactory.createTextNode(examined.content()));
+                } catch (OutputBuilderConversionError e) {
+                    throw new OutputBuilderConversionError("Error adding Examinable content", e);
+                }
+            }
+
+            if (examined.description().isPresent()) {
+                final RichOutputElement description = RichOutputElement.ofOutput(examined.description().get());
+                try {
+                    description.xmlNode(nodeFactory, myElement);
+                } catch (OutputBuilderConversionError e) {
+                    throw new OutputBuilderConversionError("Error accepting Examinable description", e);
+                }
+            }
+
+            for (final Entry<String, String> entry : examined.attributes().entrySet()) {
+                try {
+                    myElement.setAttribute(entry.getKey(), entry.getValue());
+                } catch (DOMException e) {
+                    throw new OutputBuilderConversionError(
+                            String.format("Error setting attribute '%s=%s' for Examinable %s", entry.getKey(),
+                                    entry.getValue(), examined.name()),
                             e);
                 }
             }

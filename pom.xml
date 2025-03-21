@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>com.geendutchman</groupId>
 	<artifactId>lhf-mudv2</artifactId>
-	<version>0.0.4-SNAPSHOT</version>
+	<version>0.0.5-SNAPSHOT</version>
 	<name>lhf-mudv2</name>
 	<description>Demo project for Spring Boot</description>
 	<url />
