@@ -29,10 +29,10 @@ public interface Taggable extends Serializable {
         final String content = other.content();
         final NavigableMap<String, String> attributes = other.attributes();
         Preconditions.checkArgument(!tag.isBlank(), "tag must not be empty or blank");
+        Preconditions.checkArgument(tag.matches("^\\w+$"), "tag must not contain spaces");
         Preconditions.checkArgument(!content.isBlank(), "content must not be empty or blank");
         Preconditions.checkArgument(attributes != null, "attributes must not be null");
-        return new AutoValue_Taggable_BasicTaggable(tag, content,
-                ImmutableSortedMap.copyOfSorted(attributes));
+        return new AutoValue_Taggable_BasicTaggable(tag, content, ImmutableSortedMap.copyOfSorted(attributes));
     }
 
     @AutoValue
@@ -42,10 +42,14 @@ public interface Taggable extends Serializable {
     public static abstract class BasicTaggable implements Taggable {
         public static BasicTaggable customTaggable(String tag, String content,
                 NavigableMap<String, String> attributes) {
-            Preconditions.checkArgument(!tag.isBlank(), "tag must not be empty or blank");
-            Preconditions.checkArgument(!content.isBlank(), "content must not be empty or blank");
+            final String trimmedTag = tag.trim();
+            final String trimmedContent = content.trim();
+            Preconditions.checkArgument(!trimmedTag.isBlank(), "tag must not be empty or blank");
+            Preconditions.checkArgument(trimmedTag.matches("^\\w+$"), "tag must not contain spaces");
+            Preconditions.checkArgument(!trimmedContent.isBlank(), "content must not be empty or blank");
             Preconditions.checkArgument(attributes != null, "attributes must not be null");
-            return new AutoValue_Taggable_BasicTaggable(tag, content, ImmutableSortedMap.copyOf(attributes));
+            return new AutoValue_Taggable_BasicTaggable(trimmedTag, trimmedContent,
+                    ImmutableSortedMap.copyOf(attributes));
         }
     }
 
