@@ -1,7 +1,6 @@
 package com.geendutchman.lhf_mudv2.display;
 
 import java.io.Serializable;
-import java.util.Map.Entry;
 import java.util.Optional;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -114,47 +113,33 @@ public abstract class RichOutput implements Serializable {
         }
     }
 
+    public final String printIt() {
+        final StringBuilder builder = new StringBuilder();
+        // Delegate to a RichOutputElement
+        final RichOutputElement myself = RichOutputElement.ofOutput(this);
+        myself.printIt(builder);
+        return builder.toString();
+    }
+
     public final Document xmlDocument() throws ParserConfigurationException {
         DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newDefaultInstance();
         DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
         Document document = documentBuilder.newDocument();
         Element root = null;
         try {
-            root = document.createElement(this.tag().orElse("output"));
+            root = document.createElement("DOCUMENT");
             document.appendChild(root);
-            if (this.sequenceName().isPresent()) {
-                root.appendChild(document.createTextNode(this.sequenceName().get()));
-            }
         } catch (DOMException e) {
-            throw new OutputBuilderConversionError(String.format(
-                    "Error either creating root element (with the Output name of '%s') or appending it to the document",
-                    this.sequenceName()), e);
+            throw new OutputBuilderConversionError(String.format("Error creating document for %s", this.sequenceName()),
+                    e);
         }
 
-        for (final Entry<String, String> entry : this.attributes().entrySet()) {
-            final String key = entry.getKey();
-            final String value = entry.getValue();
-            if (key != null && value != null) {
-                root.setAttribute(key, value);
-            }
-        }
-
-        final ImmutableList<RichOutputElement> retrieved = this.elements();
-        if (retrieved.isEmpty()) {
-            if (this.onEmpty().isPresent()) {
-                root.appendChild(document.createTextNode(this.onEmpty().orElse("")));
-            }
-        } else {
-            for (int i = 0; i < retrieved.size(); i++) {
-                final RichOutputElement element = retrieved.get(i);
-                element.xmlNode(document, root);
-                if (i < retrieved.size() - 1 && this.elementSeparator().isPresent()) {
-                    this.elementSeparator().get().xmlNode(document, root);
-                }
-                if (i == retrieved.size() - 2 && this.isAndLast()) {
-                    RichOutputElement.ofString("and ").xmlNode(document, root);
-                }
-            }
+        try {
+            // Delegate to a RichOutputElement
+            final RichOutputElement myself = RichOutputElement.ofOutput(this);
+            myself.xmlNode(document, root);
+        } catch (OutputBuilderConversionError e) {
+            throw new OutputBuilderConversionError("Error creating root element", e);
         }
 
         return document;

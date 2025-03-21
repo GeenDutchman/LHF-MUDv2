@@ -12,6 +12,7 @@ import com.geendutchman.lhf_mudv2.display.Examinable.BasicExaminable;
 import com.geendutchman.lhf_mudv2.display.RichOutput.OutputBuilderConversionError;
 import com.geendutchman.lhf_mudv2.display.Taggable.BasicTaggable;
 import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableList;
 
 /**
  * An element for the Rich Output
@@ -26,6 +27,13 @@ public abstract class RichOutputElement implements Serializable {
      * @throws OutputBuilderConversionError if we cannot build it
      */
     abstract void xmlNode(final Document nodeFactory, final Node parent) throws OutputBuilderConversionError;
+
+    /**
+     * Consolidates a string to build
+     * 
+     * @param builder
+     */
+    abstract void printIt(final StringBuilder builder);
 
     /**
      * Creates an element that is only a string
@@ -94,6 +102,11 @@ public abstract class RichOutputElement implements Serializable {
             }
         }
 
+        @Override
+        final void printIt(final StringBuilder builder) {
+            builder.append(this.charSequence());
+        }
+
     }
 
     /**
@@ -102,6 +115,11 @@ public abstract class RichOutputElement implements Serializable {
     @AutoValue
     public static abstract class TaggableElement extends RichOutputElement {
         public abstract BasicTaggable taggable();
+
+        @Override
+        final void printIt(final StringBuilder builder) {
+            builder.append(this.taggable().content());
+        }
 
         @Override
         final void xmlNode(final Document nodeFactory, final Node parent) throws OutputBuilderConversionError {
@@ -142,6 +160,23 @@ public abstract class RichOutputElement implements Serializable {
     @AutoValue
     public static abstract class ExaminableElement extends RichOutputElement {
         public abstract BasicExaminable examinable();
+
+        @Override
+        final void printIt(final StringBuilder builder) {
+            final BasicExaminable examined = this.examinable();
+            builder.append(examined.name()).append(":\n");
+            if (!examined.content().equals(examined.name())) {
+                builder.append("\t").append(examined.content()).append("\n");
+            }
+            if (examined.description().isPresent()) {
+                final RichOutputElement description = RichOutputElement.ofOutput(examined.description().get());
+                StringBuilder child = new StringBuilder();
+                description.printIt(child);
+                for (final String line : child.toString().split("\\r?\\n")) {
+                    builder.append("\t").append(line).append("\n");
+                }
+            }
+        }
 
         @Override
         final void xmlNode(final Document nodeFactory, final Node parent) throws OutputBuilderConversionError {
@@ -204,6 +239,10 @@ public abstract class RichOutputElement implements Serializable {
         public abstract String signal();
 
         @Override
+        final void printIt(final StringBuilder builder) {
+        }
+
+        @Override
         final void xmlNode(final Document nodeFactory, final Node parent) throws OutputBuilderConversionError {
         }
     }
@@ -216,24 +255,61 @@ public abstract class RichOutputElement implements Serializable {
         public abstract RichOutput nested();
 
         @Override
+        final void printIt(final StringBuilder builder) {
+            final RichOutput output = this.nested();
+            builder.append(output.sequenceName()).append(":\n");
+            for (final RichOutputElement element : output.elements()) {
+                StringBuilder child = new StringBuilder();
+                element.printIt(child);
+                for (final String line : child.toString().split("\\r?\\n")) {
+                    builder.append("\t").append(line).append("\n");
+                }
+            }
+        }
+
+        @Override
         final void xmlNode(final Document nodeFactory, final Node parent) throws OutputBuilderConversionError {
             final RichOutput output = this.nested();
             Element root = null;
             try {
-                root = nodeFactory.createElement(output.tag().orElse("output"));
+                final String tag = output.tag().orElse("output");
+                root = nodeFactory.createElement(tag);
                 parent.appendChild(root);
-                root.appendChild(nodeFactory.createTextNode(output.sequenceName().orElse("")));
+                if (output.sequenceName().isPresent()) {
+                    final RichOutputElement sequenceTaggable = RichOutputElement
+                            .ofTaggable(BasicTaggable.customTaggable(tag + "-title", output.sequenceName().get(),
+                                    Taggable.produceBasicTagAttributes()));
+                    sequenceTaggable.xmlNode(nodeFactory, root);
+                }
             } catch (DOMException e) {
                 throw new OutputBuilderConversionError(String.format(
-                        "Error either creating root element (with the Output name of '%s') or appending it to the document",
+                        "Error either creating element (with the Output name of '%s') or appending it to the document",
                         output.sequenceName()), e);
             }
 
-            for (final RichOutputElement element : output.elements()) {
-                try {
+            for (final Entry<String, String> entry : output.attributes().entrySet()) {
+                final String key = entry.getKey();
+                final String value = entry.getValue();
+                if (key != null && value != null) {
+                    root.setAttribute(key, value);
+                }
+            }
+
+            final ImmutableList<RichOutputElement> retrieved = output.elements();
+            if (retrieved.isEmpty()) {
+                if (output.onEmpty().isPresent()) {
+                    root.appendChild(nodeFactory.createTextNode(output.onEmpty().orElse("")));
+                }
+            } else {
+                for (int i = 0; i < retrieved.size(); i++) {
+                    final RichOutputElement element = retrieved.get(i);
                     element.xmlNode(nodeFactory, root);
-                } catch (OutputBuilderConversionError e) {
-                    throw new OutputBuilderConversionError("Error for nested:", e);
+                    if (i < retrieved.size() - 1 && output.elementSeparator().isPresent()) {
+                        output.elementSeparator().get().xmlNode(nodeFactory, root);
+                    }
+                    if (i == retrieved.size() - 2 && output.isAndLast()) {
+                        RichOutputElement.ofString("and ").xmlNode(nodeFactory, root);
+                    }
                 }
             }
         }

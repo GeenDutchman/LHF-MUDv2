@@ -54,4 +54,14 @@ public class RichOutputTest {
         Truth.assertThat(writer.toString()).contains("Goodbye");
         Truth.assertThat(writer.toString()).contains("Greetings");
     }
+
+    @Test
+    void testPrintit() {
+        RichOutput output = RichOutput.builder().setSequenceName("Greetings").addString("I am miss nesbit")
+                .addOutput(RichOutput.builder().setSequenceName("WhoI").addString("myself").build())
+                .addString("Goodbye").build();
+        final String printed = output.printIt();
+        Truth.assertThat(printed).contains("Goodbye");
+        Truth.assertThat(printed).contains("Greetings");
+    }
 }
