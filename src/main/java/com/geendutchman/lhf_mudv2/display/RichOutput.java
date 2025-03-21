@@ -13,6 +13,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedMap;
 
@@ -37,6 +38,9 @@ public abstract class RichOutput implements Serializable {
         return new AutoValue_RichOutput.Builder().setElementSeparator(Optional.of(RichOutputElement.ofString(" ")))
                 .setTag(Optional.of("output")).setIsAndLast(false);
     }
+
+    public final static String SEQUENCE_NAME_PATTERN = "^\\w+";
+    public final static String TAG_PATTERN = "^\\w{3}[\\w_-]+\\w$";
 
     @AutoValue.Builder
     public abstract static class Builder implements Serializable {
@@ -87,7 +91,17 @@ public abstract class RichOutput implements Serializable {
             return this.addElement(RichOutputElement.ofOutput(output));
         }
 
-        public abstract RichOutput build();
+        abstract RichOutput autoBuild();
+
+        public final RichOutput build() {
+            RichOutput output = autoBuild();
+            Preconditions.checkState(
+                    output.sequenceName().isEmpty() || output.sequenceName().get().matches(SEQUENCE_NAME_PATTERN),
+                    "sequence name must match: %s", SEQUENCE_NAME_PATTERN);
+            Preconditions.checkState(output.tag().isEmpty() || output.tag().get().matches(TAG_PATTERN),
+                    "tag must match: %s", TAG_PATTERN);
+            return output;
+        }
     }
 
     public final static class OutputBuilderConversionError extends RuntimeException {
@@ -104,7 +118,9 @@ public abstract class RichOutput implements Serializable {
         try {
             root = document.createElement(this.tag().orElse("output"));
             document.appendChild(root);
-            root.appendChild(document.createTextNode(this.sequenceName().orElse("")));
+            if (this.sequenceName().isPresent()) {
+                root.appendChild(document.createTextNode(this.sequenceName().get()));
+            }
         } catch (DOMException e) {
             throw new OutputBuilderConversionError(String.format(
                     "Error either creating root element (with the Output name of '%s') or appending it to the document",
