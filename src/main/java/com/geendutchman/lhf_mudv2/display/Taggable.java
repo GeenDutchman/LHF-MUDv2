@@ -1,0 +1,52 @@
+package com.geendutchman.lhf_mudv2.display;
+
+import java.io.Serializable;
+import java.util.NavigableMap;
+import java.util.TreeMap;
+
+import com.google.auto.value.AutoValue;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSortedMap;
+
+/**
+ * A basic unit of display
+ */
+public interface Taggable extends Serializable {
+    public String tag();
+
+    public String content();
+
+    public ImmutableSortedMap<String, String> attributes();
+
+    public static NavigableMap<String, String> produceBasicTagAttributes() {
+        NavigableMap<String, String> tagAttributes = new TreeMap<>();
+        tagAttributes.put("colored", "true");
+        return tagAttributes;
+    }
+
+    public static BasicTaggable basicTaggable(Taggable other) {
+        final String tag = other.tag();
+        final String content = other.content();
+        final NavigableMap<String, String> attributes = other.attributes();
+        Preconditions.checkArgument(!tag.isBlank(), "tag must not be empty or blank");
+        Preconditions.checkArgument(!content.isBlank(), "content must not be empty or blank");
+        Preconditions.checkArgument(attributes != null, "attributes must not be null");
+        return new AutoValue_Taggable_BasicTaggable(tag, content,
+                ImmutableSortedMap.copyOfSorted(attributes));
+    }
+
+    @AutoValue
+    /**
+     * A concretion of Taggable
+     */
+    public static abstract class BasicTaggable implements Taggable {
+        public static BasicTaggable customTaggable(String tag, String content,
+                NavigableMap<String, String> attributes) {
+            Preconditions.checkArgument(!tag.isBlank(), "tag must not be empty or blank");
+            Preconditions.checkArgument(!content.isBlank(), "content must not be empty or blank");
+            Preconditions.checkArgument(attributes != null, "attributes must not be null");
+            return new AutoValue_Taggable_BasicTaggable(tag, content, ImmutableSortedMap.copyOf(attributes));
+        }
+    }
+
+}
