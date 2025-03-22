@@ -1,6 +1,5 @@
 package com.geendutchman.lhf_mudv2.display;
 
-import java.io.Serializable;
 import java.util.Map.Entry;
 
 import org.w3c.dom.DOMException;
@@ -17,7 +16,7 @@ import com.google.common.collect.ImmutableList;
 /**
  * An element for the Rich Output
  */
-public abstract class RichOutputElement implements Serializable {
+public abstract class RichOutputElement {
 
     /**
      * Generates a node for xml

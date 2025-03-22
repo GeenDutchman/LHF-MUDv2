@@ -1,6 +1,5 @@
 package com.geendutchman.lhf_mudv2.item;
 
-import java.io.Serializable;
 import java.util.Comparator;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -106,7 +105,7 @@ public interface Item extends Examinable {
         }
     }
 
-    public static class ItemComparator implements Comparator<Item>, Serializable {
+    public static class ItemComparator implements Comparator<Item> {
         private static Comparator<Examinable> delegate = Examinable.getExaminableComparator();
 
         @Override

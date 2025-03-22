@@ -1,6 +1,5 @@
 package com.geendutchman.lhf_mudv2.display;
 
-import java.io.Serializable;
 import java.util.Comparator;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -67,7 +66,7 @@ public interface Examinable extends Taggable {
         }
     }
 
-    public static class ExaminableComparator implements Comparator<Examinable>, Serializable {
+    public static class ExaminableComparator implements Comparator<Examinable> {
         @Override
         public int compare(Examinable o1, Examinable o2) {
             if (o1 == null || o2 == null) {

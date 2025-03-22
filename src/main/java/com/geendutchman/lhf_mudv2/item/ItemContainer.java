@@ -147,8 +147,6 @@ public interface ItemContainer extends Examinable {
 
     public abstract ImmutableSortedSet<Item> items();
 
-    // public abstract boolean addItem(Item item);
-
     public default boolean hasItem(Item item) {
         return this.items().contains(item);
     }

@@ -1,6 +1,5 @@
 package com.geendutchman.lhf_mudv2.display;
 
-import java.io.Serializable;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
@@ -14,17 +13,20 @@ import com.google.common.collect.ImmutableSortedMap;
  * It has a tag string and a content string, as well as a map of string to
  * string of attributes
  */
-public interface Taggable extends Serializable {
+public interface Taggable {
     /**
      * The tag name, like in xml {@code
      * 
-    <h1>} or {@code
-       * 
+    <h1>} or {@code     
+          
+         
+        
+       
       
      
     <p>
-       * }, but with no alligators. This is not limited to html tags, it can be
-     * anything legal in xml.
+                    * }, but with no alligators. This is not limited to html tags,
+     * it can be anything legal in xml.
      * 
      * @return tag
      */
@@ -94,7 +96,7 @@ public interface Taggable extends Serializable {
         public static BasicTaggable customTaggable(String tag, String content,
                 NavigableMap<String, String> attributes) {
             final String trimmedTag = tag.trim();
-            taggablepreconditions(trimmedTag, content, attributes);
+            Taggable.taggablepreconditions(trimmedTag, content, attributes);
             return new AutoValue_Taggable_BasicTaggable(trimmedTag, content, ImmutableSortedMap.copyOf(attributes));
         }
 

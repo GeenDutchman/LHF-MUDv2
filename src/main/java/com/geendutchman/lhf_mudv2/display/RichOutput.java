@@ -1,6 +1,5 @@
 package com.geendutchman.lhf_mudv2.display;
 
-import java.io.Serializable;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Map;
@@ -27,7 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedMap;
 
 @AutoValue
-public abstract class RichOutput implements Serializable {
+public abstract class RichOutput {
 
     public abstract Optional<String> sequenceName();
 
@@ -52,7 +51,7 @@ public abstract class RichOutput implements Serializable {
     public final static Pattern TAG_PATTERN = Pattern.compile("^\\w{3}[\\w_-]+\\w$");
 
     @AutoValue.Builder
-    public abstract static class Builder implements Serializable {
+    public abstract static class Builder {
         public abstract Builder setSequenceName(Optional<String> sequenceName);
 
         public abstract Builder setSequenceName(String sequenceName);
