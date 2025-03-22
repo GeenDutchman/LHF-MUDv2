@@ -1,5 +1,7 @@
 package com.geendutchman.lhf_mudv2.display;
 
+import java.io.Serializable;
+import java.util.Comparator;
 import java.util.NavigableMap;
 import java.util.Optional;
 
@@ -14,6 +16,7 @@ import com.google.common.collect.ImmutableSortedMap;
  * taggable has
  */
 public interface Examinable extends Taggable {
+
     /**
      * An examinable must have a name, and it must match: ^\\w{3}
      * 
@@ -63,4 +66,26 @@ public interface Examinable extends Taggable {
             return this;
         }
     }
+
+    public static class ExaminableComparator implements Comparator<Examinable>, Serializable {
+        @Override
+        public int compare(Examinable o1, Examinable o2) {
+            if (o1 == null || o2 == null) {
+                throw new NullPointerException("Cannot compare null Examinables");
+            }
+            if (o1.equals(o2)) {
+                return 0;
+            }
+            int nameCompare = o1.name().compareTo(o2.name());
+            if (nameCompare != 0) {
+                return nameCompare;
+            }
+            return o1.description().toString().compareTo(o2.description().toString());
+        }
+    }
+
+    public static Comparator<Examinable> getExaminableComparator() {
+        return new ExaminableComparator();
+    }
+
 }

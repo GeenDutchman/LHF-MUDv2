@@ -1,5 +1,7 @@
 package com.geendutchman.lhf_mudv2.item;
 
+import java.io.Serializable;
+import java.util.Comparator;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,6 +27,11 @@ public interface Item extends Examinable {
      * An optional nickname for the item
      */
     public abstract Optional<String> nickname();
+
+    /**
+     * Is the item visible or not?
+     */
+    public abstract boolean isVisible();
 
     /**
      * Returns either the nickname if present, or the actual name
@@ -59,7 +66,7 @@ public interface Item extends Examinable {
         }
 
         public static Builder builder() {
-            return new AutoValue_Item_ImmutableItem.Builder().setTag("Item")
+            return new AutoValue_Item_ImmutableItem.Builder().setTag("Item").setIsVisible(true)
                     .setAttributes(Taggable.produceBasicTagAttributes());
         }
 
@@ -72,6 +79,8 @@ public interface Item extends Examinable {
             }
 
             public abstract Builder setName(String name);
+
+            public abstract Builder setIsVisible(boolean isVisible);
 
             public abstract Builder setNickname(Optional<String> nickname);
 
@@ -96,4 +105,28 @@ public interface Item extends Examinable {
             }
         }
     }
+
+    public static class ItemComparator implements Comparator<Item>, Serializable {
+        private static Comparator<Examinable> delegate = Examinable.getExaminableComparator();
+
+        @Override
+        public int compare(Item o1, Item o2) {
+            if (o1 == null || o2 == null) {
+                throw new NullPointerException("Cannot compare null Items");
+            }
+            if (o1.equals(o2)) {
+                return 0;
+            }
+            int displayCompare = o1.displayName().compareTo(o2.displayName());
+            if (displayCompare != 0) {
+                return displayCompare;
+            }
+            return delegate.compare(o1, o2);
+        }
+    }
+
+    public static Comparator<Item> getItemComparator() {
+        return new ItemComparator();
+    }
+
 }
