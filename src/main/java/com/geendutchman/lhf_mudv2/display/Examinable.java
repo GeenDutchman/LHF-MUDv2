@@ -3,6 +3,7 @@ package com.geendutchman.lhf_mudv2.display;
 import java.util.Comparator;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Preconditions;
@@ -33,7 +34,7 @@ public interface Examinable extends Taggable {
     /**
      * Examinable names should adhere to this regex
      */
-    public final static String EXAMINABLE_NAME = "^\\w{3}";
+    public final static Pattern EXAMINABLE_NAME = Pattern.compile("^\\w{3,}( \\w+)*$");
 
     /**
      * Transform this into an immutable unit
@@ -55,7 +56,8 @@ public interface Examinable extends Taggable {
             final String trimmedName = name.trim();
             final String trimmedTag = tag.trim();
             Taggable.taggablepreconditions(trimmedTag, content, attributes);
-            Preconditions.checkArgument(trimmedName.matches(EXAMINABLE_NAME), "name must match '%s'", EXAMINABLE_NAME);
+            Preconditions.checkArgument(EXAMINABLE_NAME.asMatchPredicate().test(trimmedName), "name must match '%s'",
+                    EXAMINABLE_NAME);
             return new AutoValue_Examinable_BasicExaminable(ImmutableSortedMap.copyOf(attributes), content, trimmedTag,
                     trimmedName, description);
         }

@@ -1,14 +1,16 @@
 package com.geendutchman.lhf_mudv2.item;
 
 import java.util.Comparator;
-import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.Taggable;
-import com.google.auto.value.AutoValue;
+import com.google.auto.value.AutoBuilder;
+import com.google.auto.value.AutoOneOf;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSortedMap;
 
 public interface Item extends Examinable {
@@ -20,7 +22,7 @@ public interface Item extends Examinable {
     /**
      * The nickname must adhere to this regex
      */
-    public static final String NICKNAME_RULES = Examinable.EXAMINABLE_NAME;
+    public static final Pattern NICKNAME_RULES = Examinable.EXAMINABLE_NAME;
 
     /**
      * An optional nickname for the item
@@ -48,61 +50,158 @@ public interface Item extends Examinable {
         return false;
     }
 
-    /**
-     * Represents an item that does not have state
-     */
-    @AutoValue
-    public static abstract class ImmutableItem implements Item {
-        final private UUID uuid = UUID.randomUUID();
+    public interface BuilderStart {
+        public BuildItem setName(String name);
+    }
 
-        final public UUID uuid() {
+    public interface BuildItem {
+        public BuildItem setVisible(boolean visible);
+
+        public BuildItem setNickname(Optional<String> nickname);
+
+        public BuildItem setItemTag(ItemTag tag);
+
+        public Item build();
+    }
+
+    @AutoBuilder(callMethod = "buildItem", ofClass = ConcreteItem.class)
+    public abstract class Builder implements BuilderStart, BuildItem {
+        final private UUID builderUuid = UUID.randomUUID();
+
+        public final UUID builderUuid() {
+            return this.builderUuid;
+        }
+
+    }
+
+    public static BuilderStart builder() {
+        final Builder builder = new AutoBuilder_Item_Builder();
+        builder.setVisible(true).setItemTag(ItemTag.ITEM);
+        return builder;
+    }
+
+    public static enum ItemTag {
+        ITEM;
+    }
+
+    public abstract ItemTag itemTag();
+
+    @Override
+    public default String tag() {
+        final ItemTag itemTag = this.itemTag();
+        if (itemTag == null) {
+            return "ITEM";
+        }
+        return itemTag.name();
+    }
+
+    @AutoOneOf(Delta.Kind.class)
+    public static abstract class Delta {
+        public enum Kind {
+            VISIBILITY, NICKNAME
+        }
+
+        public abstract Kind kind();
+
+        public abstract boolean visibility();
+
+        public abstract Optional<String> nickname();
+
+        public static Delta ofVisibility(boolean visible) {
+            return AutoOneOf_Item_Delta.visibility(visible);
+        }
+
+        public static Delta ofNickname(Optional<String> nickname) {
+            return AutoOneOf_Item_Delta.nickname(nickname);
+        }
+    }
+
+    public abstract void applyDelta(Delta delta);
+
+    static class ConcreteItem implements Item {
+        final private UUID uuid = UUID.randomUUID();
+        final private String name;
+        final private ItemTag itemTag;
+        private boolean visible = true;
+        private Optional<String> nickname;
+
+        static Item buildItem(String name, boolean visible, Optional<String> nickname, ItemTag itemTag) {
+            Preconditions.checkArgument(EXAMINABLE_NAME.asMatchPredicate().test(name),
+                    "name '%s' must match expression: %s", name, EXAMINABLE_NAME);
+            if (nickname.isPresent()) {
+                Preconditions.checkArgument(NICKNAME_RULES.asMatchPredicate().test(nickname.get()),
+                        "nickname '%s' must match expression: %s", nickname.get(), NICKNAME_RULES);
+            }
+            return new ConcreteItem(name, visible, nickname, itemTag);
+        }
+
+        public Builder toBuilder() {
+            return new AutoBuilder_Item_Builder(this);
+        }
+
+        private ConcreteItem(String name, boolean visible, Optional<String> nickname, ItemTag itemTag) {
+            this.name = name;
+            this.itemTag = itemTag;
+            this.visible = visible;
+            this.nickname = nickname;
+        }
+
+        @Override
+        public void applyDelta(Delta delta) {
+            if (delta == null) {
+                return;
+            }
+            switch (delta.kind()) {
+            case NICKNAME:
+                this.nickname = delta.nickname();
+                break;
+            case VISIBILITY:
+                this.visible = delta.visibility();
+                break;
+            default:
+                break;
+            }
+        }
+
+        @Override
+        public boolean isVisible() {
+            return visible;
+        }
+
+        @Override
+        public Optional<String> nickname() {
+            return this.nickname;
+        }
+
+        @Override
+        public UUID uuid() {
             return this.uuid;
         }
 
         @Override
-        final public boolean isStateful() {
-            return false;
+        public String name() {
+            return this.name;
         }
 
-        public static Builder builder() {
-            return new AutoValue_Item_ImmutableItem.Builder().setTag("Item").setIsVisible(true)
-                    .setAttributes(Taggable.produceBasicTagAttributes());
+        @Override
+        public Optional<RichOutput> description() {
+            return Optional.of(RichOutput.builder().addTaggable(this).addString("Is an item").build());
         }
 
-        @AutoValue.Builder
-        public static abstract class Builder {
-            final private UUID builderUUID = UUID.randomUUID();
-
-            final public UUID getBuilderUUID() {
-                return this.builderUUID;
-            }
-
-            public abstract Builder setName(String name);
-
-            public abstract Builder setIsVisible(boolean isVisible);
-
-            public abstract Builder setNickname(Optional<String> nickname);
-
-            abstract Builder setTag(String tag);
-
-            abstract Builder setAttributes(NavigableMap<String, String> attributes);
-
-            abstract ImmutableSortedMap.Builder<String, String> attributesBuilder();
-
-            public final Builder putAttribute(String key, String value) {
-                this.attributesBuilder().put(key, value);
-                return this;
-            }
-
-            public abstract Builder setDescription(Optional<RichOutput> description);
-
-            abstract ImmutableItem autoBuild();
-
-            public ImmutableItem build() {
-                final ImmutableItem built = this.autoBuild();
-                return built;
-            }
+        public ItemTag itemTag() {
+            return this.itemTag;
         }
+
+        @Override
+        public String tag() {
+            return this.itemTag.name();
+        }
+
+        @Override
+        public ImmutableSortedMap<String, String> attributes() {
+            return ImmutableSortedMap.copyOf(Taggable.produceBasicTagAttributes());
+        }
+
     }
 
     public static class ItemComparator implements Comparator<Item> {
