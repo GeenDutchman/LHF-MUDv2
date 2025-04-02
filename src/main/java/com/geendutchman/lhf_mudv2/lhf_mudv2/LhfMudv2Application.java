@@ -6,8 +6,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class LhfMudv2Application {
 
-	public static void main(String[] args) {
-		SpringApplication.run(LhfMudv2Application.class, args);
-	}
+    public static void main(String[] args) {
+        System.setProperty("reactor.logging.fallback", "JDK");
+        SpringApplication.run(LhfMudv2Application.class, args);
+    }
 
 }

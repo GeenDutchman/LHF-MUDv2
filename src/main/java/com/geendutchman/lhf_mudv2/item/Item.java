@@ -146,6 +146,23 @@ public interface Item extends Examinable {
             this.nickname = nickname;
         }
 
+        // @Override
+        // public void listen(Flux<Event> eventStream) {
+        // System.out.println("print debugging whoot");
+        // this.eventsIn = Flux.merge(this.eventsIn,
+        // eventStream.subscribeOn(Schedulers.boundedElastic(), false))
+        // .name("listener").checkpoint(String.format("merging for %s",
+        // this.uuid)).doOnNext(event -> {
+        // event.description().ifPresentOrElse(desc ->
+        // System.out.println(desc.printIt()),
+        // () -> System.out.println("Nu'un"));
+        // this.visible = true;
+        // this.sink.tryEmitNext(event);
+        // }).doOnError(System.err::println).doOnSubscribe(sub -> System.out.println("We
+        // have a subscriber!"))
+        // .subscribeOn(Schedulers.boundedElastic(), false);
+        // }
+
         @Override
         public void applyDelta(Delta delta) {
             if (delta == null) {

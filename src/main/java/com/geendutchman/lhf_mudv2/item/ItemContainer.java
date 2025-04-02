@@ -188,6 +188,9 @@ public interface ItemContainer extends Examinable {
         return this.name();
     }
 
+    @Override
+    public abstract ImmutableSortedMap<String, String> attributes();
+
     @AutoValue
     public static abstract class ImmutableItemContainer implements ItemContainer {
 

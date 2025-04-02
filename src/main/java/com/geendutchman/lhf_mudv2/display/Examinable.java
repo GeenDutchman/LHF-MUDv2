@@ -58,9 +58,12 @@ public interface Examinable extends Taggable {
             Taggable.taggablepreconditions(trimmedTag, content, attributes);
             Preconditions.checkArgument(EXAMINABLE_NAME.asMatchPredicate().test(trimmedName), "name must match '%s'",
                     EXAMINABLE_NAME);
-            return new AutoValue_Examinable_BasicExaminable(ImmutableSortedMap.copyOf(attributes), content, trimmedTag,
-                    trimmedName, description);
+            return new AutoValue_Examinable_BasicExaminable(content, trimmedTag, trimmedName, description,
+                    ImmutableSortedMap.copyOf(attributes));
         }
+
+        @Override
+        public abstract ImmutableSortedMap<String, String> attributes();
 
         @Override
         public final BasicExaminable basicExaminable() {

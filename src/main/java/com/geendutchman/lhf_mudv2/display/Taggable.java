@@ -15,18 +15,8 @@ import com.google.common.collect.ImmutableSortedMap;
  */
 public interface Taggable {
     /**
-     * The tag name, like in xml {@code
-     * 
-    <h1>} or {@code     
-          
-         
-        
-       
-      
-     
-    <p>
-                    * }, but with no alligators. This is not limited to html tags,
-     * it can be anything legal in xml.
+     * The tag name, like in xml, but with no alligators. This is not limited to
+     * html tags, it can be anything legal in xml.
      * 
      * @return tag
      */
@@ -47,7 +37,9 @@ public interface Taggable {
      * 
      * @return attributes
      */
-    public ImmutableSortedMap<String, String> attributes();
+    public default ImmutableSortedMap<String, String> attributes() {
+        return Taggable.BASIC_TAGGABLE_ATTRIBUTES;
+    }
 
     /**
      * Most taggables want to render in some colored way. They will at least need
@@ -60,6 +52,9 @@ public interface Taggable {
         tagAttributes.put("colored", "true");
         return tagAttributes;
     }
+
+    public final static ImmutableSortedMap<String, String> BASIC_TAGGABLE_ATTRIBUTES = ImmutableSortedMap
+            .copyOf(Taggable.produceBasicTagAttributes());
 
     /**
      * All tags need to adhere to: ^\\w{3}[\\w_-]+\\w$
@@ -99,6 +94,9 @@ public interface Taggable {
             Taggable.taggablepreconditions(trimmedTag, content, attributes);
             return new AutoValue_Taggable_BasicTaggable(trimmedTag, content, ImmutableSortedMap.copyOf(attributes));
         }
+
+        @Override
+        public abstract ImmutableSortedMap<String, String> attributes();
 
         @Override
         public final BasicTaggable basicTaggable() {
