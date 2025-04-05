@@ -1,5 +1,6 @@
 package com.geendutchman.lhf_mudv2.display;
 
+import java.io.Serializable;
 import java.util.Map.Entry;
 
 import org.w3c.dom.DOMException;
@@ -16,7 +17,7 @@ import com.google.common.collect.ImmutableList;
 /**
  * An element for the Rich Output
  */
-public abstract class RichOutputElement {
+public abstract class RichOutputElement implements Serializable {
 
     /**
      * Generates a node for xml
@@ -80,7 +81,7 @@ public abstract class RichOutputElement {
      * @param output
      * @return
      */
-    public static RichOutputElement ofOutput(RichOutput output) {
+    public static RichOutputElement ofNested(RichOutput output) {
         return new AutoValue_RichOutputElement_NestedElement(output);
     }
 
@@ -168,7 +169,7 @@ public abstract class RichOutputElement {
                 builder.append("\t").append(examined.content()).append("\n");
             }
             if (examined.description().isPresent()) {
-                final RichOutputElement description = RichOutputElement.ofOutput(examined.description().get());
+                final RichOutputElement description = RichOutputElement.ofNested(examined.description().get());
                 StringBuilder child = new StringBuilder();
                 description.printIt(child);
                 for (final String line : child.toString().split("\\r?\\n")) {
@@ -209,7 +210,7 @@ public abstract class RichOutputElement {
             }
 
             if (examined.description().isPresent()) {
-                final RichOutputElement description = RichOutputElement.ofOutput(examined.description().get());
+                final RichOutputElement description = RichOutputElement.ofNested(examined.description().get());
                 try {
                     description.xmlNode(nodeFactory, myElement);
                 } catch (OutputBuilderConversionError e) {

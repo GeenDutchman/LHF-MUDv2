@@ -1,5 +1,6 @@
 package com.geendutchman.lhf_mudv2.display;
 
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -50,7 +51,7 @@ public interface Examinable extends Taggable {
      * A concretion of Examinable
      */
     @AutoValue
-    public static abstract class BasicExaminable implements Examinable {
+    public static abstract class BasicExaminable implements Examinable, Serializable {
         public static BasicExaminable customExaminable(String name, Optional<RichOutput> description,
                 NavigableMap<String, String> attributes, String content, String tag) {
             final String trimmedName = name.trim();
@@ -71,7 +72,7 @@ public interface Examinable extends Taggable {
         }
     }
 
-    public static class ExaminableComparator implements Comparator<Examinable> {
+    public static class ExaminableComparator implements Comparator<Examinable>, Serializable {
         @Override
         public int compare(Examinable o1, Examinable o2) {
             if (o1 == null || o2 == null) {

@@ -1,5 +1,6 @@
 package com.geendutchman.lhf_mudv2.display;
 
+import java.io.Serializable;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
@@ -87,7 +88,7 @@ public interface Taggable {
      * A concretion of Taggable
      */
     @AutoValue
-    public static abstract class BasicTaggable implements Taggable {
+    public static abstract class BasicTaggable implements Taggable, Serializable {
         public static BasicTaggable customTaggable(String tag, String content,
                 NavigableMap<String, String> attributes) {
             final String trimmedTag = tag.trim();

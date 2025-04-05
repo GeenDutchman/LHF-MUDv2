@@ -1,5 +1,6 @@
 package com.geendutchman.lhf_mudv2.display;
 
+import java.io.Serializable;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Map;
@@ -26,7 +27,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedMap;
 
 @AutoValue
-public abstract class RichOutput {
+public abstract class RichOutput implements Serializable {
 
     public abstract Optional<String> sequenceName();
 
@@ -46,6 +47,8 @@ public abstract class RichOutput {
         return new AutoValue_RichOutput.Builder().setElementSeparator(Optional.of(RichOutputElement.ofString(" ")))
                 .setTag(Optional.of("output")).setIsAndLast(false);
     }
+
+    public abstract Builder toBuilder();
 
     public final static Pattern SEQUENCE_NAME_PATTERN = Pattern.compile("^\\w+");
     public final static Pattern TAG_PATTERN = Pattern.compile("^\\w{3}[\\w_-]+\\w$");
@@ -100,7 +103,7 @@ public abstract class RichOutput {
         }
 
         public final Builder addOutput(RichOutput output) {
-            return this.addElement(RichOutputElement.ofOutput(output));
+            return this.addElement(RichOutputElement.ofNested(output));
         }
 
         abstract RichOutput autoBuild();
@@ -126,7 +129,7 @@ public abstract class RichOutput {
     public final String printIt() {
         final StringBuilder builder = new StringBuilder();
         // Delegate to a RichOutputElement
-        final RichOutputElement myself = RichOutputElement.ofOutput(this);
+        final RichOutputElement myself = RichOutputElement.ofNested(this);
         myself.printIt(builder);
         return builder.toString();
     }
@@ -146,7 +149,7 @@ public abstract class RichOutput {
 
         try {
             // Delegate to a RichOutputElement
-            final RichOutputElement myself = RichOutputElement.ofOutput(this);
+            final RichOutputElement myself = RichOutputElement.ofNested(this);
             myself.xmlNode(document, root);
         } catch (OutputBuilderConversionError e) {
             throw new OutputBuilderConversionError("Error creating root element", e);

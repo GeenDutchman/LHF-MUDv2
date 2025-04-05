@@ -13,7 +13,30 @@ import com.google.auto.value.AutoOneOf;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSortedMap;
 
-public interface Item extends Examinable {
+@Component
+public interface Item extends Examinable, Serializable {
+
+    public record ItemID(UUID uuid) implements Comparable<ItemID> {
+        public ItemID {
+            Preconditions.checkNotNull(uuid, "ItemID should not have null uuid");
+        }
+
+        public static ItemID make() {
+            return new ItemID(UUID.randomUUID());
+        }
+
+        @Override
+        public int compareTo(ItemID o) {
+            if (o == null) {
+                throw new NullPointerException("cannot compare to nil ItemID");
+            }
+            if (this == o) {
+                return 0;
+            }
+            return this.uuid.compareTo(o.uuid);
+        }
+    }
+
     /**
      * A uuid to specify the item
      */
@@ -50,11 +73,11 @@ public interface Item extends Examinable {
         return false;
     }
 
-    public interface BuilderStart {
+    public interface BuilderStart extends Serializable {
         public BuildItem setName(String name);
     }
 
-    public interface BuildItem {
+    public interface BuildItem extends Serializable {
         public BuildItem setVisible(boolean visible);
 
         public BuildItem setNickname(Optional<String> nickname);
@@ -64,6 +87,7 @@ public interface Item extends Examinable {
         public Item build();
     }
 
+    @Component
     @AutoBuilder(callMethod = "buildItem", ofClass = ConcreteItem.class)
     public abstract class Builder implements BuilderStart, BuildItem {
         final private UUID builderUuid = UUID.randomUUID();
@@ -96,7 +120,7 @@ public interface Item extends Examinable {
     }
 
     @AutoOneOf(Delta.Kind.class)
-    public static abstract class Delta {
+    public static abstract class Delta implements Serializable {
         public enum Kind {
             VISIBILITY, NICKNAME
         }
@@ -221,7 +245,7 @@ public interface Item extends Examinable {
 
     }
 
-    public static class ItemComparator implements Comparator<Item> {
+    public static class ItemComparator implements Comparator<Item>, Serializable {
         private static Comparator<Examinable> delegate = Examinable.getExaminableComparator();
 
         @Override
