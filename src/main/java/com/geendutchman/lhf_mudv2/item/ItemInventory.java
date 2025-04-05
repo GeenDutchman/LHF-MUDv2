@@ -10,23 +10,23 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
 
 public interface ItemInventory extends ItemContainer {
-    abstract NavigableSet<Item> contents();
+    abstract NavigableSet<ItemReference> contents();
 
     @Override
     public default ImmutableSortedSet<Item> items() {
         return ImmutableSortedSet.copyOf(this.contents());
     }
 
-    public default boolean addItem(Item item) {
+    public default boolean addItem(ItemReference item) {
         if (item == null) {
             throw new NullPointerException("cannot add a null Item");
         }
         return this.contents().add(item);
     }
 
-    public default boolean addAll(Item... items) {
+    public default boolean addAll(ItemReference... items) {
         boolean changed = false;
-        for (final Item item : items) {
+        for (final ItemReference item : items) {
             if (item != null) {
                 changed |= this.contents().add(item);
             }
@@ -34,9 +34,9 @@ public interface ItemInventory extends ItemContainer {
         return changed;
     }
 
-    public default boolean addAll(Collection<Item> items) {
+    public default boolean addAll(Collection<ItemReference> items) {
         boolean changed = false;
-        for (final Item item : items) {
+        for (final ItemReference item : items) {
             if (item != null) {
                 changed |= this.contents().add(item);
             }
@@ -44,13 +44,13 @@ public interface ItemInventory extends ItemContainer {
         return changed;
     }
 
-    public default boolean removeItem(Item item) {
+    public default boolean removeItem(ItemReference item) {
         return this.contents().remove(item);
     }
 
-    public default Optional<Item> removeOne(Query query) {
-        for (Iterator<Item> iterator = this.contents().iterator(); iterator.hasNext();) {
-            final Item item = iterator.next();
+    public default Optional<ItemReference> removeOne(ItemQuery query) {
+        for (Iterator<ItemReference> iterator = this.contents().iterator(); iterator.hasNext();) {
+            final ItemReference item = iterator.next();
             if (query.test(item)) {
                 iterator.remove();
                 return Optional.of(item);
@@ -59,10 +59,10 @@ public interface ItemInventory extends ItemContainer {
         return Optional.empty();
     }
 
-    public default ImmutableItemContainer removeAll(Query query) {
+    public default ImmutableItemContainer removeAll(ItemQuery query) {
         ImmutableItemContainer.Builder builder = ImmutableItemContainer.builder().setName("queryRemoval");
-        for (Iterator<Item> iterator = this.contents().iterator(); iterator.hasNext();) {
-            final Item item = iterator.next();
+        for (Iterator<ItemReference> iterator = this.contents().iterator(); iterator.hasNext();) {
+            final ItemReference item = iterator.next();
             if (query.test(item)) {
                 iterator.remove();
                 builder.addItem(item);
@@ -73,10 +73,10 @@ public interface ItemInventory extends ItemContainer {
 
     public final static class Inventory implements ItemInventory {
         private final String name = "Inventory";
-        private final TreeSet<Item> contents = new TreeSet<>(Item.getItemComparator());
+        private final TreeSet<ItemReference> contents = new TreeSet<>(Item.getItemComparator());
 
         @Override
-        public NavigableSet<Item> contents() {
+        public NavigableSet<ItemReference> contents() {
             return this.contents;
         }
 

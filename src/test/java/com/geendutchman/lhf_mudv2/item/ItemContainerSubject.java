@@ -2,7 +2,6 @@ package com.geendutchman.lhf_mudv2.item;
 
 import java.util.Objects;
 
-import com.geendutchman.lhf_mudv2.item.ItemContainer.Query;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.OptionalSubject;
@@ -48,11 +47,11 @@ public class ItemContainerSubject extends IterableSubject {
     // this.items().doesNotContain(item);
     // }
 
-    public ItemContainerSubject queryAll(Query query) {
+    public ItemContainerSubject queryAll(ItemQuery query) {
         return check("queryAll(%s)", query).about(itemContainers()).that(this.actual.queryAll(query));
     }
 
-    public OptionalSubject queryOne(Query query) {
+    public OptionalSubject queryOne(ItemQuery query) {
         return check("queryOne(%s)", query).that(this.actual.queryOne(query));
     }
 

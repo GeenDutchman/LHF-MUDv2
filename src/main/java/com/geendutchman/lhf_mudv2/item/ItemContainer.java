@@ -1,150 +1,23 @@
 package com.geendutchman.lhf_mudv2.item;
 
-import java.io.Serializable;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 import java.util.stream.Collector;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
+import com.geendutchman.lhf_mudv2.item.Item.ItemID;
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
 
 public interface ItemContainer extends Examinable {
-
-    @AutoValue
-    public static abstract class Query implements Predicate<Item> {
-        public abstract Optional<UUID> uuid();
-
-        public abstract Optional<String> name();
-
-        public abstract ImmutableList<Pattern> namePatterns();
-
-        public abstract Optional<Boolean> isVisible();
-
-        public abstract boolean checkOnlyName();
-
-        public abstract ImmutableList<Pattern> toStringPatterns();
-
-        public final static Builder builder() {
-            final Builder builder = new AutoValue_ItemContainer_Query.Builder().setIsVisible(true)
-                    .setCheckOnlyName(false).setToStringPatterns(ImmutableList.of());
-            builder.namePatternsBuilder();
-            return builder;
-        }
-
-        abstract Builder toBuilder();
-
-        public final Query withNamePattern(String pattern) {
-            return toBuilder().addNamePattern(pattern).build();
-        }
-
-        public final Query withCheckOnlyName(boolean check) {
-            return toBuilder().setCheckOnlyName(check).build();
-        }
-
-        @AutoValue.Builder
-        public static abstract class Builder {
-            public abstract Builder setUuid(Optional<UUID> uuid);
-
-            public abstract Builder setName(Optional<String> name);
-
-            public abstract Builder setName(String name);
-
-            abstract ImmutableList.Builder<Pattern> namePatternsBuilder();
-
-            public final Builder addNamePattern(Pattern pattern) {
-                this.namePatternsBuilder().add(pattern);
-                return this;
-            }
-
-            public final Builder addNamePattern(String pattern) {
-                this.namePatternsBuilder().add(Pattern.compile(pattern));
-                return this;
-            }
-
-            public abstract Builder setIsVisible(boolean isVisible);
-
-            public abstract Builder setIsVisible(Optional<Boolean> isVisible);
-
-            public abstract Builder setCheckOnlyName(boolean check);
-
-            public abstract Builder setToStringPatterns(ImmutableList<Pattern> patterns);
-
-            public abstract Query build();
-
-        }
-
-        private final boolean testNames(Item t) {
-            if (!this.checkOnlyName()) {
-                if (this.name().isPresent()) {
-                    if (!this.name().get().equals(t.displayName())) {
-                        return false;
-                    }
-                }
-                for (final Pattern pattern : this.namePatterns()) {
-                    if (!pattern.asPredicate().test(t.displayName())) {
-                        return false;
-                    }
-                }
-            } else {
-                if (this.name().isPresent()) {
-                    if (!this.name().get().equals(t.name())) {
-                        return false;
-                    }
-                }
-                for (final Pattern pattern : this.namePatterns()) {
-                    if (!pattern.asPredicate().test(t.name())) {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        @Override
-        public final boolean test(Item t) {
-            if (t == null) {
-                return false;
-            }
-            if (this.uuid().isPresent()) {
-                if (this.uuid().get().equals(t.uuid())) {
-                    return true;
-                }
-            }
-            if (this.isVisible().isPresent()) {
-                if (t.isVisible() != this.isVisible().get()) {
-                    return false;
-                }
-            }
-            if (!this.testNames(t)) {
-                return false;
-            }
-            final ImmutableList<Pattern> toStringPatterns = this.toStringPatterns();
-            if (toStringPatterns.size() > 0) {
-                final String asStr = t.toString();
-                for (final Pattern pattern : this.toStringPatterns()) {
-                    if (!pattern.asMatchPredicate().test(asStr)) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        }
-
-    }
 
     public abstract ImmutableSortedSet<Item> items();
 
@@ -152,9 +25,9 @@ public interface ItemContainer extends Examinable {
         return this.items().contains(item);
     }
 
-    public default Optional<Item> byUUID(UUID id) {
+    public default Optional<Item> byItemID(ItemID id) {
         for (final Item item : this.items()) {
-            if (item != null && id.equals(item.uuid())) {
+            if (item != null && id.equals(item.itemID())) {
                 return Optional.of(item);
             }
         }
@@ -265,7 +138,7 @@ public interface ItemContainer extends Examinable {
         }
     }
 
-    public default Optional<Item> queryOne(Query query) {
+    public default Optional<Item> queryOne(ItemQuery query) {
         for (final Item item : this.items()) {
             if (query.test(item)) {
                 return Optional.of(item);
@@ -274,7 +147,7 @@ public interface ItemContainer extends Examinable {
         return Optional.empty();
     }
 
-    public default ImmutableItemContainer queryAll(Query query) {
+    public default ImmutableItemContainer queryAll(ItemQuery query) {
         ImmutableItemContainer.Builder builder = ImmutableItemContainer.builder().setName("queryResult");
         return this.items().stream().filter(query).collect(builder).setName("queryResult").build();
     }

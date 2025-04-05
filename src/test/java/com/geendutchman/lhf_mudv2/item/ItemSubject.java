@@ -35,8 +35,8 @@ public final class ItemSubject extends Subject {
         return check("name()").that(this.item.name());
     }
 
-    public StringSubject uuid() {
-        return check("uuid()").that(this.item.uuid().toString());
+    public StringSubject itemID() {
+        return check("itemID().uuid()").that(this.item.itemID().uuid().toString());
     }
 
     public BooleanSubject visibility() {

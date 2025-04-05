@@ -1,9 +1,13 @@
 package com.geendutchman.lhf_mudv2.item;
 
+import java.io.Serializable;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
+
+import org.springframework.stereotype.Component;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
@@ -15,6 +19,8 @@ import com.google.common.collect.ImmutableSortedMap;
 
 @Component
 public interface Item extends Examinable, Serializable {
+
+    static HashMap<ItemID, ConcreteItem> itemRepo = new HashMap<>();
 
     public record ItemID(UUID uuid) implements Comparable<ItemID> {
         public ItemID {
@@ -40,7 +46,7 @@ public interface Item extends Examinable, Serializable {
     /**
      * A uuid to specify the item
      */
-    public abstract UUID uuid();
+    public abstract ItemID itemID();
 
     /**
      * The nickname must adhere to this regex
@@ -95,7 +101,6 @@ public interface Item extends Examinable, Serializable {
         public final UUID builderUuid() {
             return this.builderUuid;
         }
-
     }
 
     public static BuilderStart builder() {
@@ -143,7 +148,7 @@ public interface Item extends Examinable, Serializable {
     public abstract void applyDelta(Delta delta);
 
     static class ConcreteItem implements Item {
-        final private UUID uuid = UUID.randomUUID();
+        final private ItemID itemID = ItemID.make();
         final private String name;
         final private ItemTag itemTag;
         private boolean visible = true;
@@ -156,7 +161,9 @@ public interface Item extends Examinable, Serializable {
                 Preconditions.checkArgument(NICKNAME_RULES.asMatchPredicate().test(nickname.get()),
                         "nickname '%s' must match expression: %s", nickname.get(), NICKNAME_RULES);
             }
-            return new ConcreteItem(name, visible, nickname, itemTag);
+            ConcreteItem item = new ConcreteItem(name, visible, nickname, itemTag);
+            Item.itemRepo.put(item.itemID, item);
+            return item;
         }
 
         public Builder toBuilder() {
@@ -215,8 +222,8 @@ public interface Item extends Examinable, Serializable {
         }
 
         @Override
-        public UUID uuid() {
-            return this.uuid;
+        public ItemID itemID() {
+            return this.itemID;
         }
 
         @Override
