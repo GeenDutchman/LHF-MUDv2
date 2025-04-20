@@ -115,7 +115,7 @@ public abstract class RichOutput implements Serializable {
                             || output.sequenceName().get().matches(SEQUENCE_NAME_PATTERN.pattern()),
                     "sequence name must match: %s", SEQUENCE_NAME_PATTERN);
             Preconditions.checkState(output.tag().isEmpty() || output.tag().get().matches(TAG_PATTERN.pattern()),
-                    "tag must match: %s", TAG_PATTERN);
+                    "tag is '%s' but must match: %s", output.tag(), TAG_PATTERN);
             return output;
         }
     }

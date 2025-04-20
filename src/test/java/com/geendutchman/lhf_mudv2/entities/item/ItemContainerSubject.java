@@ -1,4 +1,4 @@
-package com.geendutchman.lhf_mudv2.item;
+package com.geendutchman.lhf_mudv2.entities.item;
 
 import java.util.Objects;
 

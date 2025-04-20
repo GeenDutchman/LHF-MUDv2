@@ -1,4 +1,4 @@
-package com.geendutchman.lhf_mudv2.item;
+package com.geendutchman.lhf_mudv2.entities.item;
 
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -10,16 +10,20 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 
-import com.geendutchman.lhf_mudv2.display.Examinable;
-import com.geendutchman.lhf_mudv2.display.RichOutput;
-import com.geendutchman.lhf_mudv2.item.Item.ItemID;
+import com.geendutchman.lhf_mudv2.entities.EntityContainer;
+import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
 
-public interface ItemContainer extends Examinable {
+public interface ItemContainer extends EntityContainer<Item> {
 
     public abstract ImmutableSortedSet<Item> items();
+
+    @Override
+    public default ImmutableSortedSet<Item> entities() {
+        return this.items();
+    }
 
     public default boolean hasItem(Item item) {
         return this.items().contains(item);
@@ -27,29 +31,11 @@ public interface ItemContainer extends Examinable {
 
     public default Optional<Item> byItemID(ItemID id) {
         for (final Item item : this.items()) {
-            if (item != null && id.equals(item.itemID())) {
+            if (item != null && id.equals(item.identifier())) {
                 return Optional.of(item);
             }
         }
         return Optional.empty();
-    }
-
-    public default boolean isEmpty() {
-        return this.items().isEmpty();
-    }
-
-    public default int size() {
-        return this.items().size();
-    }
-
-    @Override
-    public default Optional<RichOutput> description() {
-        RichOutput.Builder builder = RichOutput.builder().setOnEmpty(Optional.of("It is empty"))
-                .setSequenceName(this.name()).setTag(Optional.of(this.tag()));
-        for (final Item item : this.items()) {
-            builder.addTaggable(item);
-        }
-        return Optional.of(builder.build());
     }
 
     @Override
@@ -151,4 +137,5 @@ public interface ItemContainer extends Examinable {
         ImmutableItemContainer.Builder builder = ImmutableItemContainer.builder().setName("queryResult");
         return this.items().stream().filter(query).collect(builder).setName("queryResult").build();
     }
+
 }

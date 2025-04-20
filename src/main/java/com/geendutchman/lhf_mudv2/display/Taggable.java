@@ -58,9 +58,9 @@ public interface Taggable {
             .copyOf(Taggable.produceBasicTagAttributes());
 
     /**
-     * All tags need to adhere to: ^\\w{3}[\\w_-]+\\w$
+     * All tags need to adhere to: ^\\w{3}(?:[_-]?\\w)*$
      */
-    public final static String TAG_PATTERN = "^\\w{3}[\\w_-]+\\w$";
+    public final static String TAG_PATTERN = "^\\w{3}(?:[_-]?\\w)*$";
 
     /**
      * Transform the taggable into an immutable unit
@@ -79,7 +79,7 @@ public interface Taggable {
      * @param attributes
      */
     static void taggablepreconditions(String tag, String content, NavigableMap<String, String> attributes) {
-        Preconditions.checkArgument(tag.matches(TAG_PATTERN), "tag must match '%s'", TAG_PATTERN);
+        Preconditions.checkArgument(tag.matches(TAG_PATTERN), "tag must match '%s' but is '%s'", TAG_PATTERN, tag);
         Preconditions.checkArgument(!content.isEmpty(), "content must not be empty");
         Preconditions.checkArgument(attributes != null, "attributes must not be null");
     }

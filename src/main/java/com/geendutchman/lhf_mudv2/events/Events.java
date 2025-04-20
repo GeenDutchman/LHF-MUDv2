@@ -1,0 +1,246 @@
+package com.geendutchman.lhf_mudv2.events;
+
+import java.net.URI;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.function.Consumer;
+
+import com.geendutchman.lhf_mudv2.display.Examinable;
+import com.geendutchman.lhf_mudv2.display.Examinable.BasicExaminable;
+import com.geendutchman.lhf_mudv2.display.RichOutput;
+import com.geendutchman.lhf_mudv2.display.RichOutput.Builder;
+import com.geendutchman.lhf_mudv2.display.RichOutputElement;
+import com.geendutchman.lhf_mudv2.entities.item.ItemEffect;
+import com.geendutchman.lhf_mudv2.events.Event.EventRouting;
+import com.geendutchman.lhf_mudv2.events.Event.EventRouting.EventRoutingBuilder;
+import com.google.auto.value.AutoValue;
+import com.google.auto.value.extension.memoized.Memoized;
+
+import autovalue.shaded.com.google.common.collect.ImmutableList;
+
+public final class Events {
+
+    @AutoValue
+    public static abstract class PlainEvent extends Event {
+
+        static PlainEventBuilder builder() {
+            return new AutoValue_Events_PlainEvent.Builder();
+        }
+
+        @AutoValue.Builder
+        public interface PlainEventBuilder {
+            public abstract PlainEventBuilder setDescription(Optional<RichOutput> description);
+
+            public abstract PlainEventBuilder setDescription(RichOutput description);
+
+            abstract EventRoutingBuilder routingBuilder();
+
+            public default PlainEventBuilder setRouting(Consumer<EventRoutingBuilder> setter) {
+                if (setter != null) {
+                    setter.accept(this.routingBuilder());
+                }
+                return this;
+            }
+
+            public abstract PlainEvent build();
+        }
+    }
+
+    public static PlainEvent.PlainEventBuilder plainEvent() {
+        return PlainEvent.builder();
+    }
+
+    @AutoValue
+    public static abstract class SeeEvent extends Event {
+        // TODO: some way to record who is watching
+        // public abstract EntityReference<Entity> observer();
+
+        @Override
+        public final Optional<RichOutput> description() {
+            return Optional.empty();
+        }
+
+        static SeeEventBuilder builder() {
+            return new AutoValue_Events_SeeEvent.Builder();
+        }
+
+        @AutoValue.Builder
+        public interface SeeEventBuilder {
+            // public abstract SeeEventBuilder setObserver(EntityReference<Entity>
+            // observer);
+
+            abstract EventRoutingBuilder routingBuilder();
+
+            public default SeeEventBuilder setRouting(Consumer<EventRoutingBuilder> setter) {
+                if (setter != null) {
+                    setter.accept(this.routingBuilder());
+                }
+                return this;
+            }
+
+            public abstract SeeEvent build();
+        }
+    }
+
+    public static SeeEvent.SeeEventBuilder seeEvent() {
+        return SeeEvent.builder();
+    }
+
+    @AutoValue
+    public static abstract class ViewedEvent extends Event {
+        public abstract BasicExaminable observed();
+
+        @Override
+        public Optional<RichOutput> description() {
+            return this.observed().description();
+        }
+
+        static ViewedEventBuilder builder() {
+            return new AutoValue_Events_ViewedEvent.Builder();
+        }
+
+        @AutoValue.Builder
+        public interface ViewedEventBuilder {
+            public abstract ViewedEventBuilder setObserved(BasicExaminable observed);
+
+            public default ViewedEventBuilder setObserved(Examinable observed) {
+                return this.setObserved(observed.basicExaminable());
+            }
+
+            abstract EventRoutingBuilder routingBuilder();
+
+            public default ViewedEventBuilder setRouting(Consumer<EventRoutingBuilder> setter) {
+                if (setter != null) {
+                    setter.accept(this.routingBuilder());
+                }
+                return this;
+            }
+
+            public abstract ViewedEvent build();
+        }
+    }
+
+    public static ViewedEvent.ViewedEventBuilder viewedEvent() {
+        return ViewedEvent.builder();
+    }
+
+    @AutoValue
+    public abstract static class ItemChangeEvent extends Event {
+        public abstract ImmutableList<ItemEffect> effects();
+
+        @Override
+        @Memoized
+        public Optional<RichOutput> description() {
+            final Builder builder = RichOutput.builder().setSequenceName("Effects on Item")
+                    .setOnEmpty(Optional.of("none"))
+                    .setElementSeparator(Optional.of(RichOutputElement.ofString("\n - ")));
+            this.effects().stream().filter(effect -> effect != null)
+                    .forEachOrdered(effect -> builder.addExaminable(effect));
+            return Optional.of(builder.build());
+        }
+
+        static ItemChangeEvent.ItemChangeEventBuilder builder() {
+            return new AutoValue_Events_ItemChangeEvent.Builder();
+        }
+
+        @AutoValue.Builder
+        public static abstract class ItemChangeEventBuilder {
+            abstract ImmutableList.Builder<ItemEffect> effectsBuilder();
+
+            public abstract ItemChangeEventBuilder setEffects(Iterable<ItemEffect> effects);
+
+            public abstract ItemChangeEventBuilder setEffects(ItemEffect... effects);
+
+            public final ItemChangeEventBuilder setEffects(Collection<ItemEffect.Builder> effects) {
+                return this.setEffects(effects.stream().filter(effectBuilder -> effectBuilder != null)
+                        .map(effectBuilder -> effectBuilder.build()).toList());
+            }
+
+            public final ItemChangeEventBuilder addEffect(ItemEffect effect) {
+                this.effectsBuilder().add(effect);
+                return this;
+            }
+
+            public final ItemChangeEventBuilder addEffect(ItemEffect.Builder effect) {
+                this.effectsBuilder().add(effect.build());
+                return this;
+            }
+
+            abstract EventRoutingBuilder routingBuilder();
+
+            public final ItemChangeEventBuilder setRouting(Consumer<EventRoutingBuilder> setter) {
+                if (setter != null) {
+                    setter.accept(this.routingBuilder());
+                }
+                return this;
+            }
+
+            public abstract ItemChangeEvent build();
+        }
+    }
+
+    public static ItemChangeEvent.ItemChangeEventBuilder itemChange() {
+        return ItemChangeEvent.builder();
+    }
+
+    public static final class AddressedBuilder {
+        private EventRoutingBuilder routing = EventRouting.builder();
+
+        public AddressedBuilder setDestination(URI destination) {
+            this.routing.setDestination(destination);
+            return this;
+        }
+
+        public AddressedBuilder setSender(URI sender) {
+            this.routing.setSender(sender);
+            return this;
+        }
+
+        public AddressedBuilder setReplyTo(URI replyTo) {
+            this.routing.setReplyTo(replyTo);
+            return this;
+        }
+
+        public AddressedBuilder setReplyToSender(URI sender) {
+            this.routing.setReplyToSender(sender);
+            return this;
+        }
+
+        public AddressedBuilder setDestinationAndSender(URI destination, URI sender) {
+            this.routing.setDestinationAndSender(destination, sender);
+            return this;
+        }
+
+        public AddressedBuilder reply(EventRouting other) {
+            if (other != null) {
+                this.setDestination(other.replyTo()).setReplyToSender(other.destination());
+            }
+            return this;
+        }
+
+        public void copyTo(EventRoutingBuilder t) {
+            if (t != null) {
+                t.setSender(this.routing.sender()).setReplyTo(this.routing.replyTo())
+                        .setDestination(this.routing.destination());
+            }
+        }
+
+        public PlainEvent.PlainEventBuilder plainEvent() {
+            return Events.plainEvent().setRouting(this::copyTo);
+        }
+
+        public SeeEvent.SeeEventBuilder seeEvent() {
+            return Events.seeEvent().setRouting(this::copyTo);
+        }
+
+        public ViewedEvent.ViewedEventBuilder viewedEvent() {
+            return Events.viewedEvent().setRouting(this::copyTo);
+        }
+
+    }
+
+    public static AddressedBuilder addressed() {
+        return new AddressedBuilder();
+    }
+
+}

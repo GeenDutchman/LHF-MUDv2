@@ -1,4 +1,4 @@
-package com.geendutchman.lhf_mudv2.item;
+package com.geendutchman.lhf_mudv2.entities.item;
 
 import com.google.common.truth.BooleanSubject;
 import com.google.common.truth.FailureMetadata;
@@ -36,7 +36,7 @@ public final class ItemSubject extends Subject {
     }
 
     public StringSubject itemID() {
-        return check("itemID().uuid()").that(this.item.itemID().uuid().toString());
+        return check("itemID().uuid()").that(this.item.identifier().uuid().toString());
     }
 
     public BooleanSubject visibility() {

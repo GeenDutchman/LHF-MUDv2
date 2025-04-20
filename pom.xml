@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>com.geendutchman</groupId>
 	<artifactId>lhf-mudv2</artifactId>
-	<version>0.0.14-SNAPSHOT</version>
+	<version>0.0.15-SNAPSHOT</version>
 	<name>lhf-mudv2</name>
 	<description>Demo project for Spring Boot</description>
 	<url />
@@ -33,34 +33,11 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>io.projectreactor</groupId>
-				<artifactId>reactor-bom</artifactId>
-				<version>2025.0.0-M1</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
+
 
 	</dependencyManagement>
 	<dependencies>
 
-		<dependency>
-			<groupId>io.projectreactor.netty</groupId>
-			<artifactId>reactor-netty</artifactId>
-		</dependency>
-
-
-		<dependency>
-			<groupId>io.projectreactor</groupId>
-			<artifactId>reactor-core</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.projectreactor</groupId>
-			<artifactId>reactor-test</artifactId>
-			<scope>test</scope>
-		</dependency>
 
 		<dependency>
 			<groupId>com.google.truth</groupId>
@@ -91,11 +68,11 @@
 		</dependency>
 
 
-		<dependency>
+		<!-- <dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-all</artifactId>
 			<version>2.0.2-beta</version>
-		</dependency>
+		</dependency> -->
 
 
 		<dependency>
@@ -126,7 +103,24 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 			</plugin>
-
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>properties</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 

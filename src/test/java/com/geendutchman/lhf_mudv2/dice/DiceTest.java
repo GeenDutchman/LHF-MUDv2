@@ -1,6 +1,6 @@
 package com.geendutchman.lhf_mudv2.dice;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.geendutchman.lhf_mudv2.dice.Dice.Plain;
 import com.google.common.truth.Truth;

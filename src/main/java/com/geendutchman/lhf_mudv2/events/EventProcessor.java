@@ -1,16 +1,15 @@
 package com.geendutchman.lhf_mudv2.events;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Sinks;
+import java.net.URI;
+import java.util.Optional;
 
 public interface EventProcessor {
-    public String processorId();
+    public URI processorURI();
 
-    public void listen(Flux<Event> eventStream);
+    public Optional<URI> locale();
 
-    abstract Sinks.Many<Event> sink();
-
-    public default Flux<Event> eventsOut() {
-        return this.sink().asFlux().name(this.processorId());
+    public default void processEvent(Event event, EventBus bus) {
+        // give us the option
     }
+
 }
