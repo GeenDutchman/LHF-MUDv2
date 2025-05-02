@@ -1,7 +1,7 @@
 package com.geendutchman.lhf_mudv2.dice;
 
 public enum DieType {
-    NONE(0), TWO(2), FOUR(4), SIX(6), EIGHT(8), TEN(10), TWELVE(12), TWENTY(20), HUNDRED(100);
+    HUNDRED(100), TWENTY(20), TWELVE(12), TEN(10), EIGHT(8), SIX(6), FOUR(4), TWO(2), ONE(1);
 
     public static DieType getDieType(String value) {
         for (DieType dType : values()) {
@@ -20,10 +20,6 @@ public enum DieType {
 
     DieType(int type) {
         this.type = type;
-    }
-
-    public Dice<Dice.Plain> diceOf(int count) {
-        return new Dice<Dice.Plain>(this, count, Dice.Plain.UNFLAVORED);
     }
 
     public int getType() {

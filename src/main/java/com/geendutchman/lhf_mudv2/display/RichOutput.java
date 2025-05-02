@@ -106,6 +106,22 @@ public abstract class RichOutput implements Serializable {
             return this.addElement(RichOutputElement.ofNested(output));
         }
 
+        public final Builder addPolymorphic(String string) {
+            return this.addString(string);
+        }
+
+        public final Builder addPolymorphic(RichOutputElement element) {
+            return this.addElement(element);
+        }
+
+        public final Builder addPolymorphic(Taggable taggable) {
+            return this.addTaggable(taggable);
+        }
+
+        public final Builder addPolymorphic(Examinable examinable) {
+            return this.addExaminable(examinable);
+        }
+
         abstract RichOutput autoBuild();
 
         public final RichOutput build() {
