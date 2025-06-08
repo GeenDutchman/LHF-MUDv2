@@ -10,6 +10,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import com.geendutchman.lhf_mudv2.dice.Difficulty;
+import com.geendutchman.lhf_mudv2.dice.Plain;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemTag;
 import com.geendutchman.lhf_mudv2.events.EventBus;
 import com.google.auto.value.AutoBuilder;
@@ -22,7 +24,7 @@ public final class ItemBuilderFactory {
 
     public static sealed interface BuildItem extends BuilderStart permits ItemBuilderFactory.Builder {
 
-        public BuildItem setVisible(boolean visible);
+        public BuildItem setVisibility(Difficulty<Plain> visible);
 
         public BuildItem setNickname(Optional<String> nickname);
 
@@ -92,7 +94,7 @@ public final class ItemBuilderFactory {
         final ItemBuilderFactory.Builder builder = new AutoBuilder_ItemBuilderFactory_Builder();
         builder.setEventBus(bus);
         builder.setRepository(repository);
-        builder.setVisible(true).setItemTag(ItemTag.ITEM);
+        builder.setVisibility(Plain.noDifficulty()).setItemTag(ItemTag.ITEM);
         builder.setLocale(Optional.empty());
         return builder;
     }

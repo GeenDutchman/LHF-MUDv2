@@ -7,6 +7,9 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import com.geendutchman.lhf_mudv2.dice.Difficulty;
+import com.geendutchman.lhf_mudv2.dice.DifficultyMods;
+import com.geendutchman.lhf_mudv2.dice.Plain;
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.entities.Entity;
 import com.geendutchman.lhf_mudv2.entities.IEntityID;
@@ -67,7 +70,7 @@ public interface Item extends Entity {
     /**
      * Is the item visible or not?
      */
-    public abstract boolean isVisible();
+    public abstract Difficulty<Plain> visibility();
 
     /**
      * Returns either the nickname if present, or the actual name
@@ -108,14 +111,18 @@ public interface Item extends Entity {
 
         public abstract Kind kind();
 
-        public abstract boolean visibility();
+        public abstract Optional<DifficultyMods<Plain>> visibility();
 
         public abstract Optional<String> nickname();
 
         public abstract Optional<URI> locale();
 
-        public static Delta ofVisibility(boolean visible) {
+        public static Delta ofVisibility(Optional<DifficultyMods<Plain>> visible) {
             return AutoOneOf_Item_Delta.visibility(visible);
+        }
+
+        public static Delta ofVisibility(DifficultyMods<Plain> visible) {
+            return AutoOneOf_Item_Delta.visibility(Optional.of(visible));
         }
 
         public static Delta ofNickname(Optional<String> nickname) {

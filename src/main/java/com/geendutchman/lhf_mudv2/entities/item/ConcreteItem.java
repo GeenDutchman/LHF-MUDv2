@@ -3,6 +3,8 @@ package com.geendutchman.lhf_mudv2.entities.item;
 import java.net.URI;
 import java.util.Optional;
 
+import com.geendutchman.lhf_mudv2.dice.Difficulty;
+import com.geendutchman.lhf_mudv2.dice.Plain;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.events.Event;
@@ -14,20 +16,21 @@ class ConcreteItem implements Item {
     final private ItemID itemID = ItemID.make();
     final private String name;
     final private ItemTag itemTag;
-    private boolean visible = true;
+    private Difficulty<Plain> visibility;
     private Optional<String> nickname;
     private Optional<URI> locale;
 
-    protected static ConcreteItem buildItem(String name, boolean visible, Optional<String> nickname, ItemTag itemTag,
-            Optional<URI> locale) {
+    protected static ConcreteItem buildItem(String name, Difficulty<Plain> visibility, Optional<String> nickname,
+            ItemTag itemTag, Optional<URI> locale) {
         Preconditions.checkArgument(EXAMINABLE_NAME.asMatchPredicate().test(name),
                 "name '%s' must match expression: %s", name, EXAMINABLE_NAME);
+        Preconditions.checkNotNull(visibility, "visibility difficulty can be zero but must not be null");
         if (nickname.isPresent()) {
             Preconditions.checkArgument(NICKNAME_RULES.asMatchPredicate().test(nickname.get()),
                     "nickname '%s' must match expression: %s", nickname.get(), NICKNAME_RULES);
         }
         Preconditions.checkNotNull(locale, "locale is null, did you mean empty?");
-        ConcreteItem item = new ConcreteItem(name, visible, nickname, itemTag);
+        ConcreteItem item = new ConcreteItem(name, visibility, nickname, itemTag);
         return item;
     }
 
@@ -35,10 +38,10 @@ class ConcreteItem implements Item {
         return new AutoBuilder_ItemBuilderFactory_Builder(this);
     }
 
-    private ConcreteItem(String name, boolean visible, Optional<String> nickname, ItemTag itemTag) {
+    private ConcreteItem(String name, Difficulty<Plain> visibility, Optional<String> nickname, ItemTag itemTag) {
         this.name = name;
         this.itemTag = itemTag;
-        this.visible = visible;
+        this.visibility = visibility;
         this.nickname = nickname;
     }
 
@@ -70,7 +73,7 @@ class ConcreteItem implements Item {
             this.nickname = delta.nickname();
             break;
         case VISIBILITY:
-            this.visible = delta.visibility();
+            delta.visibility().ifPresent(mod -> this.visibility = mod.apply(this.visibility));
             break;
         case LOCALE:
             this.locale = delta.locale();
@@ -86,8 +89,8 @@ class ConcreteItem implements Item {
     }
 
     @Override
-    public boolean isVisible() {
-        return visible;
+    public Difficulty<Plain> visibility() {
+        return visibility;
     }
 
     @Override

@@ -6,6 +6,8 @@ import java.util.Optional;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 
+import com.geendutchman.lhf_mudv2.dice.Difficulty;
+import com.geendutchman.lhf_mudv2.dice.Plain;
 import com.geendutchman.lhf_mudv2.entities.EntityReference;
 import com.geendutchman.lhf_mudv2.entities.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.IEntityID.EntityID;
@@ -62,12 +64,12 @@ public final class ItemReference extends EntityReference<Item> implements Item {
     }
 
     @Override
-    public boolean isVisible() {
+    public Difficulty<Plain> visibility() {
         this.deref();
         if (this.entity.isPresent()) {
-            return this.entity.get().isVisible();
+            return this.entity.get().visibility();
         }
-        return true;
+        return Plain.noDifficulty();
     }
 
     @Override

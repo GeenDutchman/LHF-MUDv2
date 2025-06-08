@@ -1,6 +1,9 @@
 package com.geendutchman.lhf_mudv2.entities.item;
 
-import com.google.common.truth.BooleanSubject;
+import static com.geendutchman.lhf_mudv2.dice.DifficultySubject.difficulties;
+
+import com.geendutchman.lhf_mudv2.dice.DifficultySubject;
+import com.geendutchman.lhf_mudv2.dice.Plain;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.OptionalSubject;
 import com.google.common.truth.StringSubject;
@@ -39,7 +42,7 @@ public final class ItemSubject extends Subject {
         return check("itemID().uuid()").that(this.item.identifier().uuid().toString());
     }
 
-    public BooleanSubject visibility() {
-        return check("isVisible()").that(this.item.isVisible());
+    public DifficultySubject<Plain> visibility() {
+        return check("visibility()").about(difficulties()).that(this.item.visibility());
     }
 }
