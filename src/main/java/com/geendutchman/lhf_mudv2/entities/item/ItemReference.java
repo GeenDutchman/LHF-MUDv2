@@ -18,6 +18,10 @@ public final class ItemReference extends EntityReference<Item> implements Item {
         super(id, reference, null);
     }
 
+    public static ItemReference ofItem(ItemReference ref) {
+        return ref;
+    }
+
     @Bean
     @Scope("prototype")
     public static ItemReference ofItem(Item item) {

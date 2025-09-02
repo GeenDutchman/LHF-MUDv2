@@ -1,4 +1,4 @@
-package com.geendutchman.lhf_mudv2.entities.item;
+package com.geendutchman.lhf_mudv2.entities.room;
 
 import java.util.Optional;
 
@@ -8,11 +8,11 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 
 @AutoValue
-public abstract class ItemEffect implements Examinable {
-    protected ItemEffect() {
+public abstract class RoomEffect implements Examinable {
+    protected RoomEffect() {
     }
 
-    public abstract ImmutableList<Item.Delta> deltas();
+    public abstract ImmutableList<Room.Delta> deltas();
 
     public abstract Optional<RichOutput> applicationDescription();
 
@@ -21,11 +21,11 @@ public abstract class ItemEffect implements Examinable {
     }
 
     public final String tag() {
-        return "ITEM_EFFECT";
+        return "ROOM_EFFECT";
     }
 
     public static Builder builder() {
-        return new AutoValue_ItemEffect.Builder();
+        return new AutoValue_RoomEffect.Builder();
     }
 
     @AutoValue.Builder
@@ -41,9 +41,9 @@ public abstract class ItemEffect implements Examinable {
             return this.setApplicationDescription(Optional.of(builder.build()));
         }
 
-        abstract ImmutableList.Builder<Item.Delta> deltasBuilder();
+        abstract ImmutableList.Builder<Room.Delta> deltasBuilder();
 
-        public final Builder addDeltas(Item.Delta... deltas) {
+        public final Builder addDeltas(Room.Delta... deltas) {
             deltasBuilder().add(deltas);
             return this;
         }
@@ -54,7 +54,6 @@ public abstract class ItemEffect implements Examinable {
             return this.setDescription(Optional.of(builder.build()));
         }
 
-        public abstract ItemEffect build();
-
+        public abstract RoomEffect build();
     }
 }

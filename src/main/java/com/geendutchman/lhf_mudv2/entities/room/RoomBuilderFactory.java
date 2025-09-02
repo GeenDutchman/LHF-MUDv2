@@ -1,4 +1,4 @@
-package com.geendutchman.lhf_mudv2.entities.item;
+package com.geendutchman.lhf_mudv2.entities.room;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -8,27 +8,20 @@ import org.springframework.stereotype.Component;
 import com.geendutchman.lhf_mudv2.events.EventBus;
 
 @Component
-public final class ItemBuilderFactory {
-
-    private final ItemRepository repository;
+public final class RoomBuilderFactory {
+    private final RoomRepository repository;
     private final EventBus bus;
 
     @Autowired
-    public ItemBuilderFactory(ItemRepository repository, EventBus bus) {
+    public RoomBuilderFactory(RoomRepository repository, EventBus bus) {
         this.repository = repository;
         this.bus = bus;
     }
 
     @Bean
     @Scope("prototype")
-    public Item.BuilderStart builder() {
-        final Item.BuilderStart builder = Item.builder().setItemRepository(repository).setEventBus(bus);
+    public Room.BuilderStart builder() {
+        final Room.BuilderStart builder = Room.builder().setEventBus(bus).setRoomRepository(repository);
         return builder;
     }
-
-    @Bean
-    public Item aRock() {
-        return this.builder().setName("defaultRock").build();
-    }
-
 }

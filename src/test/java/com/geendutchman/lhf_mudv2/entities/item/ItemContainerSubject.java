@@ -2,24 +2,25 @@ package com.geendutchman.lhf_mudv2.entities.item;
 
 import java.util.Objects;
 
+import com.google.common.truth.CustomSubjectBuilder;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.OptionalSubject;
 import com.google.common.truth.StringSubject;
 import com.google.common.truth.Truth;
 
-public class ItemContainerSubject extends IterableSubject {
-    public static Factory<ItemContainerSubject, ItemContainer> itemContainers() {
-        return ItemContainerSubject::new;
+public class ItemContainerSubject<I extends Item> extends IterableSubject {
+    public static CustomSubjectBuilder.Factory<ItemContainerSubjectBuilder> itemContainers() {
+        return ItemContainerSubjectBuilder::new;
     }
 
-    public static ItemContainerSubject assertThat(ItemContainer actual) {
+    public static <I extends Item> ItemContainerSubject<I> assertThat(ItemContainer<I> actual) {
         return Truth.assertAbout(itemContainers()).that(actual);
     }
 
-    private final ItemContainer actual;
+    private final ItemContainer<I> actual;
 
-    protected ItemContainerSubject(FailureMetadata metadata, ItemContainer actual) {
+    protected ItemContainerSubject(FailureMetadata metadata, ItemContainer<I> actual) {
         super(metadata, actual != null ? actual.items() : null);
         this.actual = actual;
     }
@@ -47,7 +48,7 @@ public class ItemContainerSubject extends IterableSubject {
     // this.items().doesNotContain(item);
     // }
 
-    public ItemContainerSubject queryAll(ItemQuery query) {
+    public ItemContainerSubject<I> queryAll(ItemQuery query) {
         return check("queryAll(%s)", query).about(itemContainers()).that(this.actual.queryAll(query));
     }
 

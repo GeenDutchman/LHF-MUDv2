@@ -1,14 +1,12 @@
 package com.geendutchman.lhf_mudv2.entities;
 
+import java.util.Collection;
 import java.util.Comparator;
-import java.util.EnumSet;
+import java.util.Iterator;
+import java.util.NavigableSet;
 import java.util.Optional;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collector;
+
+import org.springframework.lang.NonNull;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
@@ -60,7 +58,7 @@ public interface EntityContainer<E extends Entity> extends Examinable {
         return this.name();
     }
 
-    public default Optional<E> queryOne(IEntityQuery<E> query) {
+    public default Optional<E> queryOne(IEntityQuery<? super E> query) {
         for (final E entity : this.entities()) {
             if (query.test(entity)) {
                 return Optional.of(entity);
@@ -72,59 +70,51 @@ public interface EntityContainer<E extends Entity> extends Examinable {
     @Override
     public abstract ImmutableSortedMap<String, String> attributes();
 
-    @AutoValue
-    public static abstract class ImmutableEntityContainer<E extends Entity> implements EntityContainer<E> {
+    public static interface ImmutableEntityContainer<E extends Entity> extends EntityContainer<E> {
 
-        public static <E extends Entity> BuilderStart<E> builder() {
-            return new AutoValue_EntityContainer_ImmutableEntityContainer.Builder<>();
+        public static <E extends Entity> ImmutableEntityContainer.ImmutableEntityContainerBuilderStart<E> builder() {
+            return ImmutableEntityContainerImpl.<E>builder();
         }
 
-        public interface BuilderStart<E extends Entity> {
-            public abstract ImmutableEntityContainerBuilder<E> setComparator(Comparator<E> comparator);
+        public static interface ImmutableEntityContainerBuilderStart<E extends Entity> {
+            public abstract ImmutableEntityContainerBuilder<E> setComparator(Comparator<? super E> comparator);
+        }
+
+        public static interface ImmutableEntityContainerBuilder<E extends Entity> {
+            public abstract ImmutableEntityContainerBuilder<E> add(E entity);
+
+            public abstract ImmutableEntityContainerBuilder<E> add(Iterable<E> entities);
+
+            public abstract ImmutableEntityContainerBuilder<E> setName(String name);
+
+            public abstract ImmutableSortedMap.Builder<String, String> attributesBuilder();
+
+            public abstract ImmutableEntityContainer<E> build();
+        }
+    }
+
+    @AutoValue
+    static abstract class ImmutableEntityContainerImpl<E extends Entity> implements ImmutableEntityContainer<E> {
+
+        public static <E extends Entity> ImmutableEntityContainerBuilderStart<E> builder() {
+            return new AutoValue_EntityContainer_ImmutableEntityContainerImpl.Builder<>();
         }
 
         @AutoValue.Builder
-        static abstract class ImmutableEntityContainerBuilder<E extends Entity> implements
-                Collector<E, ImmutableEntityContainerBuilder<E>, ImmutableEntityContainerBuilder<E>>, BuilderStart<E> {
-            protected Comparator<E> entityComparator;
+        static abstract class ImmutableEntityContainerBuilder<E extends Entity>
+                implements ImmutableEntityContainer.ImmutableEntityContainerBuilder<E>,
+                ImmutableEntityContainer.ImmutableEntityContainerBuilderStart<E> {
+            protected Comparator<? super E> entityComparator;
             private ImmutableSortedSet.Builder<E> cachedEntitiesBuilder;
 
             @Override
-            public ImmutableEntityContainerBuilder<E> setComparator(Comparator<E> comparator) {
+            public ImmutableEntityContainer.ImmutableEntityContainerBuilder<E> setComparator(
+                    Comparator<? super E> comparator) {
                 this.entityComparator = comparator;
                 return this;
             }
 
-            @Override
-            public Supplier<ImmutableEntityContainerBuilder<E>> supplier() {
-                return () -> {
-                    BuilderStart<E> starter = ImmutableEntityContainer.builder();
-                    return starter.setComparator(this.entityComparator);
-                };
-            }
-
-            @Override
-            public BiConsumer<ImmutableEntityContainerBuilder<E>, E> accumulator() {
-                return (builder, entity) -> builder.addEntity(entity);
-            }
-
-            @Override
-            public BinaryOperator<ImmutableEntityContainerBuilder<E>> combiner() {
-                return (b1, b2) -> b2.addEntities(b1.build().entities());
-            }
-
-            @Override
-            public Function<ImmutableEntityContainerBuilder<E>, ImmutableEntityContainerBuilder<E>> finisher() {
-                return builder -> builder;
-            }
-
-            @Override
-            public Set<Characteristics> characteristics() {
-                return EnumSet.of(Characteristics.IDENTITY_FINISH);
-
-            }
-
-            protected abstract ImmutableSortedSet.Builder<E> entitiesBuilder(Comparator<E> comparator);
+            protected abstract ImmutableSortedSet.Builder<E> entitiesBuilder(Comparator<? super E> comparator);
 
             /**
              * Gets the cachedEntityBuilder
@@ -140,21 +130,22 @@ public interface EntityContainer<E extends Entity> extends Examinable {
                 return this.cachedEntitiesBuilder;
             }
 
-            public ImmutableEntityContainerBuilder<E> addEntity(E entity) {
+            @Override
+            public ImmutableEntityContainerBuilder<E> add(E entity) {
                 this.entitiesBuilder().add(entity);
                 return this;
             }
 
-            public ImmutableEntityContainerBuilder<E> addEntities(Iterable<E> entities) {
+            @Override
+            public ImmutableEntityContainerBuilder<E> add(Iterable<E> entities) {
                 this.entitiesBuilder().addAll(entities);
                 return this;
             }
 
+            @Override
             public abstract ImmutableEntityContainerBuilder<E> setName(String name);
 
-            protected abstract ImmutableSortedMap.Builder<String, String> attributesBuilder();
-
-            public abstract ImmutableEntityContainer<E> build();
+            public abstract ImmutableEntityContainerImpl<E> build();
 
         }
 
@@ -167,10 +158,12 @@ public interface EntityContainer<E extends Entity> extends Examinable {
      * @param comparator
      * @return
      */
-    public default EntityContainer<E> queryAll(IEntityQuery<E> query, Comparator<E> comparator) {
-        ImmutableEntityContainer.ImmutableEntityContainerBuilder<E> builder = ImmutableEntityContainer.<E>builder()
+    public default ImmutableEntityContainer<E> queryAll(IEntityQuery<? super E> query,
+            Comparator<? super E> comparator) {
+        ImmutableEntityContainer.ImmutableEntityContainerBuilder<E> builder = ImmutableEntityContainerImpl.<E>builder()
                 .setComparator(comparator).setName("queryResult");
-        return this.entities().stream().filter(query).collect(builder).setName("queryResult").build();
+        this.entities().stream().filter(query).forEach(element -> builder.add(element));
+        return builder.build();
     }
 
     /**
@@ -179,8 +172,61 @@ public interface EntityContainer<E extends Entity> extends Examinable {
      * @param query
      * @return
      */
-    public default EntityContainer<E> queryAll(IEntityQuery<E> query) {
-        return this.queryAll(query, Entity.getEntityComparator());
+    public default ImmutableEntityContainer<E> queryAll(IEntityQuery<? super E> query) {
+        return this.queryAll(query, this.entities().comparator());
+    }
+
+    public static interface MutableEntityContainer<E extends Entity> extends EntityContainer<E> {
+        public abstract NavigableSet<E> cargo();
+
+        public default boolean add(@NonNull E reference) {
+            return this.cargo().add(reference);
+        }
+
+        public default boolean add(Collection<E> references) {
+            boolean changed = false;
+            if (references != null) {
+                for (final E ref : references) {
+                    if (ref != null) {
+                        changed |= this.cargo().add(ref);
+                    }
+                }
+            }
+            return changed;
+        }
+
+        public default boolean remove(E ref) {
+            return this.cargo().remove(ref);
+        }
+
+        public default Optional<E> removeOne(IEntityQuery<? super E> query) {
+            for (Iterator<E> iterator = this.cargo().iterator(); iterator.hasNext();) {
+                final E ref = iterator.next();
+                if (query.test(ref)) {
+                    iterator.remove();
+                    return Optional.ofNullable(ref);
+                }
+            }
+            return Optional.empty();
+        }
+
+        public default ImmutableEntityContainer<E> removeAll(IEntityQuery<? super E> query,
+                Comparator<? super E> comparator) {
+            ImmutableEntityContainer.ImmutableEntityContainerBuilder<E> builder = ImmutableEntityContainerImpl
+                    .<E>builder().setComparator(comparator).setName("QueryResult");
+            for (Iterator<E> iterator = this.cargo().iterator(); iterator.hasNext();) {
+                final E ref = iterator.next();
+                if (query.test(ref)) {
+                    iterator.remove();
+                    builder.add(ref);
+                }
+            }
+            return builder.build();
+        }
+
+        public default ImmutableEntityContainer<E> removeAll(IEntityQuery<? super E> query) {
+            return this.removeAll(query, this.cargo().comparator());
+        }
     }
 
 }

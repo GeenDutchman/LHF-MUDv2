@@ -33,8 +33,11 @@ public class LhfMudv2Application {
                     logger.finest(beanName);
                 } else {
                     logger.finer(beanName);
+                    System.out.println(beanName);
                 }
             }
+            logger.finer("Done listing beans");
+            System.out.println("Done listing beans");
         };
     }
 

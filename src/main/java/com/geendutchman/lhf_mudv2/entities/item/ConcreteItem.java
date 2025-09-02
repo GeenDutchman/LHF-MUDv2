@@ -12,7 +12,7 @@ import com.geendutchman.lhf_mudv2.events.EventBus;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSortedMap;
 
-class ConcreteItem implements Item {
+final class ConcreteItem implements Item {
     final private ItemID itemID = ItemID.make();
     final private String name;
     final private ItemTag itemTag;
@@ -32,10 +32,6 @@ class ConcreteItem implements Item {
         Preconditions.checkNotNull(locale, "locale is null, did you mean empty?");
         ConcreteItem item = new ConcreteItem(name, visibility, nickname, itemTag);
         return item;
-    }
-
-    public ItemBuilderFactory.Builder toBuilder() {
-        return new AutoBuilder_ItemBuilderFactory_Builder(this);
     }
 
     private ConcreteItem(String name, Difficulty<Plain> visibility, Optional<String> nickname, ItemTag itemTag) {

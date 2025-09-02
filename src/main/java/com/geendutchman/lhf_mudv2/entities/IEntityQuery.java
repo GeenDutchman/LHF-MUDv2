@@ -18,36 +18,41 @@ public interface IEntityQuery<E extends Entity> extends Predicate<E>, Serializab
 
     public abstract ImmutableList<Pattern> toStringPatterns();
 
+    public interface Builder<E extends Entity> {
+        public abstract Builder<E> setIdentifier(Optional<IEntityID> identifier);
+
+        public abstract Builder<E> setName(Optional<String> name);
+
+        public abstract Builder<E> setName(String name);
+
+        abstract ImmutableList.Builder<Pattern> namePatternsBuilder();
+
+        public default Builder<E> addNamePattern(Pattern pattern) {
+            this.namePatternsBuilder().add(pattern);
+            return this;
+        }
+
+        public default Builder<E> addNamePattern(String pattern) {
+            this.namePatternsBuilder().add(Pattern.compile(pattern));
+            return this;
+        }
+
+        public abstract Builder<E> setToStringPatterns(ImmutableList<Pattern> patterns);
+
+        public abstract EntityQuery<E> build();
+
+        public default IEntityQuery<E> buildInterface() {
+            return this.build();
+        }
+
+    }
+
     @AutoValue
     public abstract class EntityQuery<E extends Entity> implements IEntityQuery<E> {
 
         @AutoValue.Builder
-        public static abstract class EntityQueryBuilder<E extends Entity> {
-            public abstract EntityQueryBuilder<E> setIdentifier(Optional<IEntityID> identifier);
+        public static abstract class EntityQueryBuilder<E extends Entity> implements IEntityQuery.Builder<E> {
 
-            public abstract EntityQueryBuilder<E> setName(Optional<String> name);
-
-            public abstract EntityQueryBuilder<E> setName(String name);
-
-            protected abstract ImmutableList.Builder<Pattern> namePatternsBuilder();
-
-            public EntityQueryBuilder<E> addNamePattern(Pattern pattern) {
-                this.namePatternsBuilder().add(pattern);
-                return this;
-            }
-
-            public EntityQueryBuilder<E> addNamePattern(String pattern) {
-                this.namePatternsBuilder().add(Pattern.compile(pattern));
-                return this;
-            }
-
-            public abstract EntityQueryBuilder<E> setToStringPatterns(ImmutableList<Pattern> patterns);
-
-            public abstract EntityQuery<E> build();
-
-            public IEntityQuery<E> buildInterface() {
-                return this.build();
-            }
         }
 
         abstract EntityQueryBuilder<E> toBuilder();
@@ -73,6 +78,10 @@ public interface IEntityQuery<E extends Entity> extends Predicate<E>, Serializab
         return true;
     }
 
+    default Optional<Boolean> testOtherFactors(E t) {
+        return Optional.empty();
+    }
+
     @Override
     public default boolean test(E t) {
         if (t == null) {
@@ -85,6 +94,10 @@ public interface IEntityQuery<E extends Entity> extends Predicate<E>, Serializab
         }
         if (!this.testNames(t)) {
             return false;
+        }
+        final Optional<Boolean> others = this.testOtherFactors(t);
+        if (others != null && others.isPresent()) {
+            return others.get();
         }
         final ImmutableList<Pattern> toStringPatterns = this.toStringPatterns();
         if (toStringPatterns.size() > 0) {
