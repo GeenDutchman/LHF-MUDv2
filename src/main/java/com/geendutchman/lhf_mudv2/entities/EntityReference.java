@@ -28,6 +28,7 @@ public abstract class EntityReference<E extends Entity> implements Entity {
 
     protected EntityReference(IEntityID id, E entity, EntityRepository<E> repo) {
         Preconditions.checkNotNull(id, "reference ID should not be null");
+        Preconditions.checkNotNull(repo, "repository must not be null");
         this.refId = id;
         this.entity = Optional.ofNullable(entity);
         this.repo = repo;
@@ -56,9 +57,10 @@ public abstract class EntityReference<E extends Entity> implements Entity {
         if (this.entity.isPresent()) {
             return this.entity.get().description();
         }
-        return Optional.of(RichOutput.builder().addString("Whatever this had been, it is now a statuette of an insect.")
-                .addString("On the back you see the mysterious engraven phrase:").addString(this.refId.toString())
-                .build());
+        return Optional
+                .of(RichOutput.builder().addString("Whatever this had been, it is now a statuette of an insect or bug.")
+                        .addString("On the back you see the mysterious engraven phrase:")
+                        .addString(this.refId.toString()).build());
     }
 
     @Override

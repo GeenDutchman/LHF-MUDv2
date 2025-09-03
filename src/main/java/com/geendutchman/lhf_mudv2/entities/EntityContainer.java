@@ -41,7 +41,7 @@ public interface EntityContainer<E extends Entity> extends Examinable {
     @Override
     default Optional<RichOutput> description() {
         RichOutput.Builder builder = RichOutput.builder().setOnEmpty(Optional.of("It is empty"))
-                .setSequenceName(this.name()).setTag(Optional.ofNullable(this.tag()));
+                .setTag(Optional.ofNullable(this.tag() + "-description"));
         for (final Entity entity : this.entities()) {
             builder.addTaggable(entity);
         }
@@ -183,6 +183,13 @@ public interface EntityContainer<E extends Entity> extends Examinable {
             return this.cargo().add(reference);
         }
 
+        /**
+         * Add entity to the container
+         * 
+         * @param references
+         * @return {@code true} if this container did not already contain the specified
+         *         element
+         */
         public default boolean add(Collection<E> references) {
             boolean changed = false;
             if (references != null) {

@@ -119,7 +119,7 @@ public interface ItemContainer<I extends Item> extends EntityContainer<I> {
 
         @Override
         public default ImmutableSortedSet<I> items() {
-            return ImmutableSortedSet.copyOf(this.cargo());
+            return ImmutableSortedSet.copyOfSorted(this.cargo());
         }
 
         @Override

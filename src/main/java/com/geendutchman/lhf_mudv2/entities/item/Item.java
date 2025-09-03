@@ -8,8 +8,6 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Scope;
 import org.springframework.lang.NonNull;
 
 import com.geendutchman.lhf_mudv2.dice.Difficulty;
@@ -199,12 +197,12 @@ public interface Item extends Entity {
         @Autowired
         public BuildItem setEventBus(EventBus eventBus);
 
-        public Item build();
+        public ItemReference build();
     }
 
     public static sealed interface LockedItemBuilder extends Serializable, Comparable<LockedItemBuilder>
             permits Item.Builder {
-        public Item build();
+        public ItemReference build();
 
         public String getName();
 
@@ -236,10 +234,10 @@ public interface Item extends Entity {
             return this;
         }
 
-        abstract Item autoBuild();
+        abstract ItemReference autoBuild();
 
         @Override
-        public final Item build() {
+        public final ItemReference build() {
             Preconditions.checkState(Item.EXAMINABLE_NAME.matcher(this.getName()).matches(),
                     "Item name '%s' must match '%s'", this.getName(), Item.EXAMINABLE_NAME.toString());
             if (this.getNickname().isPresent()) {
@@ -252,8 +250,6 @@ public interface Item extends Entity {
 
     }
 
-    @Bean({ "itembuilder", "itemBuilder" })
-    @Scope("prototype")
     public static Item.BuilderStart builder() {
         final Item.Builder builder = new AutoBuilder_Item_Builder();
         builder.setVisibility(Plain.noDifficulty()).setItemTag(ItemTag.ITEM);
@@ -266,19 +262,13 @@ public interface Item extends Entity {
                 .setItemTag(this.itemTag()).setNickname(this.nickname());
     }
 
-    public static Item buildItem(EventBus eventBus, ItemRepository itemRepository, String name,
+    public static ItemReference buildItem(EventBus eventBus, ItemRepository itemRepository, String name,
             Difficulty<Plain> visibility, Optional<String> nickname, ItemTag itemTag, Optional<URI> locale) {
         Preconditions.checkNotNull(eventBus, "event bus must not be null");
         Preconditions.checkNotNull(itemRepository, "item repository must be available to store item into");
         final ConcreteItem item = ConcreteItem.buildItem(name, visibility, nickname, itemTag, locale);
         eventBus.register(item);
-        itemRepository.add(item);
-        return ItemReference.ofItem(item);
-    }
-
-    @Bean
-    public static Item aRock() {
-        return Item.builder().setName("defaultRock").build();
+        return itemRepository.track(item);
     }
 
 }

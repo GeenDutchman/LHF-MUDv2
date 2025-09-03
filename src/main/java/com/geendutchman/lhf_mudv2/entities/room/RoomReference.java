@@ -9,36 +9,27 @@ import org.springframework.context.annotation.Scope;
 
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.EntityReference;
+import com.geendutchman.lhf_mudv2.entities.EntityRepository;
 import com.geendutchman.lhf_mudv2.entities.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.IEntityID.EntityID;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
 import com.google.common.collect.ImmutableSortedMap;
 
-public class RoomReference extends EntityReference<Room> implements Room {
-    private RoomReference(RoomID id, ConcreteRoom reference) {
-        super(id, reference, null);
-    }
-
-    public static RoomReference ofRoom(RoomReference ref) {
-        return ref;
+public class RoomReference extends EntityReference<ConcreteRoom> implements Room {
+    private RoomReference(RoomID id, ConcreteRoom reference, EntityRepository<ConcreteRoom> repo) {
+        super(id, reference, repo);
     }
 
     @Bean
     @Scope("prototype")
-    public static RoomReference ofRoom(Room room) {
-        return new RoomReference(room.roomID(), null);
+    public static RoomReference ofRoom(ConcreteRoom room, EntityRepository<ConcreteRoom> repo) {
+        return new RoomReference(room.roomID(), room, repo);
     }
 
     @Bean
     @Scope("prototype")
-    public static RoomReference ofRoom(ConcreteRoom room) {
-        return new RoomReference(room.roomID(), room);
-    }
-
-    @Bean
-    @Scope("prototype")
-    public static RoomReference ofId(RoomID id) {
-        return new RoomReference(id, null);
+    public static RoomReference ofId(RoomID id, EntityRepository<ConcreteRoom> repo) {
+        return new RoomReference(id, null, repo);
     }
 
     public boolean isDereferenced() {

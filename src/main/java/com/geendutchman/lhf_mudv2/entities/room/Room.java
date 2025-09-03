@@ -8,8 +8,6 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Scope;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
@@ -163,7 +161,7 @@ public interface Room extends Entity, EntityContainer<Entity> {
         @Autowired
         public BuildRoom setEventBus(EventBus eventBus);
 
-        public Room build();
+        public RoomReference build();
     }
 
     @AutoBuilder(callMethod = "buildRoom", ofClass = Room.class)
@@ -188,30 +186,27 @@ public interface Room extends Entity, EntityContainer<Entity> {
             return this;
         }
 
-        abstract Room autoBuild();
+        abstract RoomReference autoBuild();
 
         @Override
-        public final Room build() {
+        public final RoomReference build() {
             Preconditions.checkState(Room.EXAMINABLE_NAME.matcher(this.getName()).matches(),
                     "Room name '%s' must match '%s'", this.getName(), Room.EXAMINABLE_NAME.toString());
             return this.autoBuild();
         }
     }
 
-    @Bean({ "roombuilder", "roomBuilder" })
-    @Scope("prototype")
     public static Room.BuilderStart builder() {
         final Room.Builder builder = new AutoBuilder_Room_Builder();
         return builder;
     }
 
-    public static Room buildRoom(EventBus eventBus, RoomRepository roomRepository, String name,
+    public static RoomReference buildRoom(EventBus eventBus, RoomRepository roomRepository, String name,
             Optional<RichOutput> roomDescription, Optional<URI> locale, ItemInventory inventory) {
         Preconditions.checkNotNull(eventBus, "event bus must not be null");
         Preconditions.checkNotNull(roomRepository, "room repository must be available to store room into");
         final ConcreteRoom room = ConcreteRoom.buildRoom(name, roomDescription, locale, inventory);
         eventBus.register(room);
-        roomRepository.add(room);
-        return RoomReference.ofRoom(room);
+        return roomRepository.track(room);
     }
 }

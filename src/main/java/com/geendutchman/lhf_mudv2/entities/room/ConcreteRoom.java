@@ -6,7 +6,6 @@ import java.util.Optional;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
-import com.geendutchman.lhf_mudv2.entities.item.ItemReference;
 import com.geendutchman.lhf_mudv2.events.Event;
 import com.geendutchman.lhf_mudv2.events.EventBus;
 import com.google.common.base.Preconditions;
@@ -59,7 +58,7 @@ class ConcreteRoom implements Room {
             delta.item().ifPresent(item -> this.inventory.add(item));
             break;
         case ITEMBUILDER:
-            delta.itemBuilder().ifPresent(builder -> this.inventory.add(ItemReference.ofItem(builder.build())));
+            delta.itemBuilder().ifPresent(builder -> this.inventory.add(builder.build()));
             break;
         default:
             break;
@@ -93,7 +92,7 @@ class ConcreteRoom implements Room {
 
     @Override
     public Optional<RichOutput> description() {
-        RichOutput.Builder builder = RichOutput.builder();
+        RichOutput.Builder builder = RichOutput.builder().setTag(Optional.ofNullable(this.tag() + "-description"));
         if (this.roomDescription.isPresent()) {
             builder.addOutput(this.roomDescription.get());
         }

@@ -19,11 +19,15 @@ public final class ItemBuilderFactory {
         this.bus = bus;
     }
 
-    @Bean
+    @Bean({ "itembuilder", "itemBuilder" })
     @Scope("prototype")
     public Item.BuilderStart builder() {
         final Item.BuilderStart builder = Item.builder().setItemRepository(repository).setEventBus(bus);
         return builder;
+    }
+
+    public ItemReference build(Item.Builder builder) {
+        return builder.setItemRepository(repository).setEventBus(bus).build();
     }
 
     @Bean

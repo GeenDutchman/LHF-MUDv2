@@ -2,6 +2,7 @@ package com.geendutchman.lhf_mudv2.entities.item;
 
 import java.util.concurrent.ConcurrentSkipListSet;
 
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
 
 import com.geendutchman.lhf_mudv2.entities.EntityRepository;
@@ -12,6 +13,12 @@ public final class ItemRepository
         implements ItemContainer.MutableItemContainer<ConcreteItem>, EntityRepository<ConcreteItem> {
 
     private final ConcurrentSkipListSet<ConcreteItem> cargo = new ConcurrentSkipListSet<>(Item.getItemComparator());
+
+    @Override
+    public ItemReference track(@NonNull ConcreteItem entity) {
+        this.cargo.add(entity);
+        return ItemReference.ofItem(entity, this);
+    }
 
     @Override
     public String name() {

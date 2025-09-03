@@ -18,7 +18,7 @@ public final class RoomBuilderFactory {
         this.bus = bus;
     }
 
-    @Bean
+    @Bean({ "roombuilder", "roomBuilder" })
     @Scope("prototype")
     public Room.BuilderStart builder() {
         final Room.BuilderStart builder = Room.builder().setEventBus(bus).setRoomRepository(repository);

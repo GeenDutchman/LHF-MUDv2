@@ -68,8 +68,7 @@ public final class ItemInventory implements ItemContainer.MutableItemContainer<I
                 name, EXAMINABLE_NAME.toString());
         final ItemInventory inv = new ItemInventory(name);
         if (contents != null) {
-            inv.add(contents.stream().filter(locked -> locked != null)
-                    .map(locked -> ItemReference.ofItem(locked.build())).toList());
+            inv.add(contents.stream().filter(locked -> locked != null).map(locked -> locked.build()).toList());
         }
         return inv;
     }

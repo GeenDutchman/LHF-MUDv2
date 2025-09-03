@@ -118,7 +118,7 @@ public interface RoomContainer<R extends Room> extends EntityContainer<R> {
 
         @Override
         public default ImmutableSortedMap<RoomID, R> rooms() {
-            return ImmutableSortedMap.copyOf(this.chambers());
+            return ImmutableSortedMap.copyOfSorted(this.chambers());
         }
 
         @Override

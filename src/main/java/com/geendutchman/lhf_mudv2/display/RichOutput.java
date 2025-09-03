@@ -50,8 +50,8 @@ public abstract class RichOutput implements Serializable {
 
     public abstract Builder toBuilder();
 
-    public final static Pattern SEQUENCE_NAME_PATTERN = Pattern.compile("^\\w+");
-    public final static Pattern TAG_PATTERN = Pattern.compile("^\\w{3}[\\w_-]+\\w$");
+    public final static Pattern SEQUENCE_NAME_PATTERN = Pattern.compile("^\\w{1,}([ -]\\w+)*$");
+    public final static Pattern TAG_PATTERN = Pattern.compile("^\\w{3,}(-\\w+)*$");
 
     @AutoValue.Builder
     public abstract static class Builder {
@@ -129,9 +129,9 @@ public abstract class RichOutput implements Serializable {
             Preconditions.checkState(
                     output.sequenceName().isEmpty()
                             || output.sequenceName().get().matches(SEQUENCE_NAME_PATTERN.pattern()),
-                    "sequence name must match: %s", SEQUENCE_NAME_PATTERN);
+                    "sequence name '%s' must match: %s", output.sequenceName().orElse(""), SEQUENCE_NAME_PATTERN);
             Preconditions.checkState(output.tag().isEmpty() || output.tag().get().matches(TAG_PATTERN.pattern()),
-                    "tag is '%s' but must match: %s", output.tag(), TAG_PATTERN);
+                    "tag is '%s' but must match: %s", output.tag().orElse(""), TAG_PATTERN);
             return output;
         }
     }

@@ -9,35 +9,26 @@ import org.springframework.context.annotation.Scope;
 import com.geendutchman.lhf_mudv2.dice.Difficulty;
 import com.geendutchman.lhf_mudv2.dice.Plain;
 import com.geendutchman.lhf_mudv2.entities.EntityReference;
+import com.geendutchman.lhf_mudv2.entities.EntityRepository;
 import com.geendutchman.lhf_mudv2.entities.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.IEntityID.EntityID;
 
-public final class ItemReference extends EntityReference<Item> implements Item {
+public final class ItemReference extends EntityReference<ConcreteItem> implements Item {
 
-    private ItemReference(ItemID id, ConcreteItem reference) {
-        super(id, reference, null);
-    }
-
-    public static ItemReference ofItem(ItemReference ref) {
-        return ref;
+    private ItemReference(ItemID id, ConcreteItem reference, EntityRepository<ConcreteItem> repo) {
+        super(id, reference, repo);
     }
 
     @Bean
     @Scope("prototype")
-    public static ItemReference ofItem(Item item) {
-        return new ItemReference(item.itemID(), null);
+    public static ItemReference ofItem(ConcreteItem item, EntityRepository<ConcreteItem> repo) {
+        return new ItemReference(item.itemID(), item, repo);
     }
 
     @Bean
     @Scope("prototype")
-    public static ItemReference ofItem(ConcreteItem item) {
-        return new ItemReference(item.itemID(), item);
-    }
-
-    @Bean
-    @Scope("prototype")
-    public static ItemReference ofId(ItemID id) {
-        return new ItemReference(id, null);
+    public static ItemReference ofId(ItemID id, EntityRepository<ConcreteItem> repo) {
+        return new ItemReference(id, null, repo);
     }
 
     public boolean isDereferenced() {
