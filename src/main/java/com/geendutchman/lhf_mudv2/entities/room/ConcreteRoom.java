@@ -3,11 +3,14 @@ package com.geendutchman.lhf_mudv2.entities.room;
 import java.net.URI;
 import java.util.Optional;
 
+import org.springframework.lang.Nullable;
+
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
 import com.geendutchman.lhf_mudv2.events.Event;
 import com.geendutchman.lhf_mudv2.events.EventBus;
+import com.geendutchman.lhf_mudv2.events.EventProcessor;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSortedMap;
 
@@ -17,24 +20,27 @@ class ConcreteRoom implements Room {
     final private Optional<RichOutput> roomDescription;
     final private Optional<URI> locale;
     final private ItemInventory inventory;
+    @Nullable
+    final private transient EventProcessor.EventFunction<Room> eventFunction;
 
     protected static ConcreteRoom buildRoom(String name, Optional<RichOutput> roomDescription, Optional<URI> locale,
-            ItemInventory inventory) {
+            ItemInventory inventory, @Nullable EventProcessor.EventFunction<Room> eventFunction) {
         Preconditions.checkArgument(ROOMNAME_RULES.asMatchPredicate().test(name), "name '%s' must match expression: %s",
                 name, ROOMNAME_RULES);
         Preconditions.checkNotNull(locale, "the locale should not be null");
         Preconditions.checkNotNull(roomDescription, "room description may be empty but must not be null");
         Preconditions.checkNotNull(inventory, "inventory should not be null");
 
-        return new ConcreteRoom(name, roomDescription, locale, inventory);
+        return new ConcreteRoom(name, roomDescription, locale, inventory, eventFunction);
     }
 
     private ConcreteRoom(String name, Optional<RichOutput> roomDescription, Optional<URI> locale,
-            ItemInventory inventory) {
+            ItemInventory inventory, @Nullable EventProcessor.EventFunction<Room> eventFunction) {
         this.name = name;
         this.roomDescription = roomDescription;
         this.locale = locale;
         this.inventory = inventory;
+        this.eventFunction = eventFunction;
     }
 
     @Override
@@ -66,8 +72,9 @@ class ConcreteRoom implements Room {
     }
 
     @Override
-    public void processEvent(Event event, EventBus bus) {
-        // TODO: inner handlers
+    public ProcessingResult processEvent(Event event, EventBus bus) {
+        return this.eventFunction != null ? this.eventFunction.apply(event, bus, this)
+                : new ProcessingResult.Unhandled();
     }
 
     @Override

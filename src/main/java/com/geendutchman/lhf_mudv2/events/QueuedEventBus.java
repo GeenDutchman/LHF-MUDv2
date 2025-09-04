@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.geendutchman.lhf_mudv2.events.EventProcessor.ProcessingResult;
 import com.google.common.collect.ImmutableSet;
 
 @Service
@@ -69,14 +70,20 @@ final class QueuedEventBus implements EventBus {
                 final EventProcessor target = this.processors.get(event.routing().destination());
                 if (target != null) {
                     this.logger.finest("Directly addressed event");
-                    final EventHandler<Event> handler = this.handlerRegistry.getHandler(event.getClass());
-                    if (handler != null) {
-                        Thread.ofVirtual().name(threadname).start(() -> handler.handle(event, target, this))
-                                .join(timing);
-                    } else {
-                        this.logger.warning(String.format("No handler for %s -> %s, falling back to the processor",
-                                event.getClass().getSimpleName(), target.getClass().getSimpleName()));
-                        target.processEvent(event, this);
+                    switch (target.processEvent(event, this)) {
+                    case ProcessingResult.Handled h -> {
+                        // done
+                    }
+                    case ProcessingResult.Unhandled u -> {
+                        final EventHandler<Event> handler = this.handlerRegistry.getHandler(event.getClass());
+                        if (handler != null) {
+                            Thread.ofVirtual().name(threadname).start(() -> handler.handle(event, target, this))
+                                    .join(timing);
+                        } else {
+                            this.logger.warning(String.format("No handler for %s -> %s, oh well",
+                                    event.getClass().getSimpleName(), target.getClass().getSimpleName()));
+                        }
+                    }
                     }
                 } else {
                     this.logger.warning("Broadcast not yet supported");

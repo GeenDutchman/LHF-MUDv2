@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 
 import com.geendutchman.lhf_mudv2.dice.Difficulty;
 import com.geendutchman.lhf_mudv2.dice.DifficultyMods;
@@ -17,6 +18,7 @@ import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.entities.Entity;
 import com.geendutchman.lhf_mudv2.entities.IEntityID;
 import com.geendutchman.lhf_mudv2.events.EventBus;
+import com.geendutchman.lhf_mudv2.events.EventProcessor;
 import com.google.auto.value.AutoBuilder;
 import com.google.auto.value.AutoOneOf;
 import com.google.common.base.Preconditions;
@@ -189,6 +191,8 @@ public interface Item extends Entity {
 
         public BuildItem setLocale(Optional<URI> locale);
 
+        public BuildItem setEventFunction(@Nullable EventProcessor.EventFunction<Item> eventProcessor);
+
         public LockedItemBuilder lock();
 
         @Autowired
@@ -263,10 +267,11 @@ public interface Item extends Entity {
     }
 
     public static ItemReference buildItem(EventBus eventBus, ItemRepository itemRepository, String name,
-            Difficulty<Plain> visibility, Optional<String> nickname, ItemTag itemTag, Optional<URI> locale) {
+            Difficulty<Plain> visibility, Optional<String> nickname, ItemTag itemTag, Optional<URI> locale,
+            @Nullable EventProcessor.EventFunction<Item> eventFunction) {
         Preconditions.checkNotNull(eventBus, "event bus must not be null");
         Preconditions.checkNotNull(itemRepository, "item repository must be available to store item into");
-        final ConcreteItem item = ConcreteItem.buildItem(name, visibility, nickname, itemTag, locale);
+        final ConcreteItem item = ConcreteItem.buildItem(name, visibility, nickname, itemTag, locale, eventFunction);
         eventBus.register(item);
         return itemRepository.track(item);
     }

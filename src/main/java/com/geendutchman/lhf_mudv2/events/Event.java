@@ -7,7 +7,8 @@ import java.util.UUID;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.google.auto.value.AutoValue;
 
-public abstract class Event {
+public sealed abstract class Event
+        permits Events.PlainEvent, Events.ItemChangeEvent, Events.SeeEvent, Events.ViewedEvent {
 
     private final UUID uuid = UUID.randomUUID();
 

@@ -14,14 +14,13 @@ import com.geendutchman.lhf_mudv2.entities.item.ItemEffect;
 import com.geendutchman.lhf_mudv2.events.Event.EventRouting;
 import com.geendutchman.lhf_mudv2.events.Event.EventRouting.EventRoutingBuilder;
 import com.google.auto.value.AutoValue;
-import com.google.auto.value.extension.memoized.Memoized;
 
 import autovalue.shaded.com.google.common.collect.ImmutableList;
 
 public final class Events {
 
     @AutoValue
-    public static abstract class PlainEvent extends Event {
+    public static sealed abstract class PlainEvent extends Event permits AutoValue_Events_PlainEvent {
 
         static PlainEventBuilder builder() {
             return new AutoValue_Events_PlainEvent.Builder();
@@ -51,7 +50,7 @@ public final class Events {
     }
 
     @AutoValue
-    public static abstract class SeeEvent extends Event {
+    public static sealed abstract class SeeEvent extends Event permits AutoValue_Events_SeeEvent {
         // TODO: some way to record who is watching
         // public abstract EntityReference<Entity> observer();
 
@@ -87,7 +86,7 @@ public final class Events {
     }
 
     @AutoValue
-    public static abstract class ViewedEvent extends Event {
+    public static sealed abstract class ViewedEvent extends Event permits AutoValue_Events_ViewedEvent {
         public abstract BasicExaminable observed();
 
         @Override
@@ -125,11 +124,10 @@ public final class Events {
     }
 
     @AutoValue
-    public abstract static class ItemChangeEvent extends Event {
+    public abstract sealed static class ItemChangeEvent extends Event permits AutoValue_Events_ItemChangeEvent {
         public abstract ImmutableList<ItemEffect> effects();
 
         @Override
-        @Memoized
         public Optional<RichOutput> description() {
             final Builder builder = RichOutput.builder().setSequenceName("Effects on Item")
                     .setOnEmpty(Optional.of("none"))

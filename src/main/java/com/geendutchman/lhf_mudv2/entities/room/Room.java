@@ -8,6 +8,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
@@ -19,6 +20,7 @@ import com.geendutchman.lhf_mudv2.entities.item.Item.LockedItemBuilder;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
 import com.geendutchman.lhf_mudv2.entities.item.ItemReference;
 import com.geendutchman.lhf_mudv2.events.EventBus;
+import com.geendutchman.lhf_mudv2.events.EventProcessor;
 import com.google.auto.value.AutoBuilder;
 import com.google.auto.value.AutoOneOf;
 import com.google.common.base.Preconditions;
@@ -155,6 +157,8 @@ public interface Room extends Entity, EntityContainer<Entity> {
 
         public BuildRoom addItem(LockedItemBuilder... builder);
 
+        public BuildRoom setEventFunction(@Nullable EventProcessor.EventFunction<Room> eventFunction);
+
         @Autowired
         public BuildRoom setRoomRepository(RoomRepository roomRepository);
 
@@ -202,10 +206,11 @@ public interface Room extends Entity, EntityContainer<Entity> {
     }
 
     public static RoomReference buildRoom(EventBus eventBus, RoomRepository roomRepository, String name,
-            Optional<RichOutput> roomDescription, Optional<URI> locale, ItemInventory inventory) {
+            Optional<RichOutput> roomDescription, Optional<URI> locale, ItemInventory inventory,
+            @Nullable EventProcessor.EventFunction<Room> eventFunction) {
         Preconditions.checkNotNull(eventBus, "event bus must not be null");
         Preconditions.checkNotNull(roomRepository, "room repository must be available to store room into");
-        final ConcreteRoom room = ConcreteRoom.buildRoom(name, roomDescription, locale, inventory);
+        final ConcreteRoom room = ConcreteRoom.buildRoom(name, roomDescription, locale, inventory, eventFunction);
         eventBus.register(room);
         return roomRepository.track(room);
     }

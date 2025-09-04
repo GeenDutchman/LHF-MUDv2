@@ -3,12 +3,15 @@ package com.geendutchman.lhf_mudv2.entities.item;
 import java.net.URI;
 import java.util.Optional;
 
+import org.springframework.lang.Nullable;
+
 import com.geendutchman.lhf_mudv2.dice.Difficulty;
 import com.geendutchman.lhf_mudv2.dice.Plain;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.events.Event;
 import com.geendutchman.lhf_mudv2.events.EventBus;
+import com.geendutchman.lhf_mudv2.events.EventProcessor;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSortedMap;
 
@@ -16,12 +19,14 @@ final class ConcreteItem implements Item {
     final private ItemID itemID = ItemID.make();
     final private String name;
     final private ItemTag itemTag;
+    @Nullable
+    final private transient EventProcessor.EventFunction<Item> eventFunction;
     private Difficulty<Plain> visibility;
     private Optional<String> nickname;
     private Optional<URI> locale;
 
     protected static ConcreteItem buildItem(String name, Difficulty<Plain> visibility, Optional<String> nickname,
-            ItemTag itemTag, Optional<URI> locale) {
+            ItemTag itemTag, Optional<URI> locale, @Nullable EventProcessor.EventFunction<Item> eventFunction) {
         Preconditions.checkArgument(EXAMINABLE_NAME.asMatchPredicate().test(name),
                 "name '%s' must match expression: %s", name, EXAMINABLE_NAME);
         Preconditions.checkNotNull(visibility, "visibility difficulty can be zero but must not be null");
@@ -30,13 +35,15 @@ final class ConcreteItem implements Item {
                     "nickname '%s' must match expression: %s", nickname.get(), NICKNAME_RULES);
         }
         Preconditions.checkNotNull(locale, "locale is null, did you mean empty?");
-        ConcreteItem item = new ConcreteItem(name, visibility, nickname, itemTag);
+        ConcreteItem item = new ConcreteItem(name, visibility, nickname, itemTag, eventFunction);
         return item;
     }
 
-    private ConcreteItem(String name, Difficulty<Plain> visibility, Optional<String> nickname, ItemTag itemTag) {
+    private ConcreteItem(String name, Difficulty<Plain> visibility, Optional<String> nickname, ItemTag itemTag,
+            @Nullable EventProcessor.EventFunction<Item> eventFunction) {
         this.name = name;
         this.itemTag = itemTag;
+        this.eventFunction = eventFunction != null ? eventFunction : (e, b, i) -> new ProcessingResult.Unhandled();
         this.visibility = visibility;
         this.nickname = nickname;
     }
@@ -80,8 +87,9 @@ final class ConcreteItem implements Item {
     }
 
     @Override
-    public void processEvent(Event event, EventBus bus) {
-        // TODO: inner handlers
+    public ProcessingResult processEvent(Event event, EventBus bus) {
+        return this.eventFunction != null ? this.eventFunction.apply(event, bus, this)
+                : new ProcessingResult.Unhandled();
     }
 
     @Override

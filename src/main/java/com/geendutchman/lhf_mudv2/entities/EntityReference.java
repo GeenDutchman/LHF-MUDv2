@@ -100,14 +100,14 @@ public abstract class EntityReference<E extends Entity> implements Entity {
     }
 
     @Override
-    public void processEvent(Event event, EventBus bus) {
+    public ProcessingResult processEvent(Event event, EventBus bus) {
         this.deref();
         if (this.entity.isPresent()) {
-            this.entity.get().processEvent(event, bus);
-            return;
+            return this.entity.get().processEvent(event, bus);
         }
         Logger.getLogger("bugRock").log(Level.WARNING,
                 String.format("Entity '%s' not found for event '%s'", this.refId, event));
+        return new ProcessingResult.Unhandled();
     }
 
     @Override

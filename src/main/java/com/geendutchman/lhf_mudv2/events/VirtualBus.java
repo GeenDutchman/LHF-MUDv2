@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
+import com.geendutchman.lhf_mudv2.events.EventProcessor.ProcessingResult;
 import com.google.common.collect.ImmutableSet;
 
 @Component
@@ -65,14 +66,22 @@ public class VirtualBus implements EventBus {
             if (target != null) {
                 this.logger.finest("Directly addressed event");
                 // we can do blocking calls with virtual threads
-                final EventHandler<Event> handler = this.handlerRegistry.getHandler(event.getClass());
-                if (handler != null) {
-                    executor.submit(() -> handler.handle(event, target, this)).get(timing.toNanos(),
-                            TimeUnit.NANOSECONDS);
-                } else {
-                    this.logger.warning(String.format("No handler for %s -> %s, falling back to the processor",
-                            event.getClass().getSimpleName(), target.getClass().getSimpleName()));
-                    executor.submit(() -> target.processEvent(event, this)).get(timing.toNanos(), TimeUnit.NANOSECONDS);
+                switch (executor.submit(() -> target.processEvent(event, this)).get(timing.toNanos(),
+                        TimeUnit.NANOSECONDS)) {
+                case ProcessingResult.Handled h -> {
+                    // done
+                }
+                case ProcessingResult.Unhandled u -> {
+                    final EventHandler<Event> handler = this.handlerRegistry.getHandler(event.getClass());
+                    if (handler != null) {
+                        executor.submit(() -> handler.handle(event, target, this)).get(timing.toNanos(),
+                                TimeUnit.NANOSECONDS);
+                    } else {
+                        this.logger.warning(String.format("No handler for %s -> %s, oh well",
+                                event.getClass().getSimpleName(), target.getClass().getSimpleName()));
+                    }
+
+                }
                 }
             } else {
                 // this.logger.finest("Broadcast everywhere");
