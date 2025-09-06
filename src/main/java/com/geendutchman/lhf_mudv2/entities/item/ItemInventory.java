@@ -1,18 +1,24 @@
 package com.geendutchman.lhf_mudv2.entities.item;
 
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.NavigableSet;
+import java.util.Optional;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.stream.Stream;
 
 import org.springframework.lang.NonNull;
 
 import com.geendutchman.lhf_mudv2.entities.item.Item.BuildItem;
+import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
+import com.geendutchman.lhf_mudv2.entities.item.Item.LockedItemBuilder;
 import com.google.auto.value.AutoBuilder;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSortedMap;
 
-public final class ItemInventory implements ItemContainer.MutableItemContainer<ItemReference> {
+public final class ItemInventory implements ItemContainer {
 
     @AutoBuilder(callMethod = "buildInventory", ofClass = ItemInventory.class)
     public abstract static class Builder {
@@ -68,7 +74,12 @@ public final class ItemInventory implements ItemContainer.MutableItemContainer<I
                 name, EXAMINABLE_NAME.toString());
         final ItemInventory inv = new ItemInventory(name);
         if (contents != null) {
-            inv.add(contents.stream().filter(locked -> locked != null).map(locked -> locked.build()).toList());
+            for (final LockedItemBuilder locked : contents) {
+                if (locked == null) {
+                    continue;
+                }
+                inv.add(locked.build());
+            }
         }
         return inv;
     }
@@ -78,7 +89,7 @@ public final class ItemInventory implements ItemContainer.MutableItemContainer<I
     }
 
     private final String name;
-    private final ConcurrentSkipListSet<ItemReference> cargo = new ConcurrentSkipListSet<>(Item.getItemComparator());
+    private final LinkedHashMap<ItemID, Item> cargo = new LinkedHashMap<>();
 
     @Override
     public ImmutableSortedMap<String, String> attributes() {
@@ -90,14 +101,61 @@ public final class ItemInventory implements ItemContainer.MutableItemContainer<I
         return this.name;
     }
 
+    public ItemInventory add(Item... items) {
+        if (items != null) {
+            for (final Item item : items) {
+                if (item != null) {
+                    this.cargo.put(item.itemID(), item);
+                }
+            }
+        }
+        return this;
+    }
+
+    public ItemInventory add(Collection<Item> items) {
+        if (items != null) {
+            for (final Item item : items) {
+                if (item != null) {
+                    this.cargo.put(item.itemID(), item);
+                }
+            }
+        }
+        return this;
+    }
+
+    public ItemInventory addAll(Map<ItemID, Item> items) {
+        if (items != null) {
+            this.cargo.putAll(items);
+        }
+        return this;
+    }
+
+    public Optional<Item> remove(ItemID id) {
+        return Optional.ofNullable(this.cargo.remove(id));
+    }
+
+    public Optional<Item> remove(Item item) {
+        return this.remove(item.itemID());
+    }
+
     @Override
-    public ConcurrentSkipListSet<ItemReference> cargo() {
-        return this.cargo;
+    public boolean hasItem(Item item) {
+        return this.cargo.containsValue(item);
+    }
+
+    @Override
+    public Optional<Item> byItemID(ItemID id) {
+        return Optional.ofNullable(this.cargo.get(id));
+    }
+
+    @Override
+    public Stream<Item> items() {
+        return this.cargo.values().stream().sequential();
     }
 
     public ItemInventory.Builder toBuilder() {
         Builder builder = ItemInventory.builder().setName(name);
-        for (final ItemReference itemReference : cargo) {
+        for (final Item itemReference : cargo.values()) {
             if (itemReference == null) {
                 continue;
             }

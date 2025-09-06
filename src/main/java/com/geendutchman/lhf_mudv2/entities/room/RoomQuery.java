@@ -61,7 +61,7 @@ public abstract class RoomQuery implements IEntityQuery<Room> {
             return Optional.empty();
         }
         final ItemQuery filter = this.hasItemLike().get();
-        return Optional.of(t.inventory().queryOne(filter).isPresent());
+        return Optional.of(t.inventory().queryOneItem(filter).isPresent());
     }
 
     @Override

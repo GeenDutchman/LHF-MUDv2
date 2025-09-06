@@ -1,5 +1,6 @@
 package com.geendutchman.lhf_mudv2.entities.item;
 
+import java.io.Serializable;
 import java.util.Optional;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
@@ -8,7 +9,7 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 
 @AutoValue
-public abstract class ItemEffect implements Examinable {
+public abstract class ItemEffect implements Examinable, Serializable {
     protected ItemEffect() {
     }
 

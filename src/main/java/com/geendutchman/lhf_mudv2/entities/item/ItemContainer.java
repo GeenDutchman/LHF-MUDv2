@@ -1,36 +1,28 @@
 package com.geendutchman.lhf_mudv2.entities.item;
 
-import java.util.Comparator;
-import java.util.Iterator;
 import java.util.Optional;
+import java.util.stream.Stream;
 
-import com.geendutchman.lhf_mudv2.entities.EntityContainer;
+import com.geendutchman.lhf_mudv2.display.Examinable;
+import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.IEntityQuery;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
-import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.ImmutableSortedSet;
 
-public interface ItemContainer<I extends Item> extends EntityContainer<I> {
+public interface ItemContainer extends Examinable {
 
-    public abstract ImmutableSortedSet<I> items();
+    public abstract Stream<Item> items();
+
+    public abstract boolean hasItem(Item item);
+
+    public abstract Optional<Item> byItemID(ItemID id);
 
     @Override
-    public default ImmutableSortedSet<I> entities() {
-        return this.items();
-    }
-
-    public default boolean hasItem(I item) {
-        return this.items().contains(item);
-    }
-
-    public default Optional<I> byItemID(ItemID id) {
-        for (final I item : this.items()) {
-            if (item != null && id.equals(item.identifier())) {
-                return Optional.of(item);
-            }
-        }
-        return Optional.empty();
+    public default Optional<RichOutput> description() {
+        RichOutput.Builder builder = RichOutput.builder().setOnEmpty(Optional.of("It is empty"))
+                .setTag(Optional.ofNullable(this.tag() + "-description"));
+        this.items().forEachOrdered(item -> builder.addTaggable(item));
+        return Optional.of(builder.build());
     }
 
     @Override
@@ -43,108 +35,50 @@ public interface ItemContainer<I extends Item> extends EntityContainer<I> {
         return this.name();
     }
 
+    public default Optional<Item> queryOneItem(ItemQuery query) {
+        return this.items().sequential().filter(item -> query != null ? query.test(item) : item != null).findFirst();
+    }
+
+    public default Optional<Item> queryOneItem(IEntityQuery<? super Item> query) {
+        return this.items().sequential().filter(item -> query != null ? query.test(item) : item != null).findFirst();
+    }
+
     @Override
     public abstract ImmutableSortedMap<String, String> attributes();
 
-    @AutoValue
-    public static abstract class ImmutableItemContainer<I extends Item>
-            implements ItemContainer<I>, EntityContainer.ImmutableEntityContainer<I> {
+    public default ItemContainer queryItems(IEntityQuery<? super Item> query) {
+        ImmutableSortedMap.Builder<ItemID, Item> builder = ImmutableSortedMap.naturalOrder();
+        this.items().sequential().filter(item -> query != null ? query.test(item) : item != null)
+                .forEach(item -> builder.put(item.itemID(), item));
+        ImmutableSortedMap<ItemID, Item> built = builder.build();
+        return new ItemContainer() {
 
-        public final static <I extends Item> Builder<I> builder() {
-            return new AutoValue_ItemContainer_ImmutableItemContainer.Builder<>();
-        }
-
-        @AutoValue.Builder
-        static abstract class Builder<I extends Item>
-                implements EntityContainer.ImmutableEntityContainer.ImmutableEntityContainerBuilder<I> {
-
-            final private static Comparator<Item> itemComparator = Item.getItemComparator();
-
-            private ImmutableSortedSet.Builder<I> cachedItemsBuilder;
-
-            abstract ImmutableSortedSet.Builder<I> itemsBuilder(Comparator<Item> comparator);
-
-            /**
-             * Gets the cachedItemsBuilder
-             * 
-             * Note: not thread safe!
-             * 
-             * @return
-             */
-            private final ImmutableSortedSet.Builder<I> itemsBuilder() {
-                if (this.cachedItemsBuilder == null) {
-                    this.cachedItemsBuilder = this.itemsBuilder(itemComparator);
-                }
-                return this.cachedItemsBuilder;
+            @Override
+            public String name() {
+                return "QueryResult";
             }
 
             @Override
-            public final Builder<I> add(I item) {
-                this.itemsBuilder().add(item);
-                return this;
+            public Stream<Item> items() {
+                return built.values().stream().sequential();
             }
 
             @Override
-            public final Builder<I> add(Iterable<I> items) {
-                this.itemsBuilder().addAll(items);
-                return this;
+            public boolean hasItem(Item item) {
+                return built.containsValue(item);
             }
 
             @Override
-            public abstract Builder<I> setName(String name);
+            public Optional<Item> byItemID(ItemID id) {
+                return Optional.ofNullable(built.get(id));
+            }
 
             @Override
-            public abstract ImmutableItemContainer<I> build();
-        }
-    }
-
-    @Override
-    public default Optional<I> queryOne(IEntityQuery<? super I> query) {
-        for (final I item : this.items()) {
-            if (query.test(item)) {
-                return Optional.of(item);
+            public ImmutableSortedMap<String, String> attributes() {
+                return ImmutableSortedMap.of();
             }
-        }
-        return Optional.empty();
-    }
 
-    @Override
-    public default ImmutableItemContainer<I> queryAll(IEntityQuery<? super I> query) {
-        ImmutableItemContainer.Builder<I> builder = ImmutableItemContainer.<I>builder().setName("queryResult");
-        this.items().stream().filter(query).forEach(element -> builder.add(element));
-        return builder.build();
-    }
-
-    public static interface MutableItemContainer<I extends Item> extends ItemContainer<I>, MutableEntityContainer<I> {
-
-        @Override
-        public default ImmutableSortedSet<I> items() {
-            return ImmutableSortedSet.copyOfSorted(this.cargo());
-        }
-
-        @Override
-        public default int size() {
-            return this.cargo().size();
-        }
-
-        @Override
-        default boolean isEmpty() {
-            return this.cargo().isEmpty();
-        }
-
-        @Override
-        public default ImmutableItemContainer<I> removeAll(IEntityQuery<? super I> query) {
-            ImmutableItemContainer.Builder<I> builder = ImmutableItemContainer.<I>builder().setName("QueryResult");
-            for (Iterator<I> iterator = this.cargo().iterator(); iterator.hasNext();) {
-                final I ref = iterator.next();
-                if (query.test(ref)) {
-                    iterator.remove();
-                    builder.add(ref);
-                }
-            }
-            return builder.build();
-        }
-
+        };
     }
 
 }

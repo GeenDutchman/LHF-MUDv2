@@ -2,26 +2,26 @@ package com.geendutchman.lhf_mudv2.entities.item;
 
 import java.util.Objects;
 
-import com.google.common.truth.CustomSubjectBuilder;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.OptionalSubject;
+import com.google.common.truth.StreamSubject;
 import com.google.common.truth.StringSubject;
 import com.google.common.truth.Truth;
 
-public class ItemContainerSubject<I extends Item> extends IterableSubject {
-    public static CustomSubjectBuilder.Factory<ItemContainerSubjectBuilder> itemContainers() {
-        return ItemContainerSubjectBuilder::new;
+public class ItemContainerSubject extends IterableSubject {
+    public static Factory<ItemContainerSubject, ItemContainer> itemContainers() {
+        return ItemContainerSubject::new;
     }
 
-    public static <I extends Item> ItemContainerSubject<I> assertThat(ItemContainer<I> actual) {
+    public static ItemContainerSubject assertThat(ItemContainer actual) {
         return Truth.assertAbout(itemContainers()).that(actual);
     }
 
-    private final ItemContainer<I> actual;
+    private final ItemContainer actual;
 
-    protected ItemContainerSubject(FailureMetadata metadata, ItemContainer<I> actual) {
-        super(metadata, actual != null ? actual.items() : null);
+    protected ItemContainerSubject(FailureMetadata metadata, ItemContainer actual) {
+        super(metadata, actual != null ? actual.items().toList() : null);
         this.actual = actual;
     }
 
@@ -30,7 +30,11 @@ public class ItemContainerSubject<I extends Item> extends IterableSubject {
     }
 
     public IterableSubject items() {
-        return check("getItems()").that(actual.items());
+        return check("getItems()").that(actual.items().toList());
+    }
+
+    public StreamSubject itemsStream() {
+        return check("items()").that(actual.items());
     }
 
     // public void itemIsAdded(Item item) {
@@ -48,12 +52,12 @@ public class ItemContainerSubject<I extends Item> extends IterableSubject {
     // this.items().doesNotContain(item);
     // }
 
-    public ItemContainerSubject<I> queryAll(ItemQuery query) {
-        return check("queryAll(%s)", query).about(itemContainers()).that(this.actual.queryAll(query));
+    public ItemContainerSubject queryAll(ItemQuery query) {
+        return check("queryAll(%s)", query).about(itemContainers()).that(this.actual.queryItems(query));
     }
 
     public OptionalSubject queryOne(ItemQuery query) {
-        return check("queryOne(%s)", query).that(this.actual.queryOne(query));
+        return check("queryOne(%s)", query).that(this.actual.queryOneItem(query));
     }
 
     public void hasItem(Item item) {
@@ -73,7 +77,7 @@ public class ItemContainerSubject<I extends Item> extends IterableSubject {
         }
 
         if (expected instanceof ItemContainer expectedIC) {
-            containsExactlyElementsIn(expectedIC.items());
+            containsExactlyElementsIn(expectedIC.items().toList());
         } else {
             super.isEqualTo(expected);
         }

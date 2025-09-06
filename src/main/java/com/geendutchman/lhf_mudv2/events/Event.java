@@ -1,5 +1,6 @@
 package com.geendutchman.lhf_mudv2.events;
 
+import java.io.Serializable;
 import java.net.URI;
 import java.util.Optional;
 import java.util.UUID;
@@ -7,7 +8,7 @@ import java.util.UUID;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.google.auto.value.AutoValue;
 
-public sealed abstract class Event
+public sealed abstract class Event implements Serializable
         permits Events.PlainEvent, Events.ItemChangeEvent, Events.SeeEvent, Events.ViewedEvent {
 
     private final UUID uuid = UUID.randomUUID();

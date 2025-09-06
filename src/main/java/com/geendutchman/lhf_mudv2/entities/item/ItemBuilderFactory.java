@@ -26,7 +26,7 @@ public final class ItemBuilderFactory {
         return builder;
     }
 
-    public ItemReference build(Item.Builder builder) {
+    public Item build(Item.Builder builder) {
         return builder.setItemRepository(repository).setEventBus(bus).build();
     }
 

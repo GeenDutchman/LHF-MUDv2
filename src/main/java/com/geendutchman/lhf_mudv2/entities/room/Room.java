@@ -13,32 +13,34 @@ import org.springframework.lang.Nullable;
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.Entity;
-import com.geendutchman.lhf_mudv2.entities.EntityContainer;
 import com.geendutchman.lhf_mudv2.entities.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.Item.LockedItemBuilder;
+import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
-import com.geendutchman.lhf_mudv2.entities.item.ItemReference;
 import com.geendutchman.lhf_mudv2.events.EventBus;
 import com.geendutchman.lhf_mudv2.events.EventProcessor;
 import com.google.auto.value.AutoBuilder;
 import com.google.auto.value.AutoOneOf;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableSortedSet;
 
-public interface Room extends Entity, EntityContainer<Entity> {
+public interface Room extends Entity, ItemContainer {
     public record RoomID(EntityID delegate) implements IEntityID {
 
         public RoomID {
             Preconditions.checkNotNull(delegate, "RoomID should not have a null delegate");
         }
 
-        public static RoomID make() {
-            return new RoomID(IEntityID.ofEntityClass("rooms"));
+        public static RoomID make(String name) {
+            return new RoomID(new EntityID("rooms", name, UUID.randomUUID()));
         }
 
         public String entityClass() {
             return this.delegate.entityClass();
+        }
+
+        public String name() {
+            return this.delegate.name();
         }
 
         public URI uri() {
@@ -77,11 +79,6 @@ public interface Room extends Entity, EntityContainer<Entity> {
         return "ROOM";
     }
 
-    // All entities
-    public default ImmutableSortedSet<Entity> entities() {
-        return ImmutableSortedSet.copyOf(this.inventory().entities());
-    }
-
     // Rooms can hold items in an inventory
     public abstract ItemInventory inventory();
 
@@ -100,11 +97,11 @@ public interface Room extends Entity, EntityContainer<Entity> {
 
         public abstract Kind kind();
 
-        public abstract Optional<ItemReference> item();
+        public abstract Optional<Item> item();
 
         public abstract Optional<Item.LockedItemBuilder> itemBuilder();
 
-        public static Delta ofItem(ItemReference item) {
+        public static Delta ofItem(Item item) {
             return AutoOneOf_Room_Delta.item(Optional.of(item));
         }
 
@@ -165,7 +162,7 @@ public interface Room extends Entity, EntityContainer<Entity> {
         @Autowired
         public BuildRoom setEventBus(EventBus eventBus);
 
-        public RoomReference build();
+        public Room build();
     }
 
     @AutoBuilder(callMethod = "buildRoom", ofClass = Room.class)
@@ -190,10 +187,10 @@ public interface Room extends Entity, EntityContainer<Entity> {
             return this;
         }
 
-        abstract RoomReference autoBuild();
+        abstract Room autoBuild();
 
         @Override
-        public final RoomReference build() {
+        public final Room build() {
             Preconditions.checkState(Room.EXAMINABLE_NAME.matcher(this.getName()).matches(),
                     "Room name '%s' must match '%s'", this.getName(), Room.EXAMINABLE_NAME.toString());
             return this.autoBuild();
@@ -205,13 +202,14 @@ public interface Room extends Entity, EntityContainer<Entity> {
         return builder;
     }
 
-    public static RoomReference buildRoom(EventBus eventBus, RoomRepository roomRepository, String name,
+    public static Room buildRoom(EventBus eventBus, RoomRepository roomRepository, String name,
             Optional<RichOutput> roomDescription, Optional<URI> locale, ItemInventory inventory,
             @Nullable EventProcessor.EventFunction<Room> eventFunction) {
         Preconditions.checkNotNull(eventBus, "event bus must not be null");
         Preconditions.checkNotNull(roomRepository, "room repository must be available to store room into");
         final ConcreteRoom room = ConcreteRoom.buildRoom(name, roomDescription, locale, inventory, eventFunction);
         eventBus.register(room);
-        return roomRepository.track(room);
+        roomRepository.add(room);
+        return room;
     }
 }

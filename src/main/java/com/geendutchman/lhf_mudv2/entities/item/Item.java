@@ -30,12 +30,16 @@ public interface Item extends Entity {
             Preconditions.checkNotNull(delegate, "ItemID should not have null delegate");
         }
 
-        public static ItemID make() {
-            return new ItemID(IEntityID.ofEntityClass("items"));
+        public static ItemID make(String name) {
+            return new ItemID(new EntityID("items", name, UUID.randomUUID()));
         }
 
         public String entityClass() {
             return this.delegate.entityClass();
+        }
+
+        public String name() {
+            return this.delegate.name();
         }
 
         public URI uri() {
@@ -201,12 +205,12 @@ public interface Item extends Entity {
         @Autowired
         public BuildItem setEventBus(EventBus eventBus);
 
-        public ItemReference build();
+        public Item build();
     }
 
     public static sealed interface LockedItemBuilder extends Serializable, Comparable<LockedItemBuilder>
             permits Item.Builder {
-        public ItemReference build();
+        public Item build();
 
         public String getName();
 
@@ -238,10 +242,10 @@ public interface Item extends Entity {
             return this;
         }
 
-        abstract ItemReference autoBuild();
+        abstract Item autoBuild();
 
         @Override
-        public final ItemReference build() {
+        public final Item build() {
             Preconditions.checkState(Item.EXAMINABLE_NAME.matcher(this.getName()).matches(),
                     "Item name '%s' must match '%s'", this.getName(), Item.EXAMINABLE_NAME.toString());
             if (this.getNickname().isPresent()) {
@@ -266,14 +270,15 @@ public interface Item extends Entity {
                 .setItemTag(this.itemTag()).setNickname(this.nickname());
     }
 
-    public static ItemReference buildItem(EventBus eventBus, ItemRepository itemRepository, String name,
+    public static Item buildItem(EventBus eventBus, ItemRepository itemRepository, String name,
             Difficulty<Plain> visibility, Optional<String> nickname, ItemTag itemTag, Optional<URI> locale,
             @Nullable EventProcessor.EventFunction<Item> eventFunction) {
         Preconditions.checkNotNull(eventBus, "event bus must not be null");
         Preconditions.checkNotNull(itemRepository, "item repository must be available to store item into");
         final ConcreteItem item = ConcreteItem.buildItem(name, visibility, nickname, itemTag, locale, eventFunction);
         eventBus.register(item);
-        return itemRepository.track(item);
+        itemRepository.add(item);
+        return item;
     }
 
 }

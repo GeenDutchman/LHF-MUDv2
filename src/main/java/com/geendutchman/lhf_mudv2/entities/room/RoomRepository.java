@@ -1,34 +1,71 @@
 package com.geendutchman.lhf_mudv2.entities.room;
 
-import java.util.NavigableMap;
-import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.stream.Stream;
 
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
 
-import com.geendutchman.lhf_mudv2.entities.EntityRepository;
 import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 
 @Repository
-public final class RoomRepository
-        implements RoomContainer.MutableRoomContainer<ConcreteRoom>, EntityRepository<ConcreteRoom> {
-    private final ConcurrentNavigableMap<RoomID, ConcreteRoom> chambers = new ConcurrentSkipListMap<>();
+public final class RoomRepository implements RoomContainer {
+    private final ConcurrentSkipListMap<RoomID, ConcreteRoom> chambers = new ConcurrentSkipListMap<>();
 
     @Override
-    public RoomReference track(@NonNull ConcreteRoom entity) {
-        this.chambers.put(entity.roomID(), entity);
-        return RoomReference.ofRoom(entity, this);
+    public ImmutableMap<RoomID, Room> roomMap() {
+        return ImmutableMap.copyOf(chambers);
     }
 
-    /**
-     * @deprecated prefer {@code track} method
-     */
+    public RoomRepository add(ConcreteRoom... rooms) {
+        if (rooms != null) {
+            for (final ConcreteRoom room : rooms) {
+                if (room != null) {
+                    this.chambers.put(room.roomID(), room);
+                }
+            }
+        }
+        return this;
+    }
+
+    public RoomRepository add(Collection<ConcreteRoom> rooms) {
+        if (rooms != null) {
+            for (final ConcreteRoom room : rooms) {
+                if (room != null) {
+                    this.chambers.put(room.roomID(), room);
+                }
+            }
+        }
+        return this;
+    }
+
+    public RoomRepository addAll(Map<RoomID, ConcreteRoom> rooms) {
+        if (rooms != null) {
+            this.chambers.putAll(rooms);
+        }
+        return this;
+    }
+
+    public Optional<Room> remove(RoomID id) {
+        return Optional.ofNullable(this.chambers.remove(id));
+    }
+
+    public Optional<Room> remove(Room room) {
+        return this.remove(room.roomID());
+    }
+
     @Override
-    @Deprecated(forRemoval = false, since = "2025-09-02")
-    public boolean add(@NonNull ConcreteRoom reference) {
-        return MutableRoomContainer.super.add(reference);
+    public boolean hasRoom(Room room) {
+        return this.chambers.containsValue(room);
+    }
+
+    @Override
+    public Optional<Room> byRoomID(RoomID id) {
+        return Optional.ofNullable(this.chambers.get(id));
     }
 
     @Override
@@ -37,8 +74,8 @@ public final class RoomRepository
     }
 
     @Override
-    public NavigableMap<RoomID, ConcreteRoom> chambers() {
-        return this.chambers;
+    public Stream<Room> rooms() {
+        return this.chambers.values().stream().sequential().map(concrete -> (Room) concrete);
     }
 
     @Override

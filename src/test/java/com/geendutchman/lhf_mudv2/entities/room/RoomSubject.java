@@ -1,7 +1,6 @@
 package com.geendutchman.lhf_mudv2.entities.room;
 
 import com.geendutchman.lhf_mudv2.entities.item.ItemContainerSubject;
-import com.geendutchman.lhf_mudv2.entities.item.ItemReference;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.OptionalSubject;
 import com.google.common.truth.StringSubject;
@@ -24,7 +23,7 @@ public final class RoomSubject extends Subject {
         this.room = room;
     }
 
-    public ItemContainerSubject<ItemReference> inventory() {
+    public ItemContainerSubject inventory() {
         return check("inventory()").about(ItemContainerSubject.itemContainers()).that(this.room.inventory());
     }
 

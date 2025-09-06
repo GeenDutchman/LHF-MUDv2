@@ -16,7 +16,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSortedMap;
 
 final class ConcreteItem implements Item {
-    final private ItemID itemID = ItemID.make();
+    final private ItemID itemID;
     final private String name;
     final private ItemTag itemTag;
     @Nullable
@@ -44,6 +44,7 @@ final class ConcreteItem implements Item {
         this.name = name;
         this.itemTag = itemTag;
         this.eventFunction = eventFunction != null ? eventFunction : (e, b, i) -> new ProcessingResult.Unhandled();
+        this.itemID = ItemID.make(name);
         this.visibility = visibility;
         this.nickname = nickname;
     }

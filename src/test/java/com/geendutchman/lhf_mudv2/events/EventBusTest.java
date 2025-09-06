@@ -47,7 +47,7 @@ public class EventBusTest {
 
         final Item sword = itemFactory.builder().setName("Sword").build();
 
-        final ItemID id = ItemID.make();
+        final ItemID id = ItemID.make("Observer");
 
         CountDownLatch latch = new CountDownLatch(1);
         Mockito.doAnswer(invocation -> {
@@ -79,7 +79,7 @@ public class EventBusTest {
 
         final Item sword = itemFactory.builder().setName("Sword").build();
 
-        final ItemID id = ItemID.make();
+        final ItemID id = ItemID.make("Observer");
 
         CountDownLatch latch = new CountDownLatch(1);
         Mockito.doAnswer(invocation -> {

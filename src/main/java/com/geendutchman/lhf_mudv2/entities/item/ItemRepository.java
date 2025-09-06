@@ -1,33 +1,76 @@
 package com.geendutchman.lhf_mudv2.entities.item;
 
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.stream.Stream;
 
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
 
-import com.geendutchman.lhf_mudv2.entities.EntityRepository;
+import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.google.common.collect.ImmutableSortedMap;
 
 @Repository
-public final class ItemRepository
-        implements ItemContainer.MutableItemContainer<ConcreteItem>, EntityRepository<ConcreteItem> {
+public final class ItemRepository implements ItemContainer {
 
-    private final ConcurrentSkipListSet<ConcreteItem> cargo = new ConcurrentSkipListSet<>(Item.getItemComparator());
+    private final ConcurrentSkipListMap<ItemID, ConcreteItem> cargo = new ConcurrentSkipListMap<>();
+
+    public ItemRepository add(ConcreteItem... items) {
+        if (items != null) {
+            for (final ConcreteItem item : items) {
+                if (item != null) {
+                    this.cargo.put(item.itemID(), item);
+                }
+            }
+        }
+        return this;
+    }
+
+    public ItemRepository add(Collection<ConcreteItem> items) {
+        if (items != null) {
+            for (final ConcreteItem item : items) {
+                if (item != null) {
+                    this.cargo.put(item.itemID(), item);
+                }
+            }
+        }
+        return this;
+    }
+
+    public ItemRepository addAll(Map<ItemID, ConcreteItem> items) {
+        if (items != null) {
+            this.cargo.putAll(items);
+        }
+        return this;
+    }
+
+    public Optional<Item> remove(ItemID id) {
+        return Optional.ofNullable(this.cargo.remove(id));
+    }
+
+    public Optional<Item> remove(Item item) {
+        return this.remove(item.itemID());
+    }
 
     @Override
-    public ItemReference track(@NonNull ConcreteItem entity) {
-        this.cargo.add(entity);
-        return ItemReference.ofItem(entity, this);
+    public Stream<Item> items() {
+        return this.cargo.values().stream().sequential().map(concrete -> (Item) concrete);
+    }
+
+    @Override
+    public boolean hasItem(Item item) {
+        return this.cargo.containsValue(item);
+    }
+
+    @Override
+    public Optional<Item> byItemID(ItemID id) {
+        return Optional.ofNullable(this.cargo.get(id));
     }
 
     @Override
     public String name() {
         return "ItemRepository";
-    }
-
-    @Override
-    public ConcurrentSkipListSet<ConcreteItem> cargo() {
-        return this.cargo;
     }
 
     @Override

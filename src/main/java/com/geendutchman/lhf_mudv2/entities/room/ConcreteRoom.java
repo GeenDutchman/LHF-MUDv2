@@ -2,12 +2,15 @@ package com.geendutchman.lhf_mudv2.entities.room;
 
 import java.net.URI;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.springframework.lang.Nullable;
 
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.Taggable;
+import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
+import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.geendutchman.lhf_mudv2.events.Event;
 import com.geendutchman.lhf_mudv2.events.EventBus;
 import com.geendutchman.lhf_mudv2.events.EventProcessor;
@@ -15,7 +18,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSortedMap;
 
 class ConcreteRoom implements Room {
-    final private RoomID roomID = RoomID.make();
+    final private RoomID roomID;
     final private String name;
     final private Optional<RichOutput> roomDescription;
     final private Optional<URI> locale;
@@ -41,6 +44,7 @@ class ConcreteRoom implements Room {
         this.locale = locale;
         this.inventory = inventory;
         this.eventFunction = eventFunction;
+        this.roomID = RoomID.make(name);
     }
 
     @Override
@@ -95,6 +99,21 @@ class ConcreteRoom implements Room {
     @Override
     public ItemInventory inventory() {
         return this.inventory;
+    }
+
+    @Override
+    public Stream<Item> items() {
+        return this.inventory.items();
+    }
+
+    @Override
+    public boolean hasItem(Item item) {
+        return this.inventory.hasItem(item);
+    }
+
+    @Override
+    public Optional<Item> byItemID(ItemID id) {
+        return this.inventory.byItemID(id);
     }
 
     @Override
