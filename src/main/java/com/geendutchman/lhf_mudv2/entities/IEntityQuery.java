@@ -6,108 +6,88 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableList;
 
 public interface IEntityQuery<E extends Entity> extends Predicate<E>, Serializable {
 
-    public abstract Optional<IEntityID> identifier();
-
-    public abstract Optional<String> name();
-
-    public abstract ImmutableList<Pattern> namePatterns();
-
-    public abstract ImmutableList<Pattern> toStringPatterns();
-
-    public interface Builder<E extends Entity> {
-        public abstract Builder<E> setIdentifier(Optional<IEntityID> identifier);
-
-        public abstract Builder<E> setName(Optional<String> name);
-
-        public abstract Builder<E> setName(String name);
-
-        abstract ImmutableList.Builder<Pattern> namePatternsBuilder();
-
-        public default Builder<E> addNamePattern(Pattern pattern) {
-            this.namePatternsBuilder().add(pattern);
-            return this;
-        }
-
-        public default Builder<E> addNamePattern(String pattern) {
-            this.namePatternsBuilder().add(Pattern.compile(pattern));
-            return this;
-        }
-
-        public abstract Builder<E> setToStringPatterns(ImmutableList<Pattern> patterns);
-
-        public abstract EntityQuery<E> build();
-
-        public default IEntityQuery<E> buildInterface() {
-            return this.build();
-        }
-
-    }
-
     @AutoValue
-    public abstract class EntityQuery<E extends Entity> implements IEntityQuery<E> {
+    public abstract class EntityQuery implements IEntityQuery<Entity> {
+        public abstract Optional<IEntityID> identifier();
+
+        public abstract Optional<String> name();
+
+        public abstract Optional<Pattern> namePattern();
+
+        public abstract Optional<Pattern> toStringPattern();
 
         @AutoValue.Builder
-        public static abstract class EntityQueryBuilder<E extends Entity> implements IEntityQuery.Builder<E> {
+        public static abstract class EntityQueryBuilder {
+            public abstract EntityQueryBuilder setIdentifier(Optional<IEntityID> identifier);
+
+            public abstract EntityQueryBuilder setIdentifier(IEntityID identifier);
+
+            public abstract EntityQueryBuilder setName(Optional<String> name);
+
+            public abstract EntityQueryBuilder setName(String name);
+
+            public abstract EntityQueryBuilder setNamePattern(Optional<Pattern> pattern);
+
+            public abstract EntityQueryBuilder setNamePattern(Pattern pattern);
+
+            public EntityQueryBuilder setNamePattern(String pattern) {
+                return this.setNamePattern(Pattern.compile(pattern));
+            }
+
+            public abstract EntityQueryBuilder setToStringPattern(Optional<Pattern> patterns);
+
+            public abstract EntityQuery build();
 
         }
 
-        abstract EntityQueryBuilder<E> toBuilder();
+        public abstract EntityQueryBuilder toBuilder();
 
-        public final static <E extends Entity> EntityQuery.EntityQueryBuilder<E> builder() {
-            final EntityQueryBuilder<E> builder = new AutoValue_IEntityQuery_EntityQuery.Builder<>();
-            builder.namePatternsBuilder();
+        public final static EntityQuery.EntityQueryBuilder builder() {
+            final EntityQueryBuilder builder = new AutoValue_IEntityQuery_EntityQuery.Builder();
             return builder;
         }
-    }
 
-    default boolean testNames(E t) {
-        if (this.name().isPresent()) {
-            if (!this.name().get().equals(t.name())) {
+        @Override
+        public boolean test(Entity t) {
+            if (t == null) {
                 return false;
             }
-        }
-        for (final Pattern pattern : this.namePatterns()) {
-            if (!pattern.asPredicate().test(t.name())) {
-                return false;
+            if (this.identifier().isPresent()) {
+                if (this.identifier().get().compareTo(t.identifier()) == 0) {
+                    return true;
+                }
             }
+            if (this.name().isPresent()) {
+                if (!this.name().get().equals(t.name())) {
+                    return false;
+                }
+            }
+            if (this.namePattern().isPresent()) {
+                if (!this.namePattern().get().asPredicate().test(t.name())) {
+                    return false;
+                }
+            }
+
+            if (this.toStringPattern().isPresent()) {
+                if (!this.toStringPattern().get().asPredicate().test(t.toString())) {
+                    return false;
+                }
+            }
+            return true;
         }
-        return true;
     }
 
-    default Optional<Boolean> testOtherFactors(E t) {
-        return Optional.empty();
+    public static EntityQuery.EntityQueryBuilder entityQueryBuilder() {
+        final EntityQuery.EntityQueryBuilder builder = new AutoValue_IEntityQuery_EntityQuery.Builder();
+        return builder;
     }
 
     @Override
     public default boolean test(E t) {
-        if (t == null) {
-            return false;
-        }
-        if (this.identifier().isPresent()) {
-            if (this.identifier().get().compareTo(t.identifier()) == 0) {
-                return true;
-            }
-        }
-        if (!this.testNames(t)) {
-            return false;
-        }
-        final Optional<Boolean> others = this.testOtherFactors(t);
-        if (others != null && others.isPresent()) {
-            return others.get();
-        }
-        final ImmutableList<Pattern> toStringPatterns = this.toStringPatterns();
-        if (toStringPatterns.size() > 0) {
-            final String asStr = t.toString();
-            for (final Pattern pattern : this.toStringPatterns()) {
-                if (!pattern.asMatchPredicate().test(asStr)) {
-                    return false;
-                }
-            }
-        }
-        return true;
+        return t != null;
     }
+
 }

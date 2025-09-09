@@ -1,52 +1,77 @@
 package com.geendutchman.lhf_mudv2.entities.room;
 
 import java.util.Optional;
-import java.util.regex.Pattern;
+import java.util.function.Consumer;
 
 import com.geendutchman.lhf_mudv2.entities.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.IEntityQuery;
+import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.geendutchman.lhf_mudv2.entities.item.ItemQuery;
-import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableList;
 
 @AutoValue
 public abstract class RoomQuery implements IEntityQuery<Room> {
     public abstract Optional<ItemQuery> hasItemLike();
 
+    public abstract EntityQuery entityQuery();
+
     public final static Builder builder() {
-        final Builder builder = new AutoValue_RoomQuery.Builder().setToStringPatterns(ImmutableList.of());
-        builder.namePatternsBuilder();
+        final Builder builder = new AutoValue_RoomQuery.Builder();
         return builder;
     }
 
-    abstract RoomQuery.Builder toRoomQueryBuilder();
+    public abstract RoomQuery.Builder toRoomQueryBuilder();
 
     @AutoValue.Builder
     public static abstract class Builder {
-        public abstract Builder setIdentifier(Optional<IEntityID> identifier);
+        public abstract EntityQuery.EntityQueryBuilder entityQueryBuilder();
 
-        public abstract Builder setIdentifier(RoomID identifier);
+        public abstract Builder setEntityQuery(EntityQuery entityQuery);
 
-        public abstract Builder setName(Optional<String> name);
-
-        public abstract Builder setName(String name);
-
-        protected abstract ImmutableList.Builder<Pattern> namePatternsBuilder();
-
-        public final Builder addNamePattern(Pattern pattern) {
-            this.namePatternsBuilder().add(pattern);
+        public Builder setIdentifier(Optional<IEntityID> identifier) {
+            this.entityQueryBuilder().setIdentifier(identifier);
             return this;
         }
 
-        public final Builder addNamePattern(String pattern) {
-            this.namePatternsBuilder().add(Pattern.compile(pattern));
+        public Builder setIdentifier(ItemID identifier) {
+            this.entityQueryBuilder().setIdentifier(identifier);
             return this;
         }
 
-        public abstract Builder setToStringPatterns(ImmutableList<Pattern> patterns);
+        public Builder setName(String name) {
+            this.entityQueryBuilder().setName(name);
+            return this;
+        }
+
+        public final Builder adjustEntityQuery(Consumer<EntityQuery.EntityQueryBuilder> adjustor) {
+            if (adjustor != null) {
+                adjustor.accept(this.entityQueryBuilder());
+            }
+            return this;
+        }
 
         public abstract Builder setHasItemLike(Optional<ItemQuery> itemQuery);
+
+        public abstract Builder setHasItemLike(ItemQuery itemQuery);
+
+        public Builder setHasItemLike(ItemQuery.Builder iqBuilder) {
+            if (iqBuilder != null) {
+                return this.setHasItemLike(iqBuilder.build());
+            }
+            return this;
+        }
+
+        public abstract Optional<ItemQuery> hasItemLike();
+
+        public Builder adjustHasItemLike(Consumer<ItemQuery.Builder> adjustor) {
+            if (adjustor == null) {
+                return this;
+            }
+            ItemQuery.Builder asBuilder = this.hasItemLike().map(query -> query.toBuilder())
+                    .orElse(ItemQuery.builder());
+            adjustor.accept(asBuilder);
+            return this.setHasItemLike(asBuilder.build());
+        }
 
         public abstract RoomQuery build();
 
@@ -56,16 +81,19 @@ public abstract class RoomQuery implements IEntityQuery<Room> {
     }
 
     @Override
-    public Optional<Boolean> testOtherFactors(Room t) {
-        if (this.hasItemLike().isEmpty()) {
-            return Optional.empty();
-        }
-        final ItemQuery filter = this.hasItemLike().get();
-        return Optional.of(t.inventory().queryOneItem(filter).isPresent());
-    }
-
-    @Override
     public final boolean test(Room t) {
-        return IEntityQuery.super.test(t);
+        if (t == null) {
+            return false;
+        }
+        final EntityQuery entityQ = this.entityQuery();
+        if (entityQ != null && !entityQ.test(t)) {
+            return false;
+        }
+        if (this.hasItemLike().isPresent()) {
+            if (t.inventory().queryOneItem(this.hasItemLike().get()).isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 }

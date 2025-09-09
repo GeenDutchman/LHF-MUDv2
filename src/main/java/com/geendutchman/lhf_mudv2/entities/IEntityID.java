@@ -51,9 +51,6 @@ public interface IEntityID extends Comparable<IEntityID> {
             Preconditions.checkNotNull(uuid, "uuid must not be null");
         }
 
-        public final URI uri() {
-            return URI.create(String.format("%s/%s", this.entityClass(), this.uuid()));
-        }
     }
 
 }

@@ -15,8 +15,9 @@ public class ItemContainerTest {
         Item maskedItem = factory.builder().setName("hidden").setNickname(Optional.of("itemX")).build();
         ItemContainer container = ItemInventory.builder().setName("container").build().add(maskedItem).add(itemA)
                 .add(itemB);
-        ItemQuery query = ItemQuery.builder().setCheckOnlyName(false).addNamePattern("^item").build();
+        ItemQuery query = ItemQuery.builder().setDisplayNamePattern("^item").build();
         ItemContainerSubject.assertThat(container).queryAll(query).hasSize(3);
-        ItemContainerSubject.assertThat(container).queryAll(query.withCheckOnlyName(true)).hasSize(2);
+        ItemContainerSubject.assertThat(container).queryAll(query.toBuilder().setDisplayNamePattern(Optional.empty())
+                .adjustEntityQuery(q -> q.setNamePattern("^item")).build()).hasSize(2);
     }
 }
