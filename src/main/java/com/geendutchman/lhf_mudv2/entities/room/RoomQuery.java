@@ -1,5 +1,8 @@
 package com.geendutchman.lhf_mudv2.entities.room;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -21,6 +24,22 @@ public abstract class RoomQuery implements IEntityQuery<Room> {
     }
 
     public abstract RoomQuery.Builder toRoomQueryBuilder();
+
+    @Override
+    public Map<String, String> toKeyValue() {
+        Map<String, String> kv = new LinkedHashMap<>();
+        EntityQuery eq = this.entityQuery();
+        if (eq != null) {
+            kv.putAll(eq.toKeyValue());
+        }
+        Optional<ItemQuery> oiq = this.hasItemLike();
+        if (oiq.isPresent()) {
+            oiq.get().toKeyValue().forEach((key, value) -> {
+                kv.put("itemquery." + key, value);
+            });
+        }
+        return kv;
+    }
 
     @AutoValue.Builder
     public static abstract class Builder {
@@ -71,6 +90,35 @@ public abstract class RoomQuery implements IEntityQuery<Room> {
                     .orElse(ItemQuery.builder());
             adjustor.accept(asBuilder);
             return this.setHasItemLike(asBuilder.build());
+        }
+
+        public Builder fromKeyValue(Map<String, String> kv) {
+            if (kv == null) {
+                return this;
+            }
+            this.entityQueryBuilder().fromKeyValue(kv);
+            for (final Entry<String, String> q : kv.entrySet()) {
+                final String key = q.getKey().toLowerCase();
+                final String value = q.getValue();
+                if (value == null) {
+                    continue;
+                }
+                if (key.startsWith("itemquery.")) {
+                    this.adjustHasItemLike(b -> {
+                        if (b == null) {
+                            return;
+                        }
+                        b.fromKeyValue(Map.of(key.replaceFirst("itemquery.", ""), value));
+                    });
+                    continue;
+                }
+                switch (key) {
+
+                default:
+                    break;
+                }
+            }
+            return this;
         }
 
         public abstract RoomQuery build();

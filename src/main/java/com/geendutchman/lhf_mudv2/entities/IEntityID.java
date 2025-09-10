@@ -16,8 +16,8 @@ public interface IEntityID extends Comparable<IEntityID> {
     public UUID uuid();
 
     public default URI uri() {
-        return UriComponentsBuilder.newInstance().pathSegment(this.entityClass()).pathSegment(this.name())
-                .pathSegment(this.uuid().toString()).build().toUri();
+        return UriComponentsBuilder.newInstance().pathSegment("{class}").pathSegment("{name}")
+                .pathSegment(this.uuid().toString()).build(this.entityClass(), this.name());
     }
 
     @Override

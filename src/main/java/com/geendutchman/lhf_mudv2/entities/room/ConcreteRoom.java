@@ -1,6 +1,7 @@
 package com.geendutchman.lhf_mudv2.entities.room;
 
 import java.net.URI;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -130,4 +131,31 @@ class ConcreteRoom implements Room {
     public ImmutableSortedMap<String, String> attributes() {
         return ImmutableSortedMap.copyOf(Taggable.produceBasicTagAttributes());
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("ConcreteRoom [roomID=").append(roomID).append(", name=").append(name).append(", locale=");
+        if (locale != null && locale.isPresent()) {
+            builder.append(", locale=").append(locale.get());
+        }
+        builder.append("]");
+        return builder.toString();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(roomID);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (!(obj instanceof ConcreteRoom))
+            return false;
+        ConcreteRoom other = (ConcreteRoom) obj;
+        return Objects.equals(roomID, other.roomID);
+    }
+
 }

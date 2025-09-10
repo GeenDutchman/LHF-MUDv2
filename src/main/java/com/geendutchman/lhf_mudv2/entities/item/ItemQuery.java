@@ -1,5 +1,8 @@
 package com.geendutchman.lhf_mudv2.entities.item;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
@@ -27,6 +30,31 @@ public abstract class ItemQuery implements IEntityQuery<Item> {
     public final static Builder builder() {
         final Builder builder = new AutoValue_ItemQuery.Builder().setIsVisible(true);
         return builder;
+    }
+
+    @Override
+    public Map<String, String> toKeyValue() {
+        Map<String, String> kv = new LinkedHashMap<>();
+        EntityQuery eq = this.entityQuery();
+        if (eq != null) {
+            kv.putAll(eq.toKeyValue());
+        }
+        if (this.isVisible().isPresent()) {
+            kv.put("isvisible", this.isVisible().orElse(true).toString());
+        }
+        if (this.nickname().isPresent()) {
+            kv.put("nickname", this.nickname().orElse(""));
+        }
+        if (this.nicknamePattern().isPresent()) {
+            kv.put("nicknamepattern", this.nicknamePattern().get().toString());
+        }
+        if (this.displayName().isPresent()) {
+            kv.put("displayname", this.displayName().get());
+        }
+        if (this.displayNamePattern().isPresent()) {
+            kv.put("displaynamepattern", this.displayNamePattern().get().toString());
+        }
+        return kv;
     }
 
     public abstract ItemQuery.Builder toBuilder();
@@ -77,6 +105,39 @@ public abstract class ItemQuery implements IEntityQuery<Item> {
         public abstract Builder setIsVisible(boolean isVisible);
 
         public abstract Builder setIsVisible(Optional<Boolean> isVisible);
+
+        public Builder fromKeyValue(Map<String, String> kv) {
+            if (kv == null) {
+                return this;
+            }
+            this.entityQueryBuilder().fromKeyValue(kv);
+            for (final Entry<String, String> q : kv.entrySet()) {
+                final String value = q.getValue();
+                if (value == null) {
+                    continue;
+                }
+                switch (q.getKey().toLowerCase()) {
+                case "nickname":
+                    this.setNickname(value);
+                    break;
+                case "nicknamepattern":
+                    this.setNicknamePattern(Pattern.compile(value));
+                    break;
+                case "isvisible":
+                    this.setIsVisible(Boolean.parseBoolean(value));
+                    break;
+                case "displayname":
+                    this.setDisplayName(value);
+                    break;
+                case "displaynamepattern":
+                    this.setDisplayNamePattern(value);
+                    break;
+                default:
+                    break;
+                }
+            }
+            return this;
+        }
 
         public abstract ItemQuery build();
 

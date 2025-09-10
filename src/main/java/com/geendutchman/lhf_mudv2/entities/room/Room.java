@@ -29,6 +29,8 @@ public interface Room extends Entity, ItemContainer {
 
         public RoomID {
             Preconditions.checkNotNull(delegate, "RoomID should not have a null delegate");
+            Preconditions.checkState(delegate.entityClass().equals("rooms"),
+                    "an room id must be about rooms, but was %s", delegate.entityClass());
         }
 
         public static RoomID make(String name) {

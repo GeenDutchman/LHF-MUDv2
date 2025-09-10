@@ -28,6 +28,8 @@ public interface Item extends Entity {
     public record ItemID(EntityID delegate) implements IEntityID {
         public ItemID {
             Preconditions.checkNotNull(delegate, "ItemID should not have null delegate");
+            Preconditions.checkState(delegate.entityClass().equals("items"),
+                    "an item id must be about items, but was %s", delegate.entityClass());
         }
 
         public static ItemID make(String name) {

@@ -1,6 +1,7 @@
 package com.geendutchman.lhf_mudv2.entities.item;
 
 import java.net.URI;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.lang.Nullable;
@@ -130,6 +131,36 @@ final class ConcreteItem implements Item {
     @Override
     public ImmutableSortedMap<String, String> attributes() {
         return ImmutableSortedMap.copyOf(Taggable.produceBasicTagAttributes());
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("ConcreteItem [itemID=").append(itemID).append(", name=").append(name).append(", itemTag=")
+                .append(itemTag);
+        if (nickname != null && nickname.isPresent()) {
+            builder.append(", nickname=").append(nickname.orElse(""));
+        }
+        if (locale != null && locale.isPresent()) {
+            builder.append(", locale=").append(locale.get());
+        }
+        builder.append("]");
+        return builder.toString();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(itemID);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (!(obj instanceof ConcreteItem))
+            return false;
+        ConcreteItem other = (ConcreteItem) obj;
+        return Objects.equals(itemID, other.itemID);
     }
 
 }
