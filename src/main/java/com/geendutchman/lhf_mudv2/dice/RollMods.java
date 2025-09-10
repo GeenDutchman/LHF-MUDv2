@@ -14,8 +14,8 @@ public sealed interface RollMods<E extends Enum<E>> extends UnaryOperator<RollSe
         permits RollMods.Zeroed, RollMods.Doubled, RollMods.Halved, RollMods.Added {
 
     @Override
-    public default String tag() {
-        return "ROLL_MODIFIER";
+    public default Taggable.Tag tag() {
+        return new Taggable.Tag("ROLL_MODIFIER");
     }
 
     private static <E extends Enum<E>> ImmutableMap<E, String> appendNote(ImmutableMap<E, String> notes, E flavor,

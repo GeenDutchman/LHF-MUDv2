@@ -35,8 +35,8 @@ public abstract class DiceSet<E extends Enum<E>> implements Taggable {
     }
 
     @Override
-    public String tag() {
-        return "DICE_SET";
+    public Taggable.Tag tag() {
+        return new Taggable.Tag("DICE_SET");
     }
 
     public int size() {

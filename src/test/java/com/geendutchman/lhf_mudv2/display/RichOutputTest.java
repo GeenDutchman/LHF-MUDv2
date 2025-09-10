@@ -9,8 +9,8 @@ public class RichOutputTest {
     void testElements() {
         final String first = "first";
         final String second = "second";
-        RichOutput output = RichOutput.builder().addString(first)
-                .addTaggable(BasicTaggable.customTaggable("literal", "before", Taggable.produceBasicTagAttributes()))
+        RichOutput output = RichOutput.builder().addString(first).addTaggable(BasicTaggable
+                .customTaggable(new Taggable.Tag("literal"), "before", Taggable.produceBasicTagAttributes()))
                 .addString(second).build();
         RichOutputSubject.assertThat(output).plainString().contains(second);
     }

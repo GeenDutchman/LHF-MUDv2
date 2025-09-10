@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentNavigableMap;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
+import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.google.common.collect.ImmutableSortedMap;
 
 public interface EntityContainer extends Examinable {
@@ -29,8 +30,8 @@ public interface EntityContainer extends Examinable {
     }
 
     @Override
-    public default String tag() {
-        return "Entities";
+    public default Taggable.Tag tag() {
+        return new Taggable.Tag("Entities");
     }
 
     @Override

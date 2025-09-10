@@ -11,6 +11,7 @@ import org.w3c.dom.Node;
 import com.geendutchman.lhf_mudv2.display.Examinable.BasicExaminable;
 import com.geendutchman.lhf_mudv2.display.RichOutput.OutputBuilderConversionError;
 import com.geendutchman.lhf_mudv2.display.Taggable.BasicTaggable;
+import com.geendutchman.lhf_mudv2.display.Taggable.Tag;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 
@@ -126,7 +127,9 @@ public abstract class RichOutputElement implements Serializable {
             final BasicTaggable taggable = this.taggable();
             Element myElement = null;
             try {
-                myElement = nodeFactory.createElement(!taggable.tag().isBlank() ? taggable.tag() : "Taggable");
+                final Tag tag = taggable.tag();
+                myElement = nodeFactory.createElement(
+                        tag == null || tag.value() == null || tag.value().isBlank() ? "Taggable" : tag.value());
                 parent.appendChild(myElement);
             } catch (DOMException e) {
                 throw new OutputBuilderConversionError(String.format(
@@ -183,7 +186,9 @@ public abstract class RichOutputElement implements Serializable {
             final BasicExaminable examined = this.examinable();
             Element myElement = null;
             try {
-                myElement = nodeFactory.createElement(!examined.tag().isBlank() ? examined.tag() : "Examinable");
+                final Tag tag = examined.tag();
+                myElement = nodeFactory.createElement(
+                        tag == null || tag.value() == null || tag.value().isBlank() ? "Examinable" : tag.value());
                 parent.appendChild(myElement);
             } catch (DOMException e) {
                 throw new OutputBuilderConversionError(String.format(
@@ -192,8 +197,8 @@ public abstract class RichOutputElement implements Serializable {
             }
 
             if (!examined.name().equals(examined.content())) {
-                final RichOutputElement nameTaggable = RichOutputElement.ofTaggable(
-                        BasicTaggable.customTaggable("name", examined.name(), Taggable.produceBasicTagAttributes()));
+                final RichOutputElement nameTaggable = RichOutputElement.ofTaggable(BasicTaggable
+                        .customTaggable(new Tag("name"), examined.name(), Taggable.produceBasicTagAttributes()));
                 try {
                     nameTaggable.xmlNode(nodeFactory, myElement);
                     myElement.appendChild(nodeFactory.createTextNode(examined.content()));
@@ -277,8 +282,8 @@ public abstract class RichOutputElement implements Serializable {
                 parent.appendChild(root);
                 if (output.sequenceName().isPresent()) {
                     final RichOutputElement sequenceTaggable = RichOutputElement
-                            .ofTaggable(BasicTaggable.customTaggable(tag + "-title", output.sequenceName().get(),
-                                    Taggable.produceBasicTagAttributes()));
+                            .ofTaggable(BasicTaggable.customTaggable(new Tag(tag + "-title"),
+                                    output.sequenceName().get(), Taggable.produceBasicTagAttributes()));
                     sequenceTaggable.xmlNode(nodeFactory, root);
                 }
             } catch (DOMException e) {

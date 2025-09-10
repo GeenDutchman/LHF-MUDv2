@@ -15,13 +15,37 @@ import com.google.common.collect.ImmutableSortedMap;
  * string of attributes
  */
 public interface Taggable {
+
+    public record Tag(String value) implements Serializable, Comparable<Tag> {
+        /**
+         * All tags need to adhere to: ^\\w{3}(?:[_-]?\\w)*$
+         */
+        public final static String TAG_PATTERN = "^\\w{3}(?:[_-]?\\w)*$";
+
+        public Tag {
+            Preconditions.checkNotNull(value, "tag value must not be null");
+            Preconditions.checkArgument(value.matches(TAG_PATTERN), "tag '%s' must match '%s'", value, TAG_PATTERN);
+        }
+
+        @Override
+        public int compareTo(Tag o) {
+            return this.value.compareTo(o.value);
+        }
+
+        @Override
+        public final String toString() {
+            return this.value;
+        }
+
+    }
+
     /**
      * The tag name, like in xml, but with no alligators. This is not limited to
      * html tags, it can be anything legal in xml.
      * 
      * @return tag
      */
-    public String tag();
+    public Tag tag();
 
     /**
      * The contents of the tag, like {@code<z>contents</z>}
@@ -58,11 +82,6 @@ public interface Taggable {
             .copyOf(Taggable.produceBasicTagAttributes());
 
     /**
-     * All tags need to adhere to: ^\\w{3}(?:[_-]?\\w)*$
-     */
-    public final static String TAG_PATTERN = "^\\w{3}(?:[_-]?\\w)*$";
-
-    /**
      * Transform the taggable into an immutable unit
      * 
      * @return
@@ -78,8 +97,8 @@ public interface Taggable {
      * @param content
      * @param attributes
      */
-    static void taggablepreconditions(String tag, String content, NavigableMap<String, String> attributes) {
-        Preconditions.checkArgument(tag.matches(TAG_PATTERN), "tag must match '%s' but is '%s'", TAG_PATTERN, tag);
+    static void taggablepreconditions(Tag tag, String content, NavigableMap<String, String> attributes) {
+        Preconditions.checkNotNull(tag, "tag must not be null");
         Preconditions.checkArgument(!content.isEmpty(), "content must not be empty");
         Preconditions.checkArgument(attributes != null, "attributes must not be null");
     }
@@ -89,11 +108,9 @@ public interface Taggable {
      */
     @AutoValue
     public static abstract class BasicTaggable implements Taggable, Serializable {
-        public static BasicTaggable customTaggable(String tag, String content,
-                NavigableMap<String, String> attributes) {
-            final String trimmedTag = tag.trim();
-            Taggable.taggablepreconditions(trimmedTag, content, attributes);
-            return new AutoValue_Taggable_BasicTaggable(trimmedTag, content, ImmutableSortedMap.copyOf(attributes));
+        public static BasicTaggable customTaggable(Tag tag, String content, NavigableMap<String, String> attributes) {
+            Taggable.taggablepreconditions(tag, content, attributes);
+            return new AutoValue_Taggable_BasicTaggable(tag, content, ImmutableSortedMap.copyOf(attributes));
         }
 
         @Override

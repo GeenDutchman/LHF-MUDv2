@@ -13,8 +13,8 @@ public sealed interface DifficultyMods<E extends Enum<E>> extends UnaryOperator<
         permits DifficultyMods.FlavoredBonus, DifficultyMods.TotalOrFlavored {
 
     @Override
-    public default String tag() {
-        return "DIFFICULTY_MODIFIER";
+    public default Taggable.Tag tag() {
+        return new Taggable.Tag("DIFFICULTY_MODIFIER");
     }
 
     public record FlavoredBonus<E extends Enum<E>>(E flavor, int bonus) implements DifficultyMods<E> {

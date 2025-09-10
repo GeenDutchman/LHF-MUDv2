@@ -5,6 +5,7 @@ import java.util.stream.Stream;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
+import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.IEntityQuery;
 import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
 import com.google.common.collect.ImmutableMap;
@@ -29,8 +30,8 @@ public interface RoomContainer extends Examinable {
     }
 
     @Override
-    public default String tag() {
-        return "Rooms";
+    public default Taggable.Tag tag() {
+        return new Taggable.Tag("Rooms");
     }
 
     @Override

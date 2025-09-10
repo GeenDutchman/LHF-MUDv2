@@ -34,8 +34,8 @@ record RollSet<E extends Enum<E>>(DiceSet<E> diceSet, ImmutableSortedMap<E, Inte
     }
 
     @Override
-    public String tag() {
-        return "ROLL_RESULT_SET";
+    public Taggable.Tag tag() {
+        return new Taggable.Tag("ROLL_RESULT_SET");
     }
 
     public String rowContent(final E row) {

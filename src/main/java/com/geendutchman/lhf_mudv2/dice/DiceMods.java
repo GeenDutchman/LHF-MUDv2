@@ -13,8 +13,8 @@ public sealed interface DiceMods<E extends Enum<E>> extends UnaryOperator<DiceSe
         permits DiceMods.FlavoredBonus, DiceMods.DoubleDice, DiceMods.MoreDice {
 
     @Override
-    public default String tag() {
-        return "DICE_MODIFIER";
+    public default Taggable.Tag tag() {
+        return new Taggable.Tag("DICE_MODIFIER");
     }
 
     public record FlavoredBonus<E extends Enum<E>>(E flavor, int bonus) implements DiceMods<E> {

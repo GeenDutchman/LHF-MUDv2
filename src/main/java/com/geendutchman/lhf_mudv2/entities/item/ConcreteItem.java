@@ -124,8 +124,8 @@ final class ConcreteItem implements Item {
     }
 
     @Override
-    public String tag() {
-        return this.itemTag.name();
+    public Taggable.Tag tag() {
+        return this.itemTag.asTag();
     }
 
     @Override

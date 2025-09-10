@@ -22,8 +22,8 @@ public record Difficulty<E extends Enum<E>>(ImmutableSortedMap<E, Integer> dcs, 
     }
 
     @Override
-    public String tag() {
-        return "DIFFICULTY_CLASS";
+    public Taggable.Tag tag() {
+        return new Taggable.Tag("DIFFICULTY_CLASS");
     }
 
     public Difficulty {

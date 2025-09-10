@@ -5,6 +5,7 @@ import java.util.stream.Stream;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
+import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.IEntityQuery;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.google.common.collect.ImmutableSortedMap;
@@ -26,8 +27,8 @@ public interface ItemContainer extends Examinable {
     }
 
     @Override
-    public default String tag() {
-        return "Items";
+    public default Taggable.Tag tag() {
+        return new Taggable.Tag("Items");
     }
 
     @Override

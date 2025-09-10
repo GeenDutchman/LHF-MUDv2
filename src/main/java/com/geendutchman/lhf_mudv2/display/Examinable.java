@@ -53,13 +53,12 @@ public interface Examinable extends Taggable {
     @AutoValue
     public static abstract class BasicExaminable implements Examinable, Serializable {
         public static BasicExaminable customExaminable(String name, Optional<RichOutput> description,
-                NavigableMap<String, String> attributes, String content, String tag) {
+                NavigableMap<String, String> attributes, String content, Tag tag) {
             final String trimmedName = name.trim();
-            final String trimmedTag = tag.trim();
-            Taggable.taggablepreconditions(trimmedTag, content, attributes);
+            Taggable.taggablepreconditions(tag, content, attributes);
             Preconditions.checkArgument(EXAMINABLE_NAME.asMatchPredicate().test(trimmedName), "name must match '%s'",
                     EXAMINABLE_NAME);
-            return new AutoValue_Examinable_BasicExaminable(content, trimmedTag, trimmedName, description,
+            return new AutoValue_Examinable_BasicExaminable(content, tag, trimmedName, description,
                     ImmutableSortedMap.copyOf(attributes));
         }
 

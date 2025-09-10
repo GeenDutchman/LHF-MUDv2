@@ -12,6 +12,7 @@ import org.springframework.lang.Nullable;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
+import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.Entity;
 import com.geendutchman.lhf_mudv2.entities.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
@@ -77,8 +78,8 @@ public interface Room extends Entity, ItemContainer {
     public static final Pattern ROOMNAME_RULES = Examinable.EXAMINABLE_NAME;
 
     @Override
-    default String tag() {
-        return "ROOM";
+    default Taggable.Tag tag() {
+        return new Taggable.Tag("ROOM");
     }
 
     // Rooms can hold items in an inventory

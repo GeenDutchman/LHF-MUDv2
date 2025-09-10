@@ -15,6 +15,7 @@ import com.geendutchman.lhf_mudv2.dice.Difficulty;
 import com.geendutchman.lhf_mudv2.dice.DifficultyMods;
 import com.geendutchman.lhf_mudv2.dice.Plain;
 import com.geendutchman.lhf_mudv2.display.Examinable;
+import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.Entity;
 import com.geendutchman.lhf_mudv2.entities.IEntityID;
 import com.geendutchman.lhf_mudv2.events.EventBus;
@@ -103,17 +104,21 @@ public interface Item extends Entity {
 
     public static enum ItemTag {
         ITEM;
+
+        public Taggable.Tag asTag() {
+            return new Tag(this.name());
+        }
     }
 
     public abstract ItemTag itemTag();
 
     @Override
-    public default String tag() {
+    public default Tag tag() {
         final ItemTag itemTag = this.itemTag();
         if (itemTag == null) {
-            return "ITEM";
+            return new Tag("ITEM");
         }
-        return itemTag.name();
+        return itemTag.asTag();
     }
 
     @AutoOneOf(Delta.Kind.class)
