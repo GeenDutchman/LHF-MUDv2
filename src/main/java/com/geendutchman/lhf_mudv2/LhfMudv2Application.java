@@ -22,9 +22,8 @@ public class LhfMudv2Application {
     @Bean
     public CommandLineRunner commandLineRunner(ApplicationContext ctx) {
         return args -> {
-            final Logger logger = Logger.getLogger("beansLoader");
+            final Logger logger = Logger.getLogger(this.getClass().getName() + ".beansLoader");
             logger.finer("What beans do we have today?");
-            System.out.println("What beans do we have today?");
 
             final String[] beanNames = ctx.getBeanDefinitionNames();
             Arrays.sort(beanNames);
@@ -33,11 +32,9 @@ public class LhfMudv2Application {
                     logger.finest(beanName);
                 } else {
                     logger.finer(beanName);
-                    System.out.println(beanName);
                 }
             }
             logger.finer("Done listing beans");
-            System.out.println("Done listing beans");
         };
     }
 

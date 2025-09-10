@@ -18,7 +18,7 @@ import com.google.common.collect.ImmutableSortedSet;
 @Component
 public class EventHandlerRegistry {
     private final Map<Class<? extends Event>, EventHandler<? extends Event>> handlers = new ConcurrentHashMap<>();
-    private final transient Logger logger = Logger.getLogger("EventHandlerRegistry");
+    private final transient Logger logger = Logger.getLogger(this.getClass().getName());
 
     public <E extends Event> void register(EventHandler<E> handler) {
         if (handler == null) {
