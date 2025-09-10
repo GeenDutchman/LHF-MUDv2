@@ -9,7 +9,7 @@ import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.google.auto.value.AutoValue;
 
 public sealed abstract class Event implements Serializable
-        permits Events.PlainEvent, Events.ItemChangeEvent, Events.SeeEvent, Events.ViewedEvent {
+        permits Events.PlainEvent, Events.ItemChangeEvent, Events.SeeEvent, Events.ViewedEvent, Events.SayEvent {
 
     private final UUID uuid = UUID.randomUUID();
 

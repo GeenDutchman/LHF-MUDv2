@@ -10,6 +10,7 @@ import com.geendutchman.lhf_mudv2.display.Examinable.BasicExaminable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.RichOutput.Builder;
 import com.geendutchman.lhf_mudv2.display.RichOutputElement;
+import com.geendutchman.lhf_mudv2.entities.Entity;
 import com.geendutchman.lhf_mudv2.entities.item.ItemEffect;
 import com.geendutchman.lhf_mudv2.events.Event.EventRouting;
 import com.geendutchman.lhf_mudv2.events.Event.EventRouting.EventRoutingBuilder;
@@ -124,6 +125,69 @@ public final class Events {
     }
 
     @AutoValue
+    public static sealed abstract class SayEvent extends Event permits AutoValue_Events_SayEvent {
+        public abstract RichOutput message();
+
+        public abstract BasicExaminable speaker();
+
+        public abstract Optional<BasicExaminable> listener();
+
+        @Override
+        public final Optional<RichOutput> description() {
+            RichOutput.Builder output = RichOutput.builder().setSequenceName(this.speaker().name())
+                    .addTaggable(this.speaker()).addString("says");
+            if (this.listener().isPresent()) {
+                output.addString("to").addTaggable(this.listener().get());
+            }
+            output.addString(":\n")
+                    .addOutput(RichOutput.builder().setSequenceName("message").addOutput(this.message()).build());
+            return Optional.of(output.build());
+        }
+
+        public abstract SayEventBuilder toBuilder();
+
+        public static SayEventBuilder builder() {
+            return new AutoValue_Events_SayEvent.Builder();
+        }
+
+        @AutoValue.Builder
+        public interface SayEventBuilder {
+            abstract EventRoutingBuilder routingBuilder();
+
+            public abstract SayEventBuilder setMessage(RichOutput message);
+
+            abstract SayEventBuilder setSpeaker(BasicExaminable speaker);
+
+            public default SayEventBuilder setSpeaker(Entity speaker) {
+                this.routingBuilder().setReplyToSender(speaker);
+                this.setSpeaker(speaker.basicExaminable());
+                return this;
+            }
+
+            abstract SayEventBuilder setListener(Optional<BasicExaminable> listener);
+
+            public default SayEventBuilder setListener(Entity listener) {
+                this.routingBuilder().setDestination(listener);
+                this.setListener(Optional.of(listener.basicExaminable()));
+                return this;
+            }
+
+            public default SayEventBuilder setRouting(Consumer<EventRoutingBuilder> setter) {
+                if (setter != null) {
+                    setter.accept(this.routingBuilder());
+                }
+                return this;
+            }
+
+            public abstract SayEvent build();
+        }
+    }
+
+    public static SayEvent.SayEventBuilder sayEvent() {
+        return SayEvent.builder();
+    }
+
+    @AutoValue
     public abstract sealed static class ItemChangeEvent extends Event permits AutoValue_Events_ItemChangeEvent {
         public abstract ImmutableList<ItemEffect> effects();
 
@@ -233,6 +297,10 @@ public final class Events {
 
         public ViewedEvent.ViewedEventBuilder viewedEvent() {
             return Events.viewedEvent().setRouting(this::copyTo);
+        }
+
+        public SayEvent.SayEventBuilder sayEvent() {
+            return Events.sayEvent().setRouting(this::copyTo);
         }
 
     }

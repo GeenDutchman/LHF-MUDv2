@@ -11,7 +11,7 @@ import java.util.function.BiFunction;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.server.PathContainer;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.util.pattern.PathPattern;
 import org.springframework.web.util.pattern.PathPattern.PathRemainingMatchInfo;
 import org.springframework.web.util.pattern.PathPatternParser;
@@ -34,7 +34,7 @@ public interface EntityResolver {
     // public final static String specificEntity =
     // "^/(?<class>[^/]+)(?:/$|(?<specific>/(?<name>[^/]+)/(?<uuid>[0-9a-fA-F-]+)/?))?";
 
-    @Component
+    @Service
     public final static class DefaultEntityResolver implements EntityResolver {
 
         @Autowired
@@ -165,7 +165,8 @@ public interface EntityResolver {
 
             for (Entry<PathPattern, BiFunction<PathRemainingMatchInfo, URI, SortedSet<Entity>>> route : this.routes
                     .reversed().entrySet()) {
-                PathRemainingMatchInfo matchInfo = route.getKey().matchStartOfPath(PathContainer.parsePath(path));
+                PathPattern routePath = route.getKey();
+                PathRemainingMatchInfo matchInfo = routePath.matchStartOfPath(PathContainer.parsePath(path));
                 if (matchInfo != null) {
                     return route.getValue().apply(matchInfo, uri);
                 }

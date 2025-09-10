@@ -262,12 +262,27 @@ public abstract class RichOutputElement implements Serializable {
         @Override
         final void printIt(final StringBuilder builder) {
             final RichOutput output = this.nested();
-            builder.append(output.sequenceName()).append(":\n");
+            output.sequenceName().ifPresent(seqName -> builder.append(seqName).append(":\n\t"));
             for (final RichOutputElement element : output.elements()) {
+                if (element == null) {
+                    continue;
+                }
                 StringBuilder child = new StringBuilder();
                 element.printIt(child);
-                for (final String line : child.toString().split("\\r?\\n")) {
-                    builder.append("\t").append(line).append("\n");
+                final String[] splitten = child.toString().split("\r?\n");
+                if (splitten == null) {
+                    continue;
+                }
+                if (splitten.length > 1) {
+                    for (final String line : splitten) {
+                        if (output.sequenceName().isPresent()) {
+                            builder.append("\t");
+                        }
+                        builder.append(line).append("\n");
+                    }
+                } else if (splitten.length == 1) {
+                    builder.append(child);
+                    output.elementSeparator().ifPresent(sep -> sep.printIt(builder));
                 }
             }
         }

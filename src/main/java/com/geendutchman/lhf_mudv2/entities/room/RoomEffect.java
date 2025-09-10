@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
+import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 
@@ -20,8 +21,8 @@ public abstract class RoomEffect implements Examinable {
         return this.name();
     }
 
-    public final String tag() {
-        return "ROOM_EFFECT";
+    public final Taggable.Tag tag() {
+        return new Taggable.Tag("ROOM_EFFECT");
     }
 
     public static Builder builder() {
