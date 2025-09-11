@@ -16,7 +16,8 @@ import org.springframework.web.util.pattern.PathPattern;
 import org.springframework.web.util.pattern.PathPattern.PathRemainingMatchInfo;
 import org.springframework.web.util.pattern.PathPatternParser;
 
-import com.geendutchman.lhf_mudv2.entities.IEntityID.EntityID;
+import com.geendutchman.lhf_mudv2.entities.entity.Entity;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityID.EntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;

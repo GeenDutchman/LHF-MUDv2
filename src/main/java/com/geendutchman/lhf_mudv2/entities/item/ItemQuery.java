@@ -7,8 +7,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
-import com.geendutchman.lhf_mudv2.entities.IEntityID;
-import com.geendutchman.lhf_mudv2.entities.IEntityQuery;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.google.auto.value.AutoValue;
 

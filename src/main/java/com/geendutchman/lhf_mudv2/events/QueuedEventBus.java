@@ -14,8 +14,8 @@ import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.geendutchman.lhf_mudv2.entities.Entity;
 import com.geendutchman.lhf_mudv2.entities.EntityResolver;
+import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.events.EventProcessor.ProcessingResult;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;

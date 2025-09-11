@@ -10,7 +10,7 @@ import com.geendutchman.lhf_mudv2.display.Examinable.BasicExaminable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.RichOutput.Builder;
 import com.geendutchman.lhf_mudv2.display.RichOutputElement;
-import com.geendutchman.lhf_mudv2.entities.Entity;
+import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.item.ItemEffect;
 import com.geendutchman.lhf_mudv2.events.Event.EventRouting;
 import com.geendutchman.lhf_mudv2.events.Event.EventRouting.EventRoutingBuilder;

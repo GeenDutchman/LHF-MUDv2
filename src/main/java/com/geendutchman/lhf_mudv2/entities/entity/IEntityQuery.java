@@ -1,4 +1,4 @@
-package com.geendutchman.lhf_mudv2.entities;
+package com.geendutchman.lhf_mudv2.entities.entity;
 
 import java.io.Serializable;
 import java.util.LinkedHashMap;
@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import com.geendutchman.lhf_mudv2.entities.IEntityID.EntityID;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityID.EntityID;
 import com.google.auto.value.AutoValue;
 
 public interface IEntityQuery<E extends Entity> extends Predicate<E>, Serializable {

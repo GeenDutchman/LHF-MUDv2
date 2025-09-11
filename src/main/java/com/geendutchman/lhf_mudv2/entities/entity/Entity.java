@@ -1,4 +1,4 @@
-package com.geendutchman.lhf_mudv2.entities;
+package com.geendutchman.lhf_mudv2.entities.entity;
 
 import java.io.Serializable;
 import java.net.URI;

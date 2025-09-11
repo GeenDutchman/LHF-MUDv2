@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.geendutchman.lhf_mudv2.entities.entity.Entity;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
 import com.google.common.truth.Truth;
