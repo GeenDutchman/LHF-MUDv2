@@ -12,6 +12,7 @@ import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
+import com.geendutchman.lhf_mudv2.entities.repository.EntityResolver;
 import com.google.common.truth.Truth;
 
 @SpringBootTest

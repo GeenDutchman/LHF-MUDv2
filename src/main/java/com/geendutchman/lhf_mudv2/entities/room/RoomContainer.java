@@ -13,6 +13,7 @@ import com.google.common.collect.ImmutableSortedMap;
 
 public interface RoomContainer extends Examinable {
     // TODO: change this to graphs
+    // (e.g. graph of RoomID nodes paired with a hashmap // of RoomID -> Room)
     public abstract Stream<Room> rooms();
 
     public abstract ImmutableMap<RoomID, Room> roomMap();
