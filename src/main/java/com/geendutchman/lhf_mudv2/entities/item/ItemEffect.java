@@ -19,11 +19,13 @@ public abstract class ItemEffect implements Examinable, Serializable {
     public abstract Optional<RichOutput> applicationDescription();
 
     public final String content() {
-        return this.name();
+        return this.name().toString();
     }
 
+    final static Taggable.Tag ITEM_EFFECT_TAG = new Taggable.Tag("ITEM_EFFECT");
+
     public final Taggable.Tag tag() {
-        return new Taggable.Tag("ITEM_EFFECT");
+        return ITEM_EFFECT_TAG;
     }
 
     public static Builder builder() {
@@ -35,7 +37,12 @@ public abstract class ItemEffect implements Examinable, Serializable {
         protected Builder() {
         }
 
-        public abstract Builder setName(String name);
+        public abstract Builder setName(Examinable.Name name);
+
+        public Builder setName(String name) {
+            Examinable.Name eName = new Examinable.Name(name);
+            return this.setName(eName);
+        }
 
         public abstract Builder setApplicationDescription(Optional<RichOutput> d);
 

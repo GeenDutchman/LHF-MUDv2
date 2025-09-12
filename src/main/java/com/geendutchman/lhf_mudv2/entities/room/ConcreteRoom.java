@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 
 import org.springframework.lang.Nullable;
 
+import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
@@ -20,17 +21,16 @@ import com.google.common.collect.ImmutableSortedMap;
 
 class ConcreteRoom implements Room {
     final private RoomID roomID;
-    final private String name;
+    final private Examinable.Name name;
     final private Optional<RichOutput> roomDescription;
     final private Optional<URI> locale;
     final private ItemInventory inventory;
     @Nullable
     final private transient EventProcessor.EventFunction<Room> eventFunction;
 
-    protected static ConcreteRoom buildRoom(String name, Optional<RichOutput> roomDescription, Optional<URI> locale,
-            ItemInventory inventory, @Nullable EventProcessor.EventFunction<Room> eventFunction) {
-        Preconditions.checkArgument(ROOMNAME_RULES.asMatchPredicate().test(name), "name '%s' must match expression: %s",
-                name, ROOMNAME_RULES);
+    protected static ConcreteRoom buildRoom(Examinable.Name name, Optional<RichOutput> roomDescription,
+            Optional<URI> locale, ItemInventory inventory, @Nullable EventProcessor.EventFunction<Room> eventFunction) {
+        Preconditions.checkNotNull(name, "name should not be null");
         Preconditions.checkNotNull(locale, "the locale should not be null");
         Preconditions.checkNotNull(roomDescription, "room description may be empty but must not be null");
         Preconditions.checkNotNull(inventory, "inventory should not be null");
@@ -38,14 +38,14 @@ class ConcreteRoom implements Room {
         return new ConcreteRoom(name, roomDescription, locale, inventory, eventFunction);
     }
 
-    private ConcreteRoom(String name, Optional<RichOutput> roomDescription, Optional<URI> locale,
+    private ConcreteRoom(Examinable.Name name, Optional<RichOutput> roomDescription, Optional<URI> locale,
             ItemInventory inventory, @Nullable EventProcessor.EventFunction<Room> eventFunction) {
         this.name = name;
         this.roomDescription = roomDescription;
         this.locale = locale;
         this.inventory = inventory;
         this.eventFunction = eventFunction;
-        this.roomID = RoomID.make(name);
+        this.roomID = RoomID.make(name.toString());
     }
 
     @Override
@@ -88,7 +88,7 @@ class ConcreteRoom implements Room {
     }
 
     @Override
-    public String name() {
+    public Examinable.Name name() {
         return this.name;
     }
 

@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 
 import org.springframework.stereotype.Repository;
 
+import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.google.common.collect.ImmutableSortedMap;
 
@@ -68,9 +69,11 @@ public final class ItemRepository implements ItemContainer {
         return Optional.ofNullable(this.cargo.get(id));
     }
 
+    final static Examinable.Name ITEM_REPO_NAME = new Examinable.Name("ItemRepository");
+
     @Override
-    public String name() {
-        return "ItemRepository";
+    public Examinable.Name name() {
+        return ITEM_REPO_NAME;
     }
 
     @Override

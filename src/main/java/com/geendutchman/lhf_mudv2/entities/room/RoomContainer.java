@@ -30,14 +30,16 @@ public interface RoomContainer extends Examinable {
         return Optional.of(builder.build());
     }
 
+    final static Taggable.Tag ROOM_CONTAINER_TAG = new Taggable.Tag("Rooms");
+
     @Override
     public default Taggable.Tag tag() {
-        return new Taggable.Tag("Rooms");
+        return ROOM_CONTAINER_TAG;
     }
 
     @Override
     public default String content() {
-        return this.name();
+        return this.name().toString();
     }
 
     @Override
@@ -56,11 +58,12 @@ public interface RoomContainer extends Examinable {
         this.rooms().sequential().filter(room -> query != null ? query.test(room) : room != null)
                 .forEachOrdered(room -> builder.put(room.roomID(), room));
         ImmutableSortedMap<RoomID, Room> built = builder.build();
+        final Examinable.Name queryName = new Examinable.Name("RoomQueryResult");
         return new RoomContainer() {
 
             @Override
-            public String name() {
-                return "RoomQueryResult";
+            public Examinable.Name name() {
+                return queryName;
             }
 
             @Override

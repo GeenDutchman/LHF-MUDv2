@@ -12,9 +12,11 @@ import com.google.common.collect.ImmutableTable;
 public sealed interface DiceMods<E extends Enum<E>> extends UnaryOperator<DiceSet<E>>, Taggable
         permits DiceMods.FlavoredBonus, DiceMods.DoubleDice, DiceMods.MoreDice {
 
+    final static Taggable.Tag DICE_MOD_TAG = new Taggable.Tag("DICE_MODIFIER");
+
     @Override
     public default Taggable.Tag tag() {
-        return new Taggable.Tag("DICE_MODIFIER");
+        return DICE_MOD_TAG;
     }
 
     public record FlavoredBonus<E extends Enum<E>>(E flavor, int bonus) implements DiceMods<E> {

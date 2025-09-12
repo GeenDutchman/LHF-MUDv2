@@ -2,6 +2,7 @@ package com.geendutchman.lhf_mudv2.entities.entity;
 
 import java.net.URI;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -46,8 +47,8 @@ public interface IEntityID extends Comparable<IEntityID> {
                     "entity class must not be empty or blank");
             Preconditions.checkNotNull(name, "name must not be null");
             Preconditions.checkArgument(!name.isEmpty() && !name.isBlank(), "name must not be empty or blank");
-            Preconditions.checkArgument(Examinable.EXAMINABLE_NAME.matcher(name).matches(), "name must match '%s'",
-                    Examinable.EXAMINABLE_NAME.toString());
+            Preconditions.checkArgument(Pattern.matches(Examinable.Name.NAME_PATTERN, name), "name must match '%s'",
+                    Examinable.Name.NAME_PATTERN);
             Preconditions.checkNotNull(uuid, "uuid must not be null");
         }
 

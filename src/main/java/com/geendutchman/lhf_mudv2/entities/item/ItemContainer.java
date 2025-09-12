@@ -26,14 +26,16 @@ public interface ItemContainer extends Examinable {
         return Optional.of(builder.build());
     }
 
+    final static Taggable.Tag ITEM_CONTAINER_TAG = new Taggable.Tag("Items");
+
     @Override
     public default Taggable.Tag tag() {
-        return new Taggable.Tag("Items");
+        return ITEM_CONTAINER_TAG;
     }
 
     @Override
     public default String content() {
-        return this.name();
+        return this.name().toString();
     }
 
     public default Optional<Item> queryOneItem(ItemQuery query) {
@@ -52,11 +54,12 @@ public interface ItemContainer extends Examinable {
         this.items().sequential().filter(item -> query != null ? query.test(item) : item != null)
                 .forEach(item -> builder.put(item.itemID(), item));
         ImmutableSortedMap<ItemID, Item> built = builder.build();
+        final Examinable.Name resultName = new Examinable.Name("ItemQueryResult");
         return new ItemContainer() {
 
             @Override
-            public String name() {
-                return "QueryResult";
+            public Examinable.Name name() {
+                return resultName;
             }
 
             @Override

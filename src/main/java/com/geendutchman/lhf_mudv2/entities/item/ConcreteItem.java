@@ -8,6 +8,7 @@ import org.springframework.lang.Nullable;
 
 import com.geendutchman.lhf_mudv2.dice.Difficulty;
 import com.geendutchman.lhf_mudv2.dice.Plain;
+import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.events.Event;
@@ -18,34 +19,31 @@ import com.google.common.collect.ImmutableSortedMap;
 
 final class ConcreteItem implements Item {
     final private ItemID itemID;
-    final private String name;
+    final private Examinable.Name name;
     final private ItemTag itemTag;
     @Nullable
     final private transient EventProcessor.EventFunction<Item> eventFunction;
     private Difficulty<Plain> visibility;
-    private Optional<String> nickname;
+    private Optional<Examinable.Name> nickname;
     private Optional<URI> locale;
 
-    protected static ConcreteItem buildItem(String name, Difficulty<Plain> visibility, Optional<String> nickname,
-            ItemTag itemTag, Optional<URI> locale, @Nullable EventProcessor.EventFunction<Item> eventFunction) {
-        Preconditions.checkArgument(EXAMINABLE_NAME.asMatchPredicate().test(name),
-                "name '%s' must match expression: %s", name, EXAMINABLE_NAME);
+    protected static ConcreteItem buildItem(Examinable.Name name, Difficulty<Plain> visibility,
+            Optional<Examinable.Name> nickname, ItemTag itemTag, Optional<URI> locale,
+            @Nullable EventProcessor.EventFunction<Item> eventFunction) {
+        Preconditions.checkNotNull(name, "name should not be null");
+        Preconditions.checkNotNull(nickname, "nickname can be empty but should not be null");
         Preconditions.checkNotNull(visibility, "visibility difficulty can be zero but must not be null");
-        if (nickname.isPresent()) {
-            Preconditions.checkArgument(NICKNAME_RULES.asMatchPredicate().test(nickname.get()),
-                    "nickname '%s' must match expression: %s", nickname.get(), NICKNAME_RULES);
-        }
         Preconditions.checkNotNull(locale, "locale is null, did you mean empty?");
         ConcreteItem item = new ConcreteItem(name, visibility, nickname, itemTag, eventFunction);
         return item;
     }
 
-    private ConcreteItem(String name, Difficulty<Plain> visibility, Optional<String> nickname, ItemTag itemTag,
-            @Nullable EventProcessor.EventFunction<Item> eventFunction) {
+    private ConcreteItem(Examinable.Name name, Difficulty<Plain> visibility, Optional<Examinable.Name> nickname,
+            ItemTag itemTag, @Nullable EventProcessor.EventFunction<Item> eventFunction) {
         this.name = name;
         this.itemTag = itemTag;
         this.eventFunction = eventFunction != null ? eventFunction : (e, b, i) -> new ProcessingResult.Unhandled();
-        this.itemID = ItemID.make(name);
+        this.itemID = ItemID.make(name.toString());
         this.visibility = visibility;
         this.nickname = nickname;
     }
@@ -100,7 +98,7 @@ final class ConcreteItem implements Item {
     }
 
     @Override
-    public Optional<String> nickname() {
+    public Optional<Examinable.Name> nickname() {
         return this.nickname;
     }
 
@@ -110,7 +108,7 @@ final class ConcreteItem implements Item {
     }
 
     @Override
-    public String name() {
+    public Examinable.Name name() {
         return this.name;
     }
 
@@ -139,7 +137,7 @@ final class ConcreteItem implements Item {
         builder.append("ConcreteItem [itemID=").append(itemID).append(", name=").append(name).append(", itemTag=")
                 .append(itemTag);
         if (nickname != null && nickname.isPresent()) {
-            builder.append(", nickname=").append(nickname.orElse(""));
+            builder.append(", nickname=").append(nickname.map(nn -> nn.toString()).orElse(""));
         }
         if (locale != null && locale.isPresent()) {
             builder.append(", locale=").append(locale.get());

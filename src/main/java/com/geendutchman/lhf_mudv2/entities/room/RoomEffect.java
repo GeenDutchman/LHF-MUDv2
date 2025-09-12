@@ -18,11 +18,13 @@ public abstract class RoomEffect implements Examinable {
     public abstract Optional<RichOutput> applicationDescription();
 
     public final String content() {
-        return this.name();
+        return this.name().toString();
     }
 
+    final static Taggable.Tag ROOM_EFFECT_TAG = new Taggable.Tag("ROOM_EFFECT");
+
     public final Taggable.Tag tag() {
-        return new Taggable.Tag("ROOM_EFFECT");
+        return ROOM_EFFECT_TAG;
     }
 
     public static Builder builder() {
@@ -34,7 +36,12 @@ public abstract class RoomEffect implements Examinable {
         protected Builder() {
         }
 
-        public abstract Builder setName(String name);
+        public abstract Builder setName(Examinable.Name name);
+
+        public Builder setName(String name) {
+            Examinable.Name eName = new Examinable.Name(name);
+            return this.setName(eName);
+        }
 
         public abstract Builder setApplicationDescription(Optional<RichOutput> d);
 

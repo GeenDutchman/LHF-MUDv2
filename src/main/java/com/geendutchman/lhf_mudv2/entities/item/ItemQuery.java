@@ -154,13 +154,13 @@ public abstract class ItemQuery implements IEntityQuery<Item> {
         }
 
         if (this.nickname().isPresent()) {
-            if (t.nickname().isEmpty() || !this.nickname().get().equals(t.nickname().get())) {
+            if (t.nickname().isEmpty() || !this.nickname().get().equals(t.nickname().get().toString())) {
                 return false;
             }
         }
 
         if (this.displayName().isPresent()) {
-            if (!this.displayName().get().equals(t.displayName())) {
+            if (!this.displayName().get().equals(t.displayName().toString())) {
                 return false;
             }
         }

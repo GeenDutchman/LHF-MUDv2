@@ -134,7 +134,7 @@ public final class Events {
 
         @Override
         public final Optional<RichOutput> description() {
-            RichOutput.Builder output = RichOutput.builder().setSequenceName(this.speaker().name())
+            RichOutput.Builder output = RichOutput.builder().setSequenceName(this.speaker().name().toString())
                     .addTaggable(this.speaker()).addString("says");
             if (this.listener().isPresent()) {
                 output.addString("to").addTaggable(this.listener().get());

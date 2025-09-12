@@ -24,7 +24,7 @@ public class RoomContainerSubject extends MapSubject {
     }
 
     public StringSubject name() {
-        return check("name()").that(actual.name());
+        return check("name()").that(actual.name().toString());
     }
 
     public StreamSubject rooms() {

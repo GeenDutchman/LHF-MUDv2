@@ -5,7 +5,6 @@ import java.net.URI;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
@@ -72,14 +71,9 @@ public interface Item extends Entity {
     public abstract ItemID itemID();
 
     /**
-     * The nickname must adhere to this regex
-     */
-    public static final Pattern NICKNAME_RULES = Examinable.EXAMINABLE_NAME;
-
-    /**
      * An optional nickname for the item
      */
-    public abstract Optional<String> nickname();
+    public abstract Optional<Examinable.Name> nickname();
 
     /**
      * Is the item visible or not?
@@ -89,13 +83,13 @@ public interface Item extends Entity {
     /**
      * Returns either the nickname if present, or the actual name
      */
-    public default String displayName() {
+    public default Examinable.Name displayName() {
         return this.nickname().orElse(this.name());
     }
 
     @Override
     public default String content() {
-        return this.displayName();
+        return this.displayName().toString();
     }
 
     public default boolean isStateful() {
@@ -105,8 +99,10 @@ public interface Item extends Entity {
     public static enum ItemTag {
         ITEM;
 
+        public final Taggable.Tag tag = new Taggable.Tag(this.name());
+
         public Taggable.Tag asTag() {
-            return new Tag(this.name());
+            return this.tag;
         }
     }
 
@@ -116,7 +112,7 @@ public interface Item extends Entity {
     public default Tag tag() {
         final ItemTag itemTag = this.itemTag();
         if (itemTag == null) {
-            return new Tag("ITEM");
+            return ItemTag.ITEM.tag;
         }
         return itemTag.asTag();
     }
@@ -131,7 +127,7 @@ public interface Item extends Entity {
 
         public abstract Optional<DifficultyMods<Plain>> visibility();
 
-        public abstract Optional<String> nickname();
+        public abstract Optional<Examinable.Name> nickname();
 
         public abstract Optional<URI> locale();
 
@@ -143,8 +139,13 @@ public interface Item extends Entity {
             return AutoOneOf_Item_Delta.visibility(Optional.of(visible));
         }
 
-        public static Delta ofNickname(Optional<String> nickname) {
+        public static Delta ofNickname(Optional<Examinable.Name> nickname) {
             return AutoOneOf_Item_Delta.nickname(nickname);
+        }
+
+        public static Delta ofNickname(String name) {
+            Examinable.Name eName = new Examinable.Name(name);
+            return Delta.ofNickname(Optional.of(eName));
         }
 
         public static Delta ofLocale(Optional<URI> locale) {
@@ -184,19 +185,29 @@ public interface Item extends Entity {
         @Autowired
         public BuilderStart setEventBus(EventBus eventBus);
 
-        public Item.BuildItem setName(@NonNull String name);
+        public Item.BuildItem setName(@NonNull Examinable.Name name);
+
+        public default Item.BuildItem setName(String name) {
+            Examinable.Name eName = new Examinable.Name(name);
+            return this.setName(eName);
+        }
     }
 
     public static sealed interface BuildItem extends BuilderStart permits Item.Builder {
-        public String getName();
+        public Examinable.Name getName();
 
         public BuildItem setVisibility(Difficulty<Plain> visible);
 
-        public BuildItem setNickname(String nickname);
+        public BuildItem setNickname(Examinable.Name nickname);
 
-        public BuildItem setNickname(Optional<String> nickname);
+        public BuildItem setNickname(Optional<Examinable.Name> nickname);
 
-        public Optional<String> getNickname();
+        public default BuildItem setNickname(String nickname) {
+            Examinable.Name eName = new Examinable.Name(nickname);
+            return this.setNickname(eName);
+        }
+
+        public Optional<Examinable.Name> getNickname();
 
         public BuildItem setItemTag(Item.ItemTag tag);
 
@@ -219,16 +230,19 @@ public interface Item extends Entity {
             permits Item.Builder {
         public Item build();
 
-        public String getName();
+        public Examinable.Name getName();
 
-        public Optional<String> getNickname();
+        public Optional<Examinable.Name> getNickname();
 
         public UUID builderUuid();
 
         @Override
         public default int compareTo(LockedItemBuilder o) {
-            return String.format("%s:%s:%s", this.getName(), this.getNickname().orElse(""), this.builderUuid())
-                    .compareTo(String.format("%s:%s:%s", o.getName(), o.getNickname().orElse(""), o.builderUuid()));
+            return String
+                    .format("%s:%s:%s", this.getName(), this.getNickname().map(aname -> aname.toString()).orElse(""),
+                            this.builderUuid())
+                    .compareTo(String.format("%s:%s:%s", o.getName(),
+                            o.getNickname().map(oname -> oname.toString()).orElse(""), o.builderUuid()));
         }
 
     }
@@ -253,13 +267,7 @@ public interface Item extends Entity {
 
         @Override
         public final Item build() {
-            Preconditions.checkState(Item.EXAMINABLE_NAME.matcher(this.getName()).matches(),
-                    "Item name '%s' must match '%s'", this.getName(), Item.EXAMINABLE_NAME.toString());
-            if (this.getNickname().isPresent()) {
-                Preconditions.checkState(Item.NICKNAME_RULES.matcher(this.getNickname().orElse("")).matches(),
-                        "Item nickname '%s' must match '%s'", this.getNickname().orElse(""),
-                        Item.NICKNAME_RULES.toString());
-            }
+            Preconditions.checkNotNull(this.getName(), "name should not be null");
             return this.autoBuild();
         }
 
@@ -277,8 +285,8 @@ public interface Item extends Entity {
                 .setItemTag(this.itemTag()).setNickname(this.nickname());
     }
 
-    public static Item buildItem(EventBus eventBus, ItemRepository itemRepository, String name,
-            Difficulty<Plain> visibility, Optional<String> nickname, ItemTag itemTag, Optional<URI> locale,
+    public static Item buildItem(EventBus eventBus, ItemRepository itemRepository, Examinable.Name name,
+            Difficulty<Plain> visibility, Optional<Examinable.Name> nickname, ItemTag itemTag, Optional<URI> locale,
             @Nullable EventProcessor.EventFunction<Item> eventFunction) {
         Preconditions.checkNotNull(eventBus, "event bus must not be null");
         Preconditions.checkNotNull(itemRepository, "item repository must be available to store item into");

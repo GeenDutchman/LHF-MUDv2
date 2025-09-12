@@ -33,9 +33,11 @@ record RollSet<E extends Enum<E>>(DiceSet<E> diceSet, ImmutableSortedMap<E, Inte
         return this.rolls.values().stream().filter(one -> one != null).mapToInt(roll -> roll).sum();
     }
 
+    final static Taggable.Tag ROLL_SET_TAG = new Taggable.Tag("ROLL_RESULT_SET");
+
     @Override
     public Taggable.Tag tag() {
-        return new Taggable.Tag("ROLL_RESULT_SET");
+        return ROLL_SET_TAG;
     }
 
     public String rowContent(final E row) {

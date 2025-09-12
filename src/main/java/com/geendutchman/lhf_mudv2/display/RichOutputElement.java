@@ -168,7 +168,7 @@ public abstract class RichOutputElement implements Serializable {
         final void printIt(final StringBuilder builder) {
             final BasicExaminable examined = this.examinable();
             builder.append(examined.name()).append(":\n");
-            if (!examined.content().equals(examined.name())) {
+            if (!examined.content().equals(examined.name().toString())) {
                 builder.append("\t").append(examined.content()).append("\n");
             }
             if (examined.description().isPresent()) {
@@ -196,9 +196,9 @@ public abstract class RichOutputElement implements Serializable {
                         examined.tag()), e);
             }
 
-            if (!examined.name().equals(examined.content())) {
-                final RichOutputElement nameTaggable = RichOutputElement.ofTaggable(BasicTaggable
-                        .customTaggable(new Tag("name"), examined.name(), Taggable.produceBasicTagAttributes()));
+            if (!examined.name().toString().equals(examined.content())) {
+                final RichOutputElement nameTaggable = RichOutputElement.ofTaggable(BasicTaggable.customTaggable(
+                        new Tag("name"), examined.name().toString(), Taggable.produceBasicTagAttributes()));
                 try {
                     nameTaggable.xmlNode(nodeFactory, myElement);
                     myElement.appendChild(nodeFactory.createTextNode(examined.content()));

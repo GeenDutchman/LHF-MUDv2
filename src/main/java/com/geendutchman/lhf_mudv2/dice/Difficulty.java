@@ -21,9 +21,11 @@ public record Difficulty<E extends Enum<E>>(ImmutableSortedMap<E, Integer> dcs, 
         return ImmutableSortedMap.copyOf(Difficulty.BASIC_ATTRIBUTES);
     }
 
+    final static Taggable.Tag DIFFICULTY_CLASS_TAG = new Taggable.Tag("DIFFICULTY_CLASS");
+
     @Override
     public Taggable.Tag tag() {
-        return new Taggable.Tag("DIFFICULTY_CLASS");
+        return DIFFICULTY_CLASS_TAG;
     }
 
     public Difficulty {

@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 
 import org.springframework.stereotype.Repository;
 
+import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
@@ -68,9 +69,11 @@ public final class RoomRepository implements RoomContainer {
         return Optional.ofNullable(this.chambers.get(id));
     }
 
+    final static Examinable.Name ROOM_REPO_NAME = new Examinable.Name("RoomRepository");
+
     @Override
-    public String name() {
-        return "RoomRepository";
+    public Examinable.Name name() {
+        return ROOM_REPO_NAME;
     }
 
     @Override

@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.Comparator;
 import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Preconditions;
@@ -18,12 +17,51 @@ import com.google.common.collect.ImmutableSortedMap;
  */
 public interface Examinable extends Taggable {
 
+    // A name for an Examinable
+    public record Name(String value) implements Serializable, Comparable<Name>, CharSequence {
+        /**
+         * Examinable names should adhere to this regex: ^\\w{3,}( \\w+)*$
+         */
+        public final static String NAME_PATTERN = "^\\w{3,}( \\w+)*$";
+
+        public Name {
+            Preconditions.checkNotNull(value, "name value must not be null");
+            Preconditions.checkArgument(value.matches(NAME_PATTERN), "name '%s' must match '%s'", value, NAME_PATTERN);
+        }
+
+        @Override
+        public int compareTo(Name o) {
+            return this.value.compareTo(o.value);
+        }
+
+        @Override
+        public final String toString() {
+            return this.value;
+        }
+
+        @Override
+        public int length() {
+            return this.value.length();
+        }
+
+        @Override
+        public char charAt(int index) {
+            return this.value.charAt(index);
+        }
+
+        @Override
+        public CharSequence subSequence(int start, int end) {
+            return this.value.subSequence(end, end);
+        }
+
+    }
+
     /**
-     * An examinable must have a name, and it must match: ^\\w{3}
+     * An examinable must have a name, and it must match: ^\\w{3,}( \\w+)*$
      * 
      * @return
      */
-    public String name();
+    public Name name();
 
     /**
      * There's simple contents, and then there's a more formatted extra description
@@ -31,11 +69,6 @@ public interface Examinable extends Taggable {
      * @return
      */
     public Optional<RichOutput> description();
-
-    /**
-     * Examinable names should adhere to this regex
-     */
-    public final static Pattern EXAMINABLE_NAME = Pattern.compile("^\\w{3,}( \\w+)*$");
 
     /**
      * Transform this into an immutable unit
@@ -52,13 +85,11 @@ public interface Examinable extends Taggable {
      */
     @AutoValue
     public static abstract class BasicExaminable implements Examinable, Serializable {
-        public static BasicExaminable customExaminable(String name, Optional<RichOutput> description,
+        public static BasicExaminable customExaminable(Name name, Optional<RichOutput> description,
                 NavigableMap<String, String> attributes, String content, Tag tag) {
-            final String trimmedName = name.trim();
             Taggable.taggablepreconditions(tag, content, attributes);
-            Preconditions.checkArgument(EXAMINABLE_NAME.asMatchPredicate().test(trimmedName), "name must match '%s'",
-                    EXAMINABLE_NAME);
-            return new AutoValue_Examinable_BasicExaminable(content, tag, trimmedName, description,
+            Preconditions.checkNotNull(name, "examinable name must not be null");
+            return new AutoValue_Examinable_BasicExaminable(content, tag, name, description,
                     ImmutableSortedMap.copyOf(attributes));
         }
 

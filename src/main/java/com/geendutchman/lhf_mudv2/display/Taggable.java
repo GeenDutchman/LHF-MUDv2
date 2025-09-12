@@ -16,7 +16,13 @@ import com.google.common.collect.ImmutableSortedMap;
  */
 public interface Taggable {
 
-    public record Tag(String value) implements Serializable, Comparable<Tag> {
+    /**
+     * The tag name, like in xml, but with no alligators. This is not limited to
+     * html tags, it can be anything legal in xml.
+     * 
+     * @return tag
+     */
+    public record Tag(String value) implements Serializable, Comparable<Tag>, CharSequence {
         /**
          * All tags need to adhere to: ^\\w{3}(?:[_-]?\\w)*$
          */
@@ -35,6 +41,21 @@ public interface Taggable {
         @Override
         public final String toString() {
             return this.value;
+        }
+
+        @Override
+        public int length() {
+            return this.value.length();
+        }
+
+        @Override
+        public char charAt(int index) {
+            return this.value.charAt(index);
+        }
+
+        @Override
+        public CharSequence subSequence(int start, int end) {
+            return this.value.subSequence(end, end);
         }
 
     }

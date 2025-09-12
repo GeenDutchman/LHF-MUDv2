@@ -27,15 +27,15 @@ public final class ItemSubject extends Subject {
     }
 
     public OptionalSubject nickname() {
-        return check("nickname()").that(this.item.nickname());
+        return check("nickname()").that(this.item.nickname().map(nn -> nn.toString()));
     }
 
     public StringSubject displayName() {
-        return check("displayName()").that(this.item.displayName());
+        return check("displayName()").that(this.item.displayName().toString());
     }
 
     public StringSubject name() {
-        return check("name()").that(this.item.name());
+        return check("name()").that(this.item.name().toString());
     }
 
     public StringSubject itemID() {

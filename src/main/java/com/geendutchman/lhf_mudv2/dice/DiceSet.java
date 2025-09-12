@@ -34,9 +34,11 @@ public abstract class DiceSet<E extends Enum<E>> implements Taggable {
         return this.allDice().rowKeySet();
     }
 
+    final static Taggable.Tag DICE_SET_TAG = new Taggable.Tag("DICE_SET");
+
     @Override
     public Taggable.Tag tag() {
-        return new Taggable.Tag("DICE_SET");
+        return DICE_SET_TAG;
     }
 
     public int size() {

@@ -29,14 +29,16 @@ public interface EntityContainer extends Examinable {
         return Optional.of(builder.build());
     }
 
+    final static Taggable.Tag ENTITY_CONTAINER_TAG = new Taggable.Tag("Entities");
+
     @Override
     public default Taggable.Tag tag() {
-        return new Taggable.Tag("Entities");
+        return ENTITY_CONTAINER_TAG;
     }
 
     @Override
     public default String content() {
-        return this.name();
+        return this.name().toString();
     }
 
     public default Optional<Entity> queryOneEntity(IEntityQuery<? super Entity> query) {

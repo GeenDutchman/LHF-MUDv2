@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 
 import org.springframework.lang.NonNull;
 
+import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.entities.item.Item.BuildItem;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.geendutchman.lhf_mudv2.entities.item.Item.LockedItemBuilder;
@@ -30,9 +31,14 @@ public final class ItemInventory implements ItemContainer {
             return ItemInventory.builder();
         }
 
-        public abstract String name();
+        public abstract Examinable.Name name();
 
-        public abstract Builder setName(String name);
+        public abstract Builder setName(Examinable.Name name);
+
+        public Builder setName(String name) {
+            Examinable.Name eName = new Examinable.Name(name);
+            return this.setName(eName);
+        }
 
         public abstract NavigableSet<Item.LockedItemBuilder> contents();
 
@@ -43,8 +49,9 @@ public final class ItemInventory implements ItemContainer {
             try {
                 mycontents = this.contents();
             } catch (IllegalStateException e) {
-                mycontents = new TreeSet<>(Comparator.<Item.LockedItemBuilder, String>comparing(locked -> String
-                        .format("%s:%s:%s", locked.getName(), locked.getNickname().orElse(""), locked.builderUuid())));
+                mycontents = new TreeSet<>(Comparator.<Item.LockedItemBuilder, String>comparing(
+                        locked -> String.format("%s:%s:%s", locked.getName(),
+                                locked.getNickname().map(nn -> nn.toString()).orElse(""), locked.builderUuid())));
             }
             for (final Item.LockedItemBuilder item : items) {
                 if (item != null) {
@@ -64,14 +71,13 @@ public final class ItemInventory implements ItemContainer {
 
     public static Builder builder() {
         return new AutoBuilder_ItemInventory_Builder().setName("Inventory")
-                .setContents(new TreeSet<Item.LockedItemBuilder>(
-                        Comparator.<Item.LockedItemBuilder, String>comparing(locked -> String.format("%s:%s:%s",
-                                locked.getName(), locked.getNickname().orElse(""), locked.builderUuid()))));
+                .setContents(new TreeSet<Item.LockedItemBuilder>(Comparator.<Item.LockedItemBuilder, String>comparing(
+                        locked -> String.format("%s:%s:%s", locked.getName(),
+                                locked.getNickname().map(nn -> nn.toString()).orElse(""), locked.builderUuid()))));
     }
 
-    public static ItemInventory buildInventory(String name, NavigableSet<Item.LockedItemBuilder> contents) {
-        Preconditions.checkState(EXAMINABLE_NAME.matcher(name).matches(), "Inventory name '%s' does not match '%s'",
-                name, EXAMINABLE_NAME.toString());
+    public static ItemInventory buildInventory(Examinable.Name name, NavigableSet<Item.LockedItemBuilder> contents) {
+        Preconditions.checkArgument(name != null, "name should not be null");
         final ItemInventory inv = new ItemInventory(name);
         if (contents != null) {
             for (final LockedItemBuilder locked : contents) {
@@ -84,11 +90,11 @@ public final class ItemInventory implements ItemContainer {
         return inv;
     }
 
-    private ItemInventory(String name) {
+    private ItemInventory(Examinable.Name name) {
         this.name = name;
     }
 
-    private final String name;
+    private final Examinable.Name name;
     private final LinkedHashMap<ItemID, Item> cargo = new LinkedHashMap<>();
 
     @Override
@@ -97,7 +103,7 @@ public final class ItemInventory implements ItemContainer {
     }
 
     @Override
-    public String name() {
+    public Examinable.Name name() {
         return this.name;
     }
 

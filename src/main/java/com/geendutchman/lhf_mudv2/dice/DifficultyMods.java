@@ -12,9 +12,11 @@ import com.google.common.collect.ImmutableSortedMap;
 public sealed interface DifficultyMods<E extends Enum<E>> extends UnaryOperator<Difficulty<E>>, Taggable
         permits DifficultyMods.FlavoredBonus, DifficultyMods.TotalOrFlavored {
 
+    final static Taggable.Tag DIFFICULTY_MODIFIER_TAG = new Taggable.Tag("DIFFICULTY_MODIFIER");
+
     @Override
     public default Taggable.Tag tag() {
-        return new Taggable.Tag("DIFFICULTY_MODIFIER");
+        return DIFFICULTY_MODIFIER_TAG;
     }
 
     public record FlavoredBonus<E extends Enum<E>>(E flavor, int bonus) implements DifficultyMods<E> {

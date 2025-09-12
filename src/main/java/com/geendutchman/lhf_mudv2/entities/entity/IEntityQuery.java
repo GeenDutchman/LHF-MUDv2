@@ -127,12 +127,12 @@ public interface IEntityQuery<E extends Entity> extends Predicate<E>, Serializab
                 }
             }
             if (this.name().isPresent()) {
-                if (!this.name().get().equals(t.name())) {
+                if (!this.name().get().equals(t.name().toString())) {
                     return false;
                 }
             }
             if (this.namePattern().isPresent()) {
-                if (!this.namePattern().get().asPredicate().test(t.name())) {
+                if (!this.namePattern().get().asPredicate().test(t.name().toString())) {
                     return false;
                 }
             }

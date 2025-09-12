@@ -12,7 +12,7 @@ public class ItemContainerTest {
     void testQueryAll(@Autowired ItemBuilderFactory factory) {
         Item itemA = factory.builder().setName("itemA").build();
         Item itemB = factory.builder().setName("itemB").build();
-        Item maskedItem = factory.builder().setName("hidden").setNickname(Optional.of("itemX")).build();
+        Item maskedItem = factory.builder().setName("hidden").setNickname("itemX").build();
         ItemContainer container = ItemInventory.builder().setName("container").build().add(maskedItem).add(itemA)
                 .add(itemB);
         ItemQuery query = ItemQuery.builder().setDisplayNamePattern("^item").build();

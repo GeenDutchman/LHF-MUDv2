@@ -26,7 +26,7 @@ public class ItemContainerSubject extends IterableSubject {
     }
 
     public StringSubject name() {
-        return check("getName()").that(actual.name());
+        return check("getName()").that(actual.name().toString());
     }
 
     public IterableSubject items() {

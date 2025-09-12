@@ -13,9 +13,11 @@ import com.google.common.collect.Streams;
 public sealed interface RollMods<E extends Enum<E>> extends UnaryOperator<RollSet<E>>, Taggable
         permits RollMods.Zeroed, RollMods.Doubled, RollMods.Halved, RollMods.Added {
 
+    final static Taggable.Tag ROLL_MODIFIER_TAG = new Taggable.Tag("ROLL_MODIFIER");
+
     @Override
     public default Taggable.Tag tag() {
-        return new Taggable.Tag("ROLL_MODIFIER");
+        return ROLL_MODIFIER_TAG;
     }
 
     private static <E extends Enum<E>> ImmutableMap<E, String> appendNote(ImmutableMap<E, String> notes, E flavor,

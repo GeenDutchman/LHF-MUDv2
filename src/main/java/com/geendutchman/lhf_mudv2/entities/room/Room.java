@@ -5,7 +5,6 @@ import java.net.URI;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
@@ -72,14 +71,11 @@ public interface Room extends Entity, ItemContainer {
 
     public abstract RoomID roomID();
 
-    /**
-     * The room name must adhere to this regex
-     */
-    public static final Pattern ROOMNAME_RULES = Examinable.EXAMINABLE_NAME;
+    final static Taggable.Tag ROOM_TAG = new Taggable.Tag("ROOM");
 
     @Override
     default Taggable.Tag tag() {
-        return new Taggable.Tag("ROOM");
+        return ROOM_TAG;
     }
 
     // Rooms can hold items in an inventory
@@ -89,7 +85,7 @@ public interface Room extends Entity, ItemContainer {
 
     @Override
     public default String content() {
-        return this.name();
+        return this.name().toString();
     }
 
     @AutoOneOf(Delta.Kind.class)
@@ -139,7 +135,12 @@ public interface Room extends Entity, ItemContainer {
     }
 
     public static sealed interface BuilderStart extends Serializable permits Room.BuildRoom {
-        public Room.BuildRoom setName(String name);
+        public Room.BuildRoom setName(Examinable.Name name);
+
+        public default Room.BuildRoom setName(String name) {
+            Examinable.Name eName = new Examinable.Name(name);
+            return this.setName(eName);
+        }
 
         @Autowired
         public BuilderStart setRoomRepository(RoomRepository roomRepository);
@@ -149,7 +150,7 @@ public interface Room extends Entity, ItemContainer {
     }
 
     public static sealed interface BuildRoom extends BuilderStart permits Room.Builder {
-        public String getName();
+        public Examinable.Name getName();
 
         public BuildRoom setLocale(Optional<URI> locale);
 
@@ -194,8 +195,6 @@ public interface Room extends Entity, ItemContainer {
 
         @Override
         public final Room build() {
-            Preconditions.checkState(Room.EXAMINABLE_NAME.matcher(this.getName()).matches(),
-                    "Room name '%s' must match '%s'", this.getName(), Room.EXAMINABLE_NAME.toString());
             return this.autoBuild();
         }
     }
@@ -205,7 +204,7 @@ public interface Room extends Entity, ItemContainer {
         return builder;
     }
 
-    public static Room buildRoom(EventBus eventBus, RoomRepository roomRepository, String name,
+    public static Room buildRoom(EventBus eventBus, RoomRepository roomRepository, Examinable.Name name,
             Optional<RichOutput> roomDescription, Optional<URI> locale, ItemInventory inventory,
             @Nullable EventProcessor.EventFunction<Room> eventFunction) {
         Preconditions.checkNotNull(eventBus, "event bus must not be null");

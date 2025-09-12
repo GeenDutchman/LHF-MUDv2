@@ -32,7 +32,7 @@ public final class RoomSubject extends Subject {
     }
 
     public StringSubject name() {
-        return check("name()").that(this.room.name());
+        return check("name()").that(this.room.name().toString());
     }
 
     public StringSubject roomID() {
