@@ -1,7 +1,6 @@
 package com.geendutchman.lhf_mudv2.events;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
