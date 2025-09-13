@@ -1,6 +1,7 @@
 package com.geendutchman.lhf_mudv2.events;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
@@ -15,6 +16,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
+import com.geendutchman.lhf_mudv2.entities.item.ItemQuery;
+import com.geendutchman.lhf_mudv2.entities.repository.QueryCodec;
 import com.geendutchman.lhf_mudv2.events.EventProcessor.ProcessingResult;
 import com.google.common.truth.Truth;
 
@@ -28,6 +31,8 @@ public class EventBusTest {
     private EventBus bus;
     @Autowired
     private ItemBuilderFactory itemFactory;
+    @Autowired
+    private QueryCodec.Factory queryFactory;
 
     private Duration testTransform() {
         return this.timing.plusSeconds(3);
@@ -92,6 +97,8 @@ public class EventBusTest {
     public void testBroadcast() {
         CountDownLatch talkerLatch = new CountDownLatch(1);
         CountDownLatch hearerLatch = new CountDownLatch(1);
+        CountDownLatch observerLatch = new CountDownLatch(1);
+
         final Item talker = itemFactory.builder().setName("talker").setEventFunction((event, bus, processor) -> {
             Truth.assertWithMessage("event should not be null").that(event).isNotNull();
             Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
@@ -114,6 +121,17 @@ public class EventBusTest {
             return new ProcessingResult.Unhandled();
         }).build();
 
+        itemFactory.builder().setName("observer").setEventFunction((event, bus, processor) -> {
+            Truth.assertWithMessage("event should not be null").that(event).isNotNull();
+            Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
+            Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
+            if (event.description().isPresent() && event.description().get().printIt().contains("hearer")) {
+                observerLatch.countDown();
+                return new ProcessingResult.Handled();
+            }
+            return new ProcessingResult.Unhandled();
+        }).build();
+
         final Event event = Events.sayEvent().setSpeaker(talker).setListener(hearer)
                 .setRouting(routing -> routing.setDestination(UriComponentsBuilder.fromPath("/items").build().toUri()))
                 .setMessage(RichOutput.builder().addPolymorphic("I say unto thee, listen!").build()).build();
@@ -127,8 +145,75 @@ public class EventBusTest {
 
         assertDoesNotThrow(() -> talkerLatch.await(transformed.toNanos(), TimeUnit.NANOSECONDS));
         assertDoesNotThrow(() -> hearerLatch.await(transformed.toNanos(), TimeUnit.NANOSECONDS));
+        assertDoesNotThrow(() -> observerLatch.await(transformed.toNanos(), TimeUnit.NANOSECONDS));
+
         Truth.assertWithMessage("talker must hear").that(talkerLatch.getCount()).isEqualTo(0);
         Truth.assertWithMessage("hearer must listen").that(hearerLatch.getCount()).isEqualTo(0);
+        Truth.assertWithMessage("observer must observer").that(observerLatch.getCount()).isEqualTo(0);
+
+    }
+
+    @Test
+    public void testQueriedBroadcast() {
+        CountDownLatch talkerLatch = new CountDownLatch(1);
+        CountDownLatch hearerLatch = new CountDownLatch(1);
+        CountDownLatch dumbdumb = new CountDownLatch(1);
+
+        final Item talker = itemFactory.builder().setName("talker").setEventFunction((event, bus, processor) -> {
+            Truth.assertWithMessage("event should not be null").that(event).isNotNull();
+            Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
+            Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
+            if (event.description().isPresent() && event.description().get().printIt().contains("talker")) {
+                talkerLatch.countDown();
+                return new ProcessingResult.Handled();
+            }
+            return new ProcessingResult.Unhandled();
+        }).build();
+
+        final Item hearer = itemFactory.builder().setName("hearer").setEventFunction((event, bus, processor) -> {
+            Truth.assertWithMessage("event should not be null").that(event).isNotNull();
+            Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
+            Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
+            if (event.description().isPresent() && event.description().get().printIt().contains("hearer")) {
+                hearerLatch.countDown();
+                return new ProcessingResult.Handled();
+            }
+            return new ProcessingResult.Unhandled();
+        }).build();
+
+        itemFactory.builder().setName("dumbdumb").setEventFunction((event, bus, processor) -> {
+            Truth.assertWithMessage("event should not be null").that(event).isNotNull();
+            Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
+            Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
+            if (event.description().isPresent() && event.description().get().printIt().contains("hearer")) {
+                dumbdumb.countDown();
+                return new ProcessingResult.Handled();
+            }
+            return new ProcessingResult.Unhandled();
+        }).build();
+
+        ItemQuery query = ItemQuery.builder().setDisplayNamePattern(".*er.*").build();
+
+        final Event event = Events.sayEvent().setSpeaker(talker).setListener(hearer)
+                .setRouting(routing -> routing.setDestination(queryFactory.defaultEntityQueryCodec()
+                        .toURI(query, UriComponentsBuilder.fromPath("/items")).build().toUri()))
+                .setMessage(RichOutput.builder().addPolymorphic("I say unto thee, listen!").build()).build();
+        System.out.println(event.description().get().printIt());
+        Truth.assertThat(event.description().get().printIt()).contains(talker.name());
+        Truth.assertThat(event.description().get().printIt()).contains(hearer.name());
+
+        bus.publish(event);
+
+        final Duration transformed = this.testTransform();
+
+        assertDoesNotThrow(() -> talkerLatch.await(transformed.toNanos(), TimeUnit.NANOSECONDS));
+        assertDoesNotThrow(() -> hearerLatch.await(transformed.toNanos(), TimeUnit.NANOSECONDS));
+        Truth.assertThat(assertDoesNotThrow(() -> dumbdumb.await(transformed.toNanos(), TimeUnit.NANOSECONDS)))
+                .isFalse();
+
+        Truth.assertWithMessage("talker must hear").that(talkerLatch.getCount()).isEqualTo(0);
+        Truth.assertWithMessage("hearer must listen").that(hearerLatch.getCount()).isEqualTo(0);
+        Truth.assertWithMessage("dumdumb must not hear").that(dumbdumb.getCount()).isEqualTo(1);
 
     }
 }

@@ -159,11 +159,25 @@ public abstract class ItemQuery implements IEntityQuery<Item> {
             }
         }
 
+        if (this.nicknamePattern().isPresent()) {
+            if (t.nickname().isEmpty()
+                    || !this.nicknamePattern().get().asPredicate().test(t.nickname().get().toString())) {
+                return false;
+            }
+        }
+
         if (this.displayName().isPresent()) {
             if (!this.displayName().get().equals(t.displayName().toString())) {
                 return false;
             }
         }
+
+        if (this.displayNamePattern().isPresent()) {
+            if (!this.displayNamePattern().get().asPredicate().test(t.displayName().toString())) {
+                return false;
+            }
+        }
+
         // TODO: check visibility
         return true;
     }
