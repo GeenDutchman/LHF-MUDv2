@@ -18,23 +18,21 @@ import org.springframework.web.util.pattern.PathPatternParser;
 
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID.EntityID;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery.EntityQuery;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
+import com.geendutchman.lhf_mudv2.entities.item.ItemQuery;
 import com.geendutchman.lhf_mudv2.entities.item.ItemRepository;
 import com.geendutchman.lhf_mudv2.entities.room.Room;
-import com.geendutchman.lhf_mudv2.entities.room.RoomContainer;
 import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
+import com.geendutchman.lhf_mudv2.entities.room.RoomContainer;
+import com.geendutchman.lhf_mudv2.entities.room.RoomQuery;
 import com.geendutchman.lhf_mudv2.entities.room.RoomRepository;
 import com.google.common.collect.ImmutableSortedSet;
 
 public interface EntityResolver {
     SortedSet<Entity> resolve(URI uri);
-
-    // public static Pattern entitiesRoot =
-    // Pattern.compile("^/entities(?:/|(/.*)?)$");
-    // public final static String specificEntity =
-    // "^/(?<class>[^/]+)(?:/$|(?<specific>/(?<name>[^/]+)/(?<uuid>[0-9a-fA-F-]+)/?))?";
 
     @Service
     public final static class DefaultEntityResolver implements EntityResolver {
@@ -45,29 +43,38 @@ public interface EntityResolver {
         @Autowired
         private final RoomRepository rooms;
 
+        @Autowired
+        private final QueryCodec.Factory queryCodecFactory;
+
         private final transient SortedMap<PathPattern, BiFunction<PathPattern.PathRemainingMatchInfo, URI, SortedSet<Entity>>> routes;
 
         @Autowired
-        public DefaultEntityResolver(ItemRepository items, RoomRepository rooms) {
+        public DefaultEntityResolver(QueryCodec.Factory queryCodecFactory, ItemRepository items, RoomRepository rooms) {
+            this.queryCodecFactory = queryCodecFactory;
             this.items = items;
             this.rooms = rooms;
             this.routes = this.createRoutes();
         }
 
-        private SortedSet<Entity> resolveItem(PathRemainingMatchInfo info, URI uri, ItemContainer itemContainer) {
+        private Optional<Item> getItem(PathRemainingMatchInfo info, URI uri, ItemContainer itemContainer) {
             if (itemContainer == null || uri == null || info == null) {
-                return ImmutableSortedSet.of();
+                return Optional.empty();
             }
             UUID itemUUID;
             try {
                 itemUUID = UUID.fromString(info.getUriVariables().getOrDefault("item-id", null));
             } catch (IllegalArgumentException | NullPointerException e) {
-                return ImmutableSortedSet.of();
+                return Optional.empty();
             }
             ItemID itemID = new ItemID(
                     new EntityID("items", info.getUriVariables().getOrDefault("item-name", ""), itemUUID));
             Optional<Item> retrieved = itemContainer.byItemID(itemID);
-            if (retrieved.isPresent()) {
+            return retrieved;
+        }
+
+        private SortedSet<Entity> resolveItem(PathRemainingMatchInfo info, URI uri, ItemContainer itemContainer) {
+            Optional<Item> retrieved = this.getItem(info, uri, itemContainer);
+            if (retrieved != null && retrieved.isPresent()) {
                 return ImmutableSortedSet.orderedBy(Entity.getEntityComparator()).add(retrieved.get()).build();
             }
             return ImmutableSortedSet.of();
@@ -76,79 +83,59 @@ public interface EntityResolver {
         private SortedSet<Entity> resolveAllEntities(PathRemainingMatchInfo info, URI uri, ItemContainer itemContainer,
                 RoomContainer rooms) {
             ImmutableSortedSet.Builder<Entity> builder = ImmutableSortedSet.orderedBy(Entity.getEntityComparator());
-            this.items.items().forEach(item -> builder.add(item));
-            this.rooms.rooms().forEach(room -> builder.add(room));
+            EntityQuery query = queryCodecFactory.defaultEntityQueryCodec().fromURI(uri);
+            this.items.items().filter(query).forEach(item -> builder.add(item));
+            this.rooms.rooms().filter(query).forEach(room -> builder.add(room));
             return builder.build();
         }
 
         private SortedSet<Entity> resolveItems(PathRemainingMatchInfo info, URI uri, ItemContainer itemContainer) {
             ImmutableSortedSet.Builder<Entity> builder = ImmutableSortedSet.orderedBy(Entity.getEntityComparator());
-            this.items.items().forEach(item -> builder.add(item));
+            ItemQuery query = queryCodecFactory.defaultItemQueryCodec().fromURI(uri);
+            this.items.items().filter(query).forEach(item -> builder.add(item));
             return builder.build();
         }
 
         private SortedSet<Entity> resolveRooms(PathRemainingMatchInfo info, URI uri, RoomContainer roomContainer) {
             ImmutableSortedSet.Builder<Entity> builder = ImmutableSortedSet.orderedBy(Entity.getEntityComparator());
-            this.rooms.rooms().forEach(room -> builder.add(room));
+            RoomQuery query = queryCodecFactory.defaultRoomQueryCodec().fromURI(uri);
+            this.rooms.rooms().filter(query).forEach(room -> builder.add(room));
             return builder.build();
         }
 
-        private SortedSet<Entity> resolveRoom(PathRemainingMatchInfo info, URI uri, RoomContainer roomContainer) {
+        private Optional<Room> getRoom(PathRemainingMatchInfo info, URI uri, RoomContainer roomContainer) {
             UUID id;
             try {
                 id = UUID.fromString(info.getUriVariables().getOrDefault("room-id", null));
             } catch (IllegalArgumentException | NullPointerException e) {
-                return ImmutableSortedSet.of();
+                return Optional.empty();
             }
             EntityID entityID = new EntityID("rooms", info.getUriVariables().getOrDefault("room-name", ""), id);
             RoomID roomID = new RoomID(entityID);
             Optional<Room> found = this.rooms.byRoomID(roomID);
-            if (found.isPresent()) {
+            return found;
+        }
+
+        private SortedSet<Entity> resolveRoom(PathRemainingMatchInfo info, URI uri, RoomContainer roomContainer) {
+            Optional<Room> found = this.getRoom(info, uri, roomContainer);
+            if (found != null && found.isPresent()) {
                 return ImmutableSortedSet.orderedBy(Entity.getEntityComparator()).add(found.get()).build();
             }
             return ImmutableSortedSet.of();
         }
 
         private SortedSet<Entity> resolveRoomItems(PathRemainingMatchInfo info, URI uri, RoomContainer roomContainer) {
-            UUID id;
-            try {
-                id = UUID.fromString(info.getUriVariables().getOrDefault("room-id", null));
-            } catch (IllegalArgumentException | NullPointerException e) {
-                return ImmutableSortedSet.of();
-            }
-            EntityID entityID = new EntityID("rooms", info.getUriVariables().getOrDefault("room-name", ""), id);
-            RoomID roomID = new RoomID(entityID);
-            Optional<Room> found = this.rooms.byRoomID(roomID);
-            if (found.isPresent()) {
-                return ImmutableSortedSet.orderedBy(Entity.getEntityComparator())
-                        .addAll(found.get().inventory().items().toList()).build();
+            Optional<Room> found = this.getRoom(info, uri, roomContainer);
+            if (found != null && found.isPresent()) {
+                return this.resolveItems(info, uri, found.get());
             }
             return ImmutableSortedSet.of();
         }
 
         private SortedSet<Entity> resolveItemInRoom(PathRemainingMatchInfo info, URI uri, RoomContainer roomContainer) {
-            UUID roomUUID;
-            try {
-                roomUUID = UUID.fromString(info.getUriVariables().getOrDefault("room-id", null));
-            } catch (IllegalArgumentException | NullPointerException e) {
-                return ImmutableSortedSet.of();
-            }
-            RoomID roomID = new RoomID(
-                    new EntityID("rooms", info.getUriVariables().getOrDefault("room-name", ""), roomUUID));
-            Optional<Room> found = this.rooms.byRoomID(roomID);
-            if (found.isPresent()) {
-                UUID itemUUID;
-                try {
-                    itemUUID = UUID.fromString(info.getUriVariables().getOrDefault("item-id", null));
-                } catch (IllegalArgumentException | NullPointerException e) {
-                    return ImmutableSortedSet.of();
-                }
-                ItemID itemID = new ItemID(
-                        new EntityID("items", info.getUriVariables().getOrDefault("item-name", ""), itemUUID));
-                Optional<Item> retrieved = found.get().inventory().byItemID(itemID);
-                if (retrieved.isPresent()) {
-                    return ImmutableSortedSet.orderedBy(Entity.getEntityComparator()).add(retrieved.get()).build();
-                }
+            Optional<Room> found = this.getRoom(info, uri, roomContainer);
+            if (found != null && found.isPresent()) {
+                return this.resolveItem(info, uri, found.get());
             }
             return ImmutableSortedSet.of();
         }
