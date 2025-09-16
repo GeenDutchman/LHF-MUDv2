@@ -7,7 +7,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.springframework.web.util.UriComponents;
@@ -15,8 +17,35 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID.EntityID;
 import com.google.auto.value.AutoValue;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.BoundType;
+import com.google.common.collect.Range;
 
 public interface IEntityQuery<E extends Entity> extends Predicate<E>, Serializable {
+
+    /**
+     * Transforms a string to a Range
+     * 
+     * @param <T>             is comparable
+     * @param s               string to transform
+     * @param typedFromString method to change a string to a T
+     * @throws IllegalArgumentException
+     * @return computed range
+     */
+    public static <T extends Comparable<T>> Range<T> rangeFromString(final String s,
+            Function<String, T> typedFromString) {
+        Preconditions.checkArgument(typedFromString != null, "must provide a way to transform string to type");
+        Pattern spliter = Pattern
+                .compile("^(?<lowbound>[\\(\\[])(?<lower>.*(?=\\.\\.))\\.\\.(?<upper>[^)\\]]+)(?<upbound>[)\\]])$");
+        Matcher matcher = spliter.matcher(s);
+        Preconditions.checkArgument(matcher.matches(), "the string '%s' should match '%s'", s, spliter);
+        String upper = matcher.group("upper");
+        String lower = matcher.group("lower");
+        T upType = typedFromString.apply(upper);
+        T lowType = typedFromString.apply(lower);
+        return Range.<T>range(lowType, matcher.group("lowbound") == "[" ? BoundType.CLOSED : BoundType.OPEN, upType,
+                matcher.group("upbound") == "]" ? BoundType.CLOSED : BoundType.OPEN);
+    }
 
     @AutoValue
     public abstract class EntityQuery implements IEntityQuery<Entity> {

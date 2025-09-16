@@ -134,6 +134,9 @@ public interface Taggable {
             return new AutoValue_Taggable_BasicTaggable(tag, content, ImmutableSortedMap.copyOf(attributes));
         }
 
+        protected BasicTaggable() {
+        }
+
         @Override
         public abstract ImmutableSortedMap<String, String> attributes();
 

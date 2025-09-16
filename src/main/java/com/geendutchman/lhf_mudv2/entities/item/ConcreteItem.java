@@ -25,7 +25,7 @@ final class ConcreteItem implements Item {
     final private transient EventProcessor.EventFunction<Item> eventFunction;
     private Difficulty<Plain> visibility;
     private Optional<Examinable.Name> nickname;
-    private Optional<URI> locale;
+    private Optional<URI> locale = Optional.empty();
 
     protected static ConcreteItem buildItem(Examinable.Name name, Difficulty<Plain> visibility,
             Optional<Examinable.Name> nickname, ItemTag itemTag, Optional<URI> locale,
