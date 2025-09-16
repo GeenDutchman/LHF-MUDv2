@@ -10,10 +10,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 
-record RollSet<E extends Enum<E>>(DiceSet<E> diceSet, ImmutableSortedMap<E, Integer> rolls,
+public record RollSet<E extends Enum<E>>(DiceSet<E> diceSet, ImmutableSortedMap<E, Integer> rolls,
         ImmutableMap<E, String> notes, Optional<RollSet<E>> origin) implements Taggable {
 
-    RollSet {
+    public RollSet {
         Preconditions.checkNotNull(diceSet, "Diceset should not be null");
         Preconditions.checkArgument(!diceSet.isEmpty(), "DiceSet should not be empty");
         Preconditions.checkNotNull(rolls, "rolls may be empty but may not be null");

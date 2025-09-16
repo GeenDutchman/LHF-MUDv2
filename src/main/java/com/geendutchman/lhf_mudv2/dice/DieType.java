@@ -16,13 +16,17 @@ public enum DieType {
         return DieType.getDieType(value) != null;
     }
 
-    private int type;
+    private byte type;
 
-    DieType(int type) {
+    private DieType(int type) {
+        this.type = (byte) type;
+    }
+
+    DieType(byte type) {
         this.type = type;
     }
 
-    public int getType() {
+    public byte getType() {
         return this.type;
     }
 

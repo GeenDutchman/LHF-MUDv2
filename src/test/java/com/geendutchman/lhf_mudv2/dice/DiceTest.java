@@ -11,7 +11,7 @@ public class DiceTest {
 
     @Test
     public void TestDiceDisplay() {
-        final DiceSet<Plain> dice = Plain.dTwenty(1);
+        final DiceSet<Plain> dice = Plain.dTwenty((byte) 1);
         Truth.assertThat(dice).isNotNull();
         Truth.assertThat(dice.content()).containsMatch("1d20");
         System.out.println(dice);
@@ -20,7 +20,7 @@ public class DiceTest {
         Truth.assertThat(result.content()).containsMatch("1d20");
         System.out.println(result);
 
-        final DiceSet<Stuff> lil = DiceSet.<Stuff>builder().addDie(DieType.EIGHT, 1, Stuff.TEST).build();
+        final DiceSet<Stuff> lil = DiceSet.<Stuff>builder().addDie(DieType.EIGHT, (byte) 1, Stuff.TEST).build();
         Truth.assertThat(lil).isNotNull();
         final RollSet<Stuff> lilResult = lil.roll();
         Truth.assertThat(lilResult.content()).containsMatch("1d8");

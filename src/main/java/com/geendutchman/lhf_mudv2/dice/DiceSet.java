@@ -26,7 +26,7 @@ public abstract class DiceSet<E extends Enum<E>> implements Taggable {
         return ImmutableSortedMap.copyOf(BASIC_ATTRIBUTES);
     }
 
-    public abstract ImmutableTable<E, DieType, Integer> allDice();
+    public abstract ImmutableTable<E, DieType, Byte> allDice();
 
     public abstract Optional<String> note();
 
@@ -52,8 +52,8 @@ public abstract class DiceSet<E extends Enum<E>> implements Taggable {
     public String rowContent(final E row) {
         StringJoiner sj = new StringJoiner("+", Plain.UNFLAVORED.equals(row) ? "(" : String.format("(%s:", row), ")")
                 .setEmptyValue("0");
-        final ImmutableMap<DieType, Integer> rowValue = this.allDice().row(row);
-        for (final Entry<DieType, Integer> entry : rowValue.entrySet()) {
+        final ImmutableMap<DieType, Byte> rowValue = this.allDice().row(row);
+        for (final Entry<DieType, Byte> entry : rowValue.entrySet()) {
             if (DieType.ONE.equals(entry.getKey())) {
                 sj.add(entry.getValue().toString());
             } else {
@@ -66,7 +66,7 @@ public abstract class DiceSet<E extends Enum<E>> implements Taggable {
     @Override
     public String content() {
         StringJoiner outer = new StringJoiner("+");
-        final ImmutableTable<E, DieType, Integer> cached = this.allDice();
+        final ImmutableTable<E, DieType, Byte> cached = this.allDice();
         for (final E row : cached.rowKeySet()) {
             outer.add(this.rowContent(row));
         }
@@ -76,7 +76,7 @@ public abstract class DiceSet<E extends Enum<E>> implements Taggable {
 
     public RollSet<E> roll() {
         ImmutableSortedMap.Builder<E, Integer> rolls = ImmutableSortedMap.<E, Integer>naturalOrder();
-        for (final Entry<E, Map<DieType, Integer>> row : this.allDice().rowMap().entrySet()) {
+        for (final Entry<E, Map<DieType, Byte>> row : this.allDice().rowMap().entrySet()) {
             int amount = row.getValue().entrySet().stream().mapToInt(entry -> {
                 if (DieType.ONE.equals(entry.getKey())) {
                     return entry.getValue();
@@ -97,11 +97,11 @@ public abstract class DiceSet<E extends Enum<E>> implements Taggable {
     @AutoValue.Builder
     public static abstract class DiceSetBuilder<E extends Enum<E>> {
 
-        private final TreeBasedTable<E, DieType, Integer> allDiceBuilder = TreeBasedTable.<E, DieType, Integer>create();
+        private final TreeBasedTable<E, DieType, Byte> allDiceBuilder = TreeBasedTable.<E, DieType, Byte>create();
 
-        abstract DiceSetBuilder<E> setAllDice(Table<E, DieType, Integer> retable);
+        abstract DiceSetBuilder<E> setAllDice(Table<E, DieType, Byte> retable);
 
-        abstract ImmutableTable<E, DieType, Integer> allDice();
+        abstract ImmutableTable<E, DieType, Byte> allDice();
 
         public abstract Optional<String> note();
 
@@ -117,29 +117,37 @@ public abstract class DiceSet<E extends Enum<E>> implements Taggable {
             return this;
         }
 
-        public final DiceSetBuilder<E> addDie(DieType type, int count, E flavor) {
+        public final DiceSetBuilder<E> addDie(DieType type, byte count, E flavor) {
             if (count < 0) {
                 throw new IllegalArgumentException("cannot subtract dice");
             }
             // this.allDiceBuilder.putAll(this.allDice());
-            Integer there = allDiceBuilder.get(flavor, type);
-            if (there != null) {
-                there = there + count;
-            } else {
+            Byte there = allDiceBuilder.get(flavor, type);
+            if (there == null) {
                 there = count;
+            } else if (there > Byte.MAX_VALUE - count) {
+                there = Byte.MAX_VALUE;
+            } else if (there < Byte.MIN_VALUE + count) {
+                there = Byte.MIN_VALUE;
+            } else {
+                there = (byte) (there + count);
             }
             allDiceBuilder.put(flavor, type, there);
             this.setAllDice(allDiceBuilder);
             return this;
         }
 
-        public final DiceSetBuilder<E> addBonus(E flavor, int bonus) {
+        public final DiceSetBuilder<E> addBonus(E flavor, byte bonus) {
             this.allDiceBuilder.putAll(this.allDice());
-            Integer there = allDiceBuilder.get(flavor, DieType.ONE);
-            if (there != null) {
-                there = there + bonus;
-            } else {
+            Byte there = allDiceBuilder.get(flavor, DieType.ONE);
+            if (there == null) {
                 there = bonus;
+            } else if (there > Byte.MAX_VALUE - bonus) {
+                there = Byte.MAX_VALUE;
+            } else if (there < Byte.MIN_VALUE + bonus) {
+                there = Byte.MIN_VALUE;
+            } else {
+                there = (byte) (there + bonus);
             }
             allDiceBuilder.put(flavor, DieType.ONE, there);
             this.setAllDice(allDiceBuilder);

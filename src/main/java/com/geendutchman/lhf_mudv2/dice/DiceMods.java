@@ -19,7 +19,7 @@ public sealed interface DiceMods<E extends Enum<E>> extends UnaryOperator<DiceSe
         return DICE_MOD_TAG;
     }
 
-    public record FlavoredBonus<E extends Enum<E>>(E flavor, int bonus) implements DiceMods<E> {
+    public record FlavoredBonus<E extends Enum<E>>(E flavor, byte bonus) implements DiceMods<E> {
 
         public FlavoredBonus {
             Preconditions.checkNotNull(flavor, "bonus flavor cannot be null");
@@ -45,10 +45,10 @@ public sealed interface DiceMods<E extends Enum<E>> extends UnaryOperator<DiceSe
 
         @Override
         public DiceSet<E> apply(DiceSet<E> t) {
-            final ImmutableTable<E, DieType, Integer> allDice = t.allDice();
+            final ImmutableTable<E, DieType, Byte> allDice = t.allDice();
             DiceSetBuilder<E> builder = t.toBuilder();
-            ImmutableMap<DieType, Integer> row = allDice.row(flavor);
-            for (Entry<DieType, Integer> entry : row.entrySet()) {
+            ImmutableMap<DieType, Byte> row = allDice.row(flavor);
+            for (Entry<DieType, Byte> entry : row.entrySet()) {
                 builder.addDie(entry.getKey(), entry.getValue(), flavor);
             }
             builder.addNote(String.format("(doubled dice of %s)", flavor));
@@ -61,7 +61,7 @@ public sealed interface DiceMods<E extends Enum<E>> extends UnaryOperator<DiceSe
         }
     }
 
-    public record MoreDice<E extends Enum<E>>(E flavor, DieType type, int count) implements DiceMods<E> {
+    public record MoreDice<E extends Enum<E>>(E flavor, DieType type, byte count) implements DiceMods<E> {
         public MoreDice {
             Preconditions.checkNotNull(flavor, "flavor cannot be null for adding dice");
             Preconditions.checkNotNull(type, "DieType must not be null");

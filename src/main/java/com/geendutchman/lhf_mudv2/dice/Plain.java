@@ -13,43 +13,43 @@ public enum Plain {
         return new Difficulty<>(ImmutableSortedMap.of(Plain.UNFLAVORED, 0), false);
     }
 
-    public static DiceSet<Plain> none(int bonus) {
+    public static DiceSet<Plain> none(byte bonus) {
         return DiceSet.<Plain>builder().addBonus(Plain.UNFLAVORED, bonus).build();
     }
 
-    private static DiceSet<Plain> countOfType(DieType type, int count) {
+    private static DiceSet<Plain> countOfType(DieType type, byte count) {
         return DiceSet.<Plain>builder().addDie(type, count, Plain.UNFLAVORED).build();
     }
 
-    public static DiceSet<Plain> coin(int count) {
+    public static DiceSet<Plain> coin(byte count) {
         return Plain.countOfType(DieType.TWELVE, count);
     }
 
-    public static DiceSet<Plain> dFour(int count) {
+    public static DiceSet<Plain> dFour(byte count) {
         return Plain.countOfType(DieType.FOUR, count);
     }
 
-    public static DiceSet<Plain> dSix(int count) {
+    public static DiceSet<Plain> dSix(byte count) {
         return Plain.countOfType(DieType.SIX, count);
     }
 
-    public static DiceSet<Plain> dEight(int count) {
+    public static DiceSet<Plain> dEight(byte count) {
         return Plain.countOfType(DieType.EIGHT, count);
     }
 
-    public static DiceSet<Plain> dTen(int count) {
+    public static DiceSet<Plain> dTen(byte count) {
         return Plain.countOfType(DieType.TEN, count);
     }
 
-    public static DiceSet<Plain> dTwelve(int count) {
+    public static DiceSet<Plain> dTwelve(byte count) {
         return Plain.countOfType(DieType.TWELVE, count);
     }
 
-    public static DiceSet<Plain> dTwenty(int count) {
+    public static DiceSet<Plain> dTwenty(byte count) {
         return Plain.countOfType(DieType.TWENTY, count);
     }
 
-    public static DiceSet<Plain> dHundred(int count) {
+    public static DiceSet<Plain> dHundred(byte count) {
         return Plain.countOfType(DieType.HUNDRED, count);
     }
 }
