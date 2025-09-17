@@ -11,10 +11,14 @@ import com.geendutchman.lhf_mudv2.dice.DiceSet;
 import com.geendutchman.lhf_mudv2.dice.DieType;
 import com.geendutchman.lhf_mudv2.dice.Plain;
 import com.geendutchman.lhf_mudv2.dice.RollSet;
+import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.Taggable;
+import com.geendutchman.lhf_mudv2.entities.creatures.CreatureBuilderFactory.Builder;
+import com.geendutchman.lhf_mudv2.entities.creatures.CreatureBuilderFactory.NameGenerationStrategy;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
+import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
 import com.google.auto.value.AutoOneOf;
@@ -126,7 +130,7 @@ public interface Creature extends Entity, ItemContainer {
 
         public abstract Optional<Item> inventoryItem();
 
-        public abstract Optional<Item.LockedItemBuilder> inventoryItemBuilder();
+        public abstract Optional<ItemBuilderFactory.LockedItemBuilder> inventoryItemBuilder();
 
         public abstract Optional<AbstractMap.SimpleImmutableEntry<AttributeScores, Byte>> scoreDelta();
 
@@ -140,11 +144,11 @@ public interface Creature extends Entity, ItemContainer {
             return AutoOneOf_Creature_Delta.inventoryItem(Optional.of(item));
         }
 
-        public static Delta ofItemBuilder(Item.LockedItemBuilder itemBuilder) {
+        public static Delta ofItemBuilder(ItemBuilderFactory.LockedItemBuilder itemBuilder) {
             return AutoOneOf_Creature_Delta.inventoryItemBuilder(Optional.of(itemBuilder));
         }
 
-        public static Delta ofItemBuilder(Item.BuildItem itemBuilder) {
+        public static Delta ofItemBuilder(ItemBuilderFactory.BuildItem itemBuilder) {
             return AutoOneOf_Creature_Delta.inventoryItemBuilder(Optional.of(itemBuilder.lock()));
         }
 
@@ -181,6 +185,37 @@ public interface Creature extends Entity, ItemContainer {
 
     public static Comparator<Creature> getCreatureComparator() {
         return new CreatureComparator();
+    }
+
+    public default CreatureBuilderFactory.Builder toBuilder() {
+        Builder builder = new AutoBuilder_CreatureBuilderFactory_Builder().setHealth(this.maximumHealth())
+                .useRandomName();
+        final String[] splits = this.name().toString().split(" ");
+        if (splits.length > 1) {
+            for (int i = splits.length - 1; i >= 0; i--) {
+                if (i == 0) {
+                    builder.useRandomName();
+                    break;
+                }
+                String last = splits[i];
+                if (last.matches("Count\\d+")) {
+                    continue;
+                }
+                try {
+                    Examinable.Name made = new Examinable.Name(last);
+                    builder.setNameGenerationStrategy(
+                            new NameGenerationStrategy(NameGenerationStrategy.Kind.PIN_LASTNAME, Optional.of(made)));
+                    break;
+                } catch (IllegalArgumentException e) {
+                    continue;
+                }
+            }
+        }
+        for (AttributeScores score : AttributeScores.values()) {
+            byte retrieved = this.getScore(score);
+            builder.setScore(score, retrieved);
+        }
+        return builder;
     }
 
 }

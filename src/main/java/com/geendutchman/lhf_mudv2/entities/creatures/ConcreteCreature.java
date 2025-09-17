@@ -59,8 +59,8 @@ final class ConcreteCreature implements Creature {
         this.scores = new ConcurrentSkipListMap<>(scores);
         this.scoreModBonuses = new ConcurrentSkipListMap<>(scoreModifierBonuses);
         this.vitals = new ConcurrentSkipListMap<>(vitals);
-        this.vitals.computeIfAbsent(CreatureStats.HEALTH, k -> 10);
-        this.vitals.computeIfAbsent(CreatureStats.MAX_HEALTH, k -> 10);
+        this.vitals.computeIfAbsent(CreatureStats.MAX_HEALTH, k -> this.vitals.getOrDefault(CreatureStats.HEALTH, 10));
+        this.vitals.computeIfAbsent(CreatureStats.HEALTH, k -> this.vitals.getOrDefault(CreatureStats.MAX_HEALTH, 10));
         this.locale = Optional.empty();
     }
 
@@ -178,7 +178,10 @@ final class ConcreteCreature implements Creature {
             delta.faction().ifPresent(f -> this.faction = f);
             break;
         case INVENTORY_ITEM:
-            delta.inventoryItem().ifPresent(item -> this.inventory.add(item));
+            delta.inventoryItem().ifPresent(item -> {
+                this.inventory.add(item);
+                item.applyDelta(Item.Delta.ofLocale(Optional.of(this.identifier().uri())));
+            });
             break;
         case INVENTORY_ITEM_BUILDER:
             delta.inventoryItemBuilder().ifPresent(builder -> this.inventory.add(builder.build()));

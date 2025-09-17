@@ -6,21 +6,14 @@ import java.util.Comparator;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.Nullable;
-
-import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
-import com.geendutchman.lhf_mudv2.entities.item.Item.LockedItemBuilder;
+import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
-import com.geendutchman.lhf_mudv2.events.EventBus;
-import com.geendutchman.lhf_mudv2.events.EventProcessor;
-import com.google.auto.value.AutoBuilder;
 import com.google.auto.value.AutoOneOf;
 import com.google.common.base.Preconditions;
 
@@ -98,17 +91,17 @@ public interface Room extends Entity, ItemContainer {
 
         public abstract Optional<Item> item();
 
-        public abstract Optional<Item.LockedItemBuilder> itemBuilder();
+        public abstract Optional<ItemBuilderFactory.LockedItemBuilder> itemBuilder();
 
         public static Delta ofItem(Item item) {
             return AutoOneOf_Room_Delta.item(Optional.of(item));
         }
 
-        public static Delta ofItemBuilder(Item.BuildItem itemBuilder) {
+        public static Delta ofItemBuilder(ItemBuilderFactory.BuildItem itemBuilder) {
             return AutoOneOf_Room_Delta.itemBuilder(Optional.of(itemBuilder.lock()));
         }
 
-        public static Delta ofItemBuilder(Item.LockedItemBuilder itemBuilder) {
+        public static Delta ofItemBuilder(ItemBuilderFactory.LockedItemBuilder itemBuilder) {
             return AutoOneOf_Room_Delta.itemBuilder(Optional.of(itemBuilder));
         }
     }
@@ -134,84 +127,4 @@ public interface Room extends Entity, ItemContainer {
         return new RoomComparator();
     }
 
-    public static sealed interface BuilderStart extends Serializable permits Room.BuildRoom {
-        public Room.BuildRoom setName(Examinable.Name name);
-
-        public default Room.BuildRoom setName(String name) {
-            Examinable.Name eName = new Examinable.Name(name);
-            return this.setName(eName);
-        }
-
-        @Autowired
-        public BuilderStart setRoomRepository(RoomRepository roomRepository);
-
-        @Autowired
-        public BuilderStart setEventBus(EventBus eventBus);
-    }
-
-    public static sealed interface BuildRoom extends BuilderStart permits Room.Builder {
-        public Examinable.Name getName();
-
-        public BuildRoom setLocale(Optional<URI> locale);
-
-        public BuildRoom setRoomDescription(Optional<RichOutput> roomDescription);
-
-        public BuildRoom addItem(LockedItemBuilder... builder);
-
-        public BuildRoom setEventFunction(@Nullable EventProcessor.EventFunction<Room> eventFunction);
-
-        @Autowired
-        public BuildRoom setRoomRepository(RoomRepository roomRepository);
-
-        @Autowired
-        public BuildRoom setEventBus(EventBus eventBus);
-
-        public Room build();
-    }
-
-    @AutoBuilder(callMethod = "buildRoom", ofClass = Room.class)
-    public abstract non-sealed static class Builder implements BuildRoom {
-        final private UUID builderUuid = UUID.randomUUID();
-
-        protected Builder() {
-        }
-
-        public final UUID builderUuid() {
-            return this.builderUuid;
-        }
-
-        public abstract ItemInventory.Builder inventoryBuilder();
-
-        // public abstract BuildRoom setInventory(ItemInventory inv);
-
-        @Override
-        public final BuildRoom addItem(LockedItemBuilder... builder) {
-            final ItemInventory.Builder set = this.inventoryBuilder();
-            set.addContents(builder);
-            return this;
-        }
-
-        abstract Room autoBuild();
-
-        @Override
-        public final Room build() {
-            return this.autoBuild();
-        }
-    }
-
-    public static Room.BuilderStart builder() {
-        final Room.Builder builder = new AutoBuilder_Room_Builder();
-        return builder;
-    }
-
-    public static Room buildRoom(EventBus eventBus, RoomRepository roomRepository, Examinable.Name name,
-            Optional<RichOutput> roomDescription, Optional<URI> locale, ItemInventory inventory,
-            @Nullable EventProcessor.EventFunction<Room> eventFunction) {
-        Preconditions.checkNotNull(eventBus, "event bus must not be null");
-        Preconditions.checkNotNull(roomRepository, "room repository must be available to store room into");
-        final ConcreteRoom room = ConcreteRoom.buildRoom(name, roomDescription, locale, inventory, eventFunction);
-        eventBus.register(room);
-        roomRepository.add(room);
-        return room;
-    }
 }

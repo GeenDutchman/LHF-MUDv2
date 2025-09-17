@@ -12,9 +12,9 @@ import java.util.stream.Stream;
 import org.springframework.lang.NonNull;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
-import com.geendutchman.lhf_mudv2.entities.item.Item.BuildItem;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
-import com.geendutchman.lhf_mudv2.entities.item.Item.LockedItemBuilder;
+import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory.BuildItem;
+import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory.LockedItemBuilder;
 import com.google.auto.value.AutoBuilder;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSortedMap;
@@ -40,20 +40,20 @@ public final class ItemInventory implements ItemContainer {
             return this.setName(eName);
         }
 
-        public abstract NavigableSet<Item.LockedItemBuilder> contents();
+        public abstract NavigableSet<ItemBuilderFactory.LockedItemBuilder> contents();
 
-        public abstract Builder setContents(@NonNull NavigableSet<Item.LockedItemBuilder> contents);
+        public abstract Builder setContents(@NonNull NavigableSet<ItemBuilderFactory.LockedItemBuilder> contents);
 
-        public final Builder addContents(Item.LockedItemBuilder... items) {
-            NavigableSet<Item.LockedItemBuilder> mycontents;
+        public final Builder addContents(ItemBuilderFactory.LockedItemBuilder... items) {
+            NavigableSet<ItemBuilderFactory.LockedItemBuilder> mycontents;
             try {
                 mycontents = this.contents();
             } catch (IllegalStateException e) {
-                mycontents = new TreeSet<>(Comparator.<Item.LockedItemBuilder, String>comparing(
+                mycontents = new TreeSet<>(Comparator.<ItemBuilderFactory.LockedItemBuilder, String>comparing(
                         locked -> String.format("%s:%s:%s", locked.getName(),
                                 locked.getNickname().map(nn -> nn.toString()).orElse(""), locked.builderUuid())));
             }
-            for (final Item.LockedItemBuilder item : items) {
+            for (final ItemBuilderFactory.LockedItemBuilder item : items) {
                 if (item != null) {
                     mycontents.add(item);
                 }
@@ -71,16 +71,18 @@ public final class ItemInventory implements ItemContainer {
 
     public static Builder builder() {
         return new AutoBuilder_ItemInventory_Builder().setName("Inventory")
-                .setContents(new TreeSet<Item.LockedItemBuilder>(Comparator.<Item.LockedItemBuilder, String>comparing(
-                        locked -> String.format("%s:%s:%s", locked.getName(),
-                                locked.getNickname().map(nn -> nn.toString()).orElse(""), locked.builderUuid()))));
+                .setContents(new TreeSet<ItemBuilderFactory.LockedItemBuilder>(
+                        Comparator.<ItemBuilderFactory.LockedItemBuilder, String>comparing(locked -> String.format(
+                                "%s:%s:%s", locked.getName(), locked.getNickname().map(nn -> nn.toString()).orElse(""),
+                                locked.builderUuid()))));
     }
 
-    public static ItemInventory buildInventory(Examinable.Name name, NavigableSet<Item.LockedItemBuilder> contents) {
+    public static ItemInventory buildInventory(Examinable.Name name,
+            NavigableSet<ItemBuilderFactory.LockedItemBuilder> contents) {
         Preconditions.checkArgument(name != null, "name should not be null");
         final ItemInventory inv = new ItemInventory(name);
         if (contents != null) {
-            for (final LockedItemBuilder locked : contents) {
+            for (final ItemBuilderFactory.LockedItemBuilder locked : contents) {
                 if (locked == null) {
                     continue;
                 }
@@ -165,7 +167,7 @@ public final class ItemInventory implements ItemContainer {
             if (itemReference == null) {
                 continue;
             }
-            final BuildItem itemBuilder = Item.builder().setName(itemReference.name())
+            final ItemBuilderFactory.BuildItem itemBuilder = ItemBuilderFactory.builder().setName(itemReference.name())
                     .setItemTag(itemReference.itemTag()).setNickname(itemReference.nickname())
                     .setVisibility(itemReference.visibility());
             builder.addContents(itemBuilder.lock());

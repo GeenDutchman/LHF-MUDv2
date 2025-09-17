@@ -6,10 +6,6 @@ import java.util.Comparator;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
-
 import com.geendutchman.lhf_mudv2.dice.Difficulty;
 import com.geendutchman.lhf_mudv2.dice.DifficultyMods;
 import com.geendutchman.lhf_mudv2.dice.Plain;
@@ -17,9 +13,6 @@ import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
-import com.geendutchman.lhf_mudv2.events.EventBus;
-import com.geendutchman.lhf_mudv2.events.EventProcessor;
-import com.google.auto.value.AutoBuilder;
 import com.google.auto.value.AutoOneOf;
 import com.google.common.base.Preconditions;
 
@@ -178,122 +171,9 @@ public interface Item extends Entity {
         return new ItemComparator();
     }
 
-    public static sealed interface BuilderStart extends Serializable permits Item.BuildItem {
-        @Autowired
-        public BuilderStart setItemRepository(ItemRepository itemRepository);
-
-        @Autowired
-        public BuilderStart setEventBus(EventBus eventBus);
-
-        public Item.BuildItem setName(@NonNull Examinable.Name name);
-
-        public default Item.BuildItem setName(String name) {
-            Examinable.Name eName = new Examinable.Name(name);
-            return this.setName(eName);
-        }
-    }
-
-    public static sealed interface BuildItem extends BuilderStart permits Item.Builder {
-        public Examinable.Name getName();
-
-        public BuildItem setVisibility(Difficulty<Plain> visible);
-
-        public BuildItem setNickname(Examinable.Name nickname);
-
-        public BuildItem setNickname(Optional<Examinable.Name> nickname);
-
-        public default BuildItem setNickname(String nickname) {
-            Examinable.Name eName = new Examinable.Name(nickname);
-            return this.setNickname(eName);
-        }
-
-        public Optional<Examinable.Name> getNickname();
-
-        public BuildItem setItemTag(Item.ItemTag tag);
-
-        public BuildItem setLocale(Optional<URI> locale);
-
-        public BuildItem setEventFunction(@Nullable EventProcessor.EventFunction<Item> eventProcessor);
-
-        public LockedItemBuilder lock();
-
-        @Autowired
-        public BuildItem setItemRepository(ItemRepository itemRepository);
-
-        @Autowired
-        public BuildItem setEventBus(EventBus eventBus);
-
-        public Item build();
-    }
-
-    public static sealed interface LockedItemBuilder extends Serializable, Comparable<LockedItemBuilder>
-            permits Item.Builder {
-        public Item build();
-
-        public Examinable.Name getName();
-
-        public Optional<Examinable.Name> getNickname();
-
-        public UUID builderUuid();
-
-        @Override
-        public default int compareTo(LockedItemBuilder o) {
-            return String
-                    .format("%s:%s:%s", this.getName(), this.getNickname().map(aname -> aname.toString()).orElse(""),
-                            this.builderUuid())
-                    .compareTo(String.format("%s:%s:%s", o.getName(),
-                            o.getNickname().map(oname -> oname.toString()).orElse(""), o.builderUuid()));
-        }
-
-    }
-
-    @AutoBuilder(callMethod = "buildItem", ofClass = Item.class)
-    public non-sealed abstract static class Builder implements BuildItem, LockedItemBuilder {
-        final private UUID builderUuid = UUID.randomUUID();
-
-        protected Builder() {
-        }
-
-        public final UUID builderUuid() {
-            return this.builderUuid;
-        }
-
-        @Override
-        public final LockedItemBuilder lock() {
-            return this;
-        }
-
-        abstract Item autoBuild();
-
-        @Override
-        public final Item build() {
-            Preconditions.checkNotNull(this.getName(), "name should not be null");
-            return this.autoBuild();
-        }
-
-    }
-
-    public static Item.BuilderStart builder() {
-        final Item.Builder builder = new AutoBuilder_Item_Builder();
-        builder.setVisibility(Plain.noDifficulty()).setItemTag(ItemTag.ITEM);
-        builder.setLocale(Optional.empty());
-        return builder;
-    }
-
-    public default Item.BuildItem toBuilder() {
-        return new AutoBuilder_Item_Builder().setVisibility(this.visibility()).setName(this.name())
+    public default ItemBuilderFactory.BuildItem toBuilder() {
+        return new AutoBuilder_ItemBuilderFactory_Builder().setVisibility(this.visibility()).setName(this.name())
                 .setItemTag(this.itemTag()).setNickname(this.nickname());
-    }
-
-    public static Item buildItem(EventBus eventBus, ItemRepository itemRepository, Examinable.Name name,
-            Difficulty<Plain> visibility, Optional<Examinable.Name> nickname, ItemTag itemTag, Optional<URI> locale,
-            @Nullable EventProcessor.EventFunction<Item> eventFunction) {
-        Preconditions.checkNotNull(eventBus, "event bus must not be null");
-        Preconditions.checkNotNull(itemRepository, "item repository must be available to store item into");
-        final ConcreteItem item = ConcreteItem.buildItem(name, visibility, nickname, itemTag, locale, eventFunction);
-        eventBus.register(item);
-        itemRepository.add(item);
-        return item;
     }
 
 }

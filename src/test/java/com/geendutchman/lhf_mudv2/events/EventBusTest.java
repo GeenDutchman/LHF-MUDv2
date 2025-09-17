@@ -44,7 +44,7 @@ public class EventBusTest {
         Truth.assertThat(bus.listProcessors()).isNotEmpty();
 
         CountDownLatch latch = new CountDownLatch(1);
-        final Item sword = itemFactory.builder().setName("Sword").build();
+        final Item sword = itemFactory.builder().setName("Sword").build(itemFactory);
         final Item observer = itemFactory.builder().setName("Observer").setEventFunction((event, bus, processor) -> {
             Truth.assertWithMessage("event should not be null").that(event).isNotNull();
             Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
@@ -52,7 +52,7 @@ public class EventBusTest {
             System.out.println(event);
             latch.countDown();
             return new ProcessingResult.Handled();
-        }).build();
+        }).build(itemFactory);
 
         final Event event = Events.addressed().setDestination(sword.processorURI())
                 .setReplyToSender(observer.processorURI()).seeEvent().build();
@@ -72,14 +72,14 @@ public class EventBusTest {
         Truth.assertThat(bus.listProcessors()).isNotEmpty();
 
         CountDownLatch latch = new CountDownLatch(1);
-        final Item sword = itemFactory.builder().setName("Sword").build();
+        final Item sword = itemFactory.builder().setName("Sword").build(itemFactory);
         final Item observer = itemFactory.builder().setName("Observer").setEventFunction((event, bus, processor) -> {
             Truth.assertWithMessage("event should not be null").that(event).isNotNull();
             Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
             Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
             latch.countDown();
             return new ProcessingResult.Handled();
-        }).build();
+        }).build(itemFactory);
 
         final Event event = Events.addressed().setDestination(sword.processorURI())
                 .setReplyToSender(observer.processorURI()).seeEvent().build();
@@ -107,7 +107,7 @@ public class EventBusTest {
                 return new ProcessingResult.Handled();
             }
             return new ProcessingResult.Unhandled();
-        }).build();
+        }).build(itemFactory);
 
         final Item hearer = itemFactory.builder().setName("hearer").setEventFunction((event, bus, processor) -> {
             Truth.assertWithMessage("event should not be null").that(event).isNotNull();
@@ -118,7 +118,7 @@ public class EventBusTest {
                 return new ProcessingResult.Handled();
             }
             return new ProcessingResult.Unhandled();
-        }).build();
+        }).build(itemFactory);
 
         itemFactory.builder().setName("observer").setEventFunction((event, bus, processor) -> {
             Truth.assertWithMessage("event should not be null").that(event).isNotNull();
@@ -129,7 +129,7 @@ public class EventBusTest {
                 return new ProcessingResult.Handled();
             }
             return new ProcessingResult.Unhandled();
-        }).build();
+        }).build(itemFactory);
 
         final Event event = Events.sayEvent().setSpeaker(talker).setListener(hearer)
                 .setRouting(routing -> routing.setDestination(UriComponentsBuilder.fromPath("/items").build().toUri()))
@@ -167,7 +167,7 @@ public class EventBusTest {
                 return new ProcessingResult.Handled();
             }
             return new ProcessingResult.Unhandled();
-        }).build();
+        }).build(itemFactory);
 
         final Item hearer = itemFactory.builder().setName("hearer").setEventFunction((event, bus, processor) -> {
             Truth.assertWithMessage("event should not be null").that(event).isNotNull();
@@ -178,7 +178,7 @@ public class EventBusTest {
                 return new ProcessingResult.Handled();
             }
             return new ProcessingResult.Unhandled();
-        }).build();
+        }).build(itemFactory);
 
         itemFactory.builder().setName("dumbdumb").setEventFunction((event, bus, processor) -> {
             Truth.assertWithMessage("event should not be null").that(event).isNotNull();
@@ -189,7 +189,7 @@ public class EventBusTest {
                 return new ProcessingResult.Handled();
             }
             return new ProcessingResult.Unhandled();
-        }).build();
+        }).build(itemFactory);
 
         ItemQuery query = ItemQuery.builder().setDisplayNamePattern(".*er.*").build();
 

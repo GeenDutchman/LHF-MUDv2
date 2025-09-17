@@ -22,7 +22,7 @@ import com.google.common.truth.Truth;
 public class EntityResolverTest {
     @Test
     void testResolve(@Autowired EntityResolver resolver, @Autowired ItemBuilderFactory itemFactory) {
-        Item itemOne = itemFactory.builder().setName("dingus").build();
+        Item itemOne = itemFactory.builder().setName("dingus").build(itemFactory);
         IEntityID id = itemOne.identifier();
         URI uri = id.uri();
         SortedSet<Entity> found = resolver.resolve(uri);
@@ -34,7 +34,7 @@ public class EntityResolverTest {
 
     @Test
     void testResolveItems(@Autowired EntityResolver resolver, @Autowired ItemBuilderFactory itemFactory) {
-        Item itemOne = itemFactory.builder().setName("dingus").build();
+        Item itemOne = itemFactory.builder().setName("dingus").build(itemFactory);
         SortedSet<Entity> found = resolver.resolve(UriComponentsBuilder.fromPath("/items").build().toUri());
         Truth.assertWithMessage("found the wrong number of entities in '%s", found).that(found.size()).isAtLeast(2);
         Truth.assertThat(found).contains(itemOne);
@@ -43,8 +43,8 @@ public class EntityResolverTest {
     @Test
     void testResolveItems(@Autowired EntityResolver resolver, @Autowired ItemBuilderFactory itemFactory,
             @Autowired QueryCodec.Factory queryCodecFactory) {
-        Item itemOne = itemFactory.builder().setName("dingus").build();
-        Item itemTwo = itemFactory.builder().setName("zoological").setNickname("insect").build();
+        Item itemOne = itemFactory.builder().setName("dingus").build(itemFactory);
+        Item itemTwo = itemFactory.builder().setName("zoological").setNickname("insect").build(itemFactory);
         ItemQuery itemQuery = ItemQuery.builder().setDisplayName("insect").build();
         ItemQueryCodec codec = queryCodecFactory.defaultItemQueryCodec();
         SortedSet<Entity> found = resolver

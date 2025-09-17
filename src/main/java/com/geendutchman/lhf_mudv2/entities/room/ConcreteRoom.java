@@ -66,7 +66,10 @@ class ConcreteRoom implements Room {
 
         switch (delta.kind()) {
         case ITEM:
-            delta.item().ifPresent(item -> this.inventory.add(item));
+            delta.item().ifPresent(item -> {
+                this.inventory.add(item);
+                item.applyDelta(Item.Delta.ofLocale(Optional.of(this.identifier().uri())));
+            });
             break;
         case ITEMBUILDER:
             delta.itemBuilder().ifPresent(builder -> this.inventory.add(builder.build()));
