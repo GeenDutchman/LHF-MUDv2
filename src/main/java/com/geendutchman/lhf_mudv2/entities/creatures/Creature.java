@@ -4,30 +4,19 @@ import java.io.Serializable;
 import java.net.URI;
 import java.util.AbstractMap;
 import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.Nullable;
-
-import com.geendutchman.lhf_mudv2.dice.D6Set;
 import com.geendutchman.lhf_mudv2.dice.DiceSet;
 import com.geendutchman.lhf_mudv2.dice.DieType;
 import com.geendutchman.lhf_mudv2.dice.Plain;
 import com.geendutchman.lhf_mudv2.dice.RollSet;
-import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
-import com.geendutchman.lhf_mudv2.entities.item.Item.LockedItemBuilder;
 import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
-import com.geendutchman.lhf_mudv2.events.EventBus;
-import com.geendutchman.lhf_mudv2.events.EventProcessor;
-import com.google.auto.value.AutoBuilder;
 import com.google.auto.value.AutoOneOf;
 
 import autovalue.shaded.com.google.common.base.Preconditions;
@@ -192,84 +181,6 @@ public interface Creature extends Entity, ItemContainer {
 
     public static Comparator<Creature> getCreatureComparator() {
         return new CreatureComparator();
-    }
-
-    @AutoBuilder(callMethod = "buildCreature", ofClass = Creature.class)
-    public abstract static class Builder implements Serializable {
-
-        @Autowired
-        public abstract Builder setCreatureRepository(CreatureRepository creatureRepository);
-
-        @Autowired
-        public abstract Builder setEventBus(EventBus eventBus);
-
-        public abstract Builder setName(Examinable.Name name);
-
-        public Builder setName(String name) {
-            Examinable.Name eName = new Examinable.Name(name);
-            return this.setName(eName);
-        }
-
-        public abstract Builder setFaction(Faction faction);
-
-        public abstract Builder setVitals(Map<CreatureStats, Integer> vitals);
-
-        protected abstract Map<CreatureStats, Integer> vitals();
-
-        public Builder setHealth(int maxhealth) {
-            Map<CreatureStats, Integer> vitals = this.vitals();
-            if (vitals == null) {
-                vitals = new EnumMap<>(CreatureStats.class);
-            }
-            vitals.put(CreatureStats.MAX_HEALTH, maxhealth);
-            vitals.put(CreatureStats.HEALTH, maxhealth);
-            return this.setVitals(vitals);
-        }
-
-        public abstract ItemInventory.Builder inventoryBuilder();
-
-        public final Builder addItem(LockedItemBuilder... builder) {
-            final ItemInventory.Builder set = this.inventoryBuilder();
-            set.addContents(builder);
-            return this;
-        }
-
-        public abstract Builder setScores(Map<AttributeScores, Byte> scores);
-
-        protected abstract Map<AttributeScores, Byte> scores();
-
-        public final Builder scores4d6DropLowest() {
-            Map<AttributeScores, Byte> nextScores = new EnumMap<>(AttributeScores.class);
-            for (final AttributeScores scoretype : AttributeScores.values()) {
-                nextScores.put(scoretype, D6Set.fourD6DropLowestAsByte());
-            }
-            return this.setScores(nextScores);
-        }
-
-        public abstract Builder setScoreModifierBonuses(Map<AttributeScores, Byte> bonuses);
-
-        public abstract Builder setEventFunction(@Nullable EventProcessor.EventFunction<Creature> eventProcessor);
-
-        public abstract Creature build();
-
-    }
-
-    public static Creature.Builder builder() {
-        return new AutoBuilder_Creature_Builder();
-    }
-
-    public static Creature buildCreature(EventBus eventBus, CreatureRepository creatureRepository, Examinable.Name name,
-            ItemInventory inventory, Faction faction, Map<AttributeScores, Byte> scores,
-            Map<AttributeScores, Byte> scoreModifierBonuses, Map<CreatureStats, Integer> vitals,
-            @Nullable EventProcessor.EventFunction<Creature> eventFunction) {
-        Preconditions.checkNotNull(eventBus, "event bus must not be null");
-        Preconditions.checkNotNull(creatureRepository, "creature repository must be available to store creature into");
-
-        final ConcreteCreature creature = ConcreteCreature.buildCreature(name, inventory, faction, scores,
-                scoreModifierBonuses, vitals, eventFunction);
-        eventBus.register(creature);
-        creatureRepository.add(creature);
-        return creature;
     }
 
 }
