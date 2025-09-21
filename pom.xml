@@ -57,13 +57,6 @@
 			<groupId>com.google.auto.value</groupId>
 			<artifactId>auto-value-annotations</artifactId>
 			<version>1.11.0</version>
-		</dependency>
-
-
-		<dependency>
-			<groupId>com.google.auto.value</groupId>
-			<artifactId>auto-value</artifactId>
-			<version>1.11.0</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -109,6 +102,15 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>com.google.auto.value</groupId>
+							<artifactId>auto-value</artifactId>
+							<version>1.11.0</version>
+						</path>
+					</annotationProcessorPaths>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
