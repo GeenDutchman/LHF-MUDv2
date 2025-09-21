@@ -4,12 +4,12 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.stream.Stream;
 
 import org.springframework.stereotype.Repository;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 
 @Repository
@@ -55,8 +55,8 @@ public final class ItemRepository implements ItemContainer {
     }
 
     @Override
-    public Stream<Item> items() {
-        return this.cargo.values().stream().sequential().map(concrete -> (Item) concrete);
+    public ImmutableSet<Item> items() {
+        return ImmutableSet.copyOf(this.cargo.values());
     }
 
     @Override

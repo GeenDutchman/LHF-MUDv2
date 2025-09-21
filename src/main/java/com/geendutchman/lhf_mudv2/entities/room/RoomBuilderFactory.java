@@ -2,7 +2,9 @@ package com.geendutchman.lhf_mudv2.entities.room;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.util.LinkedHashSet;
 import java.util.Optional;
+import java.util.SequencedSet;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +16,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
+import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
+import com.geendutchman.lhf_mudv2.entities.creatures.CreatureBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
 import com.geendutchman.lhf_mudv2.events.EventBus;
@@ -42,6 +46,8 @@ public final class RoomBuilderFactory implements EventProcessor {
 
         public BuildRoom addItem(ItemBuilderFactory.LockedItemBuilder... builder);
 
+        public BuildRoom addCreature(CreatureBuilderFactory.Builder... builder);
+
         public BuildRoom setEventFunction(@Nullable EventProcessor.EventFunction<Room> eventFunction);
 
         public Room build(RoomBuilderFactory factory);
@@ -50,22 +56,39 @@ public final class RoomBuilderFactory implements EventProcessor {
     @AutoBuilder(callMethod = "buildRoom", ofClass = ConcreteRoom.class)
     public abstract non-sealed static class Builder implements BuildRoom {
         final private UUID builderUuid = UUID.randomUUID();
+        private ItemInventory.Builder inventoryBuilder = ItemInventory.builder();
+        private SequencedSet<CreatureBuilderFactory.Builder> creatures;
 
         protected Builder() {
+            this.inventoryBuilder = ItemInventory.builder();
+            this.creatures = new LinkedHashSet<>();
         }
 
         public final UUID builderUuid() {
             return this.builderUuid;
         }
 
-        public abstract ItemInventory.Builder inventoryBuilder();
+        public ItemInventory.Builder inventoryBuilder() {
+            return this.inventoryBuilder;
+        }
 
-        // public abstract BuildRoom setInventory(ItemInventory inv);
+        protected abstract BuildRoom setInventory(ItemInventory inv);
 
         @Override
         public final BuildRoom addItem(ItemBuilderFactory.LockedItemBuilder... builder) {
             final ItemInventory.Builder set = this.inventoryBuilder();
             set.addContents(builder);
+            return this;
+        }
+
+        @Override
+        public BuildRoom addCreature(CreatureBuilderFactory.Builder... builders) {
+            for (CreatureBuilderFactory.Builder builder : creatures) {
+                if (builder == null) {
+                    continue;
+                }
+                this.creatures.add(builder);
+            }
             return this;
         }
 
@@ -76,23 +99,37 @@ public final class RoomBuilderFactory implements EventProcessor {
             if (factory == null) {
                 throw new NullPointerException("factory must not be null");
             }
+            ItemInventory items = this.inventoryBuilder.build(factory.itemFactory);
+            this.setInventory(items);
             final ConcreteRoom built = this.autoBuild();
+            this.setInventory(ItemInventory.builder().build(factory.itemFactory)); // clear it
+            for (final CreatureBuilderFactory.Builder builder : creatures) {
+                if (builder == null) {
+                    continue;
+                }
+                Creature builtCreature = builder.build(factory.creatureFactory);
+                built.applyDelta(Room.Delta.ofCreature(builtCreature));
+            }
             factory.repository.add(built);
             factory.bus.register(built);
             return built;
         }
     }
 
+    private final CreatureBuilderFactory creatureFactory;
+    private final ItemBuilderFactory itemFactory;
     private final RoomRepository repository;
     private final EventBus bus;
     private final URI processorURI;
 
     @Autowired
-    public RoomBuilderFactory(RoomRepository repository, EventBus bus) {
+    public RoomBuilderFactory(CreatureBuilderFactory creatureFactory, ItemBuilderFactory itemFactory,
+            RoomRepository repository, EventBus bus) {
+        this.creatureFactory = creatureFactory;
+        this.itemFactory = itemFactory;
         this.repository = repository;
         this.bus = bus;
-        this.processorURI = UriComponentsBuilder.fromPath("/builderFactory/rooms").path(UUID.randomUUID().toString())
-                .build().toUri();
+        this.processorURI = UriComponentsBuilder.fromPath("/builderFactory/rooms").build().toUri();
         this.bus.register(this);
     }
 
@@ -108,7 +145,7 @@ public final class RoomBuilderFactory implements EventProcessor {
 
     @Bean({ "roombuilder", "roomBuilder" })
     @Scope("prototype")
-    public RoomBuilderFactory.BuilderStart builder() {
+    public static RoomBuilderFactory.BuilderStart builder() {
         final RoomBuilderFactory.Builder builder = new AutoBuilder_RoomBuilderFactory_Builder();
         return builder;
     }

@@ -10,13 +10,18 @@ import com.geendutchman.lhf_mudv2.display.Examinable.BasicExaminable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.RichOutput.Builder;
 import com.geendutchman.lhf_mudv2.display.RichOutputElement;
+import com.geendutchman.lhf_mudv2.entities.creatures.Creature.CreatureID;
+import com.geendutchman.lhf_mudv2.entities.creatures.CreatureBuilderFactory;
+import com.geendutchman.lhf_mudv2.entities.creatures.CreatureEffect;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
+import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.item.ItemEffect;
+import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
+import com.geendutchman.lhf_mudv2.entities.room.RoomEffect;
 import com.geendutchman.lhf_mudv2.events.Event.EventRouting;
 import com.geendutchman.lhf_mudv2.events.Event.EventRouting.EventRoutingBuilder;
 import com.google.auto.value.AutoValue;
-
-import autovalue.shaded.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 
 public final class Events {
 
@@ -48,6 +53,279 @@ public final class Events {
 
     public static PlainEvent.PlainEventBuilder plainEvent() {
         return PlainEvent.builder();
+    }
+
+    @AutoValue
+    public static sealed abstract class CreateItemsForCreatureEvent extends Event
+            permits AutoValue_Events_CreateItemsForCreatureEvent {
+        public abstract CreatureID forCreature();
+
+        public abstract ImmutableList<ItemBuilderFactory.LockedItemBuilder> itemBuilders();
+
+        static CreateItemsForCreatureEvent.CreateItemsForCreatureBuilder builder() {
+            return new AutoValue_Events_CreateItemsForCreatureEvent.Builder();
+        }
+
+        public abstract Examinable.Name reason();
+
+        @AutoValue.Builder
+        public interface CreateItemsForCreatureBuilder {
+            public abstract CreateItemsForCreatureBuilder setForCreature(CreatureID id);
+
+            public abstract CreateItemsForCreatureBuilder setDescription(Optional<RichOutput> description);
+
+            public abstract ImmutableList.Builder<ItemBuilderFactory.LockedItemBuilder> itemBuildersBuilder();
+
+            public default CreateItemsForCreatureBuilder addItemBuilder(
+                    ItemBuilderFactory.LockedItemBuilder... builder) {
+                this.itemBuildersBuilder().add(builder);
+                return this;
+            }
+
+            public default CreateItemsForCreatureBuilder addItemBuilders(
+                    Collection<ItemBuilderFactory.LockedItemBuilder> builders) {
+                this.itemBuildersBuilder().addAll(builders);
+                return this;
+            }
+
+            public abstract CreateItemsForCreatureBuilder setReason(Examinable.Name reason);
+
+            abstract EventRoutingBuilder routingBuilder();
+
+            public default CreateItemsForCreatureBuilder setRouting(Consumer<EventRoutingBuilder> setter) {
+                if (setter != null) {
+                    setter.accept(this.routingBuilder());
+                }
+                return this;
+            }
+
+            public abstract CreateItemsForCreatureEvent build();
+
+        }
+    }
+
+    public static CreateItemsForCreatureEvent.CreateItemsForCreatureBuilder itemForCreature() {
+        return CreateItemsForCreatureEvent.builder();
+    }
+
+    @AutoValue
+    public abstract sealed static class CreatureChangeEvent extends Event permits AutoValue_Events_CreatureChangeEvent {
+        public abstract ImmutableList<CreatureEffect> effects();
+
+        @Override
+        public Optional<RichOutput> description() {
+            final Builder builder = RichOutput.builder().setSequenceName("Effects on Creature")
+                    .setOnEmpty(Optional.of("none"))
+                    .setElementSeparator(Optional.of(RichOutputElement.ofString("\n - ")));
+            this.effects().stream().filter(effect -> effect != null)
+                    .forEachOrdered(effect -> builder.addExaminable(effect));
+            return Optional.of(builder.build());
+        }
+
+        static CreatureChangeEvent.CreatureChangeEventBuilder builder() {
+            return new AutoValue_Events_CreatureChangeEvent.Builder();
+        }
+
+        @AutoValue.Builder
+        public static abstract class CreatureChangeEventBuilder {
+            abstract ImmutableList.Builder<CreatureEffect> effectsBuilder();
+
+            public abstract CreatureChangeEventBuilder setEffects(Iterable<CreatureEffect> effects);
+
+            public abstract CreatureChangeEventBuilder setEffects(CreatureEffect... effects);
+
+            public final CreatureChangeEventBuilder setEffects(Collection<CreatureEffect.Builder> effects) {
+                return this.setEffects(effects.stream().filter(effectBuilder -> effectBuilder != null)
+                        .map(effectBuilder -> effectBuilder.build()).toList());
+            }
+
+            public final CreatureChangeEventBuilder addEffect(CreatureEffect effect) {
+                this.effectsBuilder().add(effect);
+                return this;
+            }
+
+            public final CreatureChangeEventBuilder addEffect(CreatureEffect.Builder effect) {
+                this.effectsBuilder().add(effect.build());
+                return this;
+            }
+
+            abstract EventRoutingBuilder routingBuilder();
+
+            public final CreatureChangeEventBuilder setRouting(Consumer<EventRoutingBuilder> setter) {
+                if (setter != null) {
+                    setter.accept(this.routingBuilder());
+                }
+                return this;
+            }
+
+            public abstract CreatureChangeEvent build();
+        }
+    }
+
+    public static CreatureChangeEvent.CreatureChangeEventBuilder creatureChange() {
+        return CreatureChangeEvent.builder();
+    }
+
+    @AutoValue
+    public static sealed abstract class CreateItemsForRoomEvent extends Event
+            permits AutoValue_Events_CreateItemsForRoomEvent {
+        public abstract RoomID forRoom();
+
+        public abstract ImmutableList<ItemBuilderFactory.LockedItemBuilder> itemBuilders();
+
+        static CreateItemsForRoomEvent.CreateItemsForRoomBuilder builder() {
+            return new AutoValue_Events_CreateItemsForRoomEvent.Builder();
+        }
+
+        public abstract Examinable.Name reason();
+
+        @AutoValue.Builder
+        public interface CreateItemsForRoomBuilder {
+            public abstract CreateItemsForRoomBuilder setForRoom(RoomID id);
+
+            public abstract CreateItemsForRoomBuilder setDescription(Optional<RichOutput> description);
+
+            public abstract ImmutableList.Builder<ItemBuilderFactory.LockedItemBuilder> itemBuildersBuilder();
+
+            public default CreateItemsForRoomBuilder addItemBuilder(ItemBuilderFactory.LockedItemBuilder... builder) {
+                this.itemBuildersBuilder().add(builder);
+                return this;
+            }
+
+            public default CreateItemsForRoomBuilder addItemBuilders(
+                    Collection<ItemBuilderFactory.LockedItemBuilder> builders) {
+                this.itemBuildersBuilder().addAll(builders);
+                return this;
+            }
+
+            public abstract CreateItemsForRoomBuilder setReason(Examinable.Name reason);
+
+            abstract EventRoutingBuilder routingBuilder();
+
+            public default CreateItemsForRoomBuilder setRouting(Consumer<EventRoutingBuilder> setter) {
+                if (setter != null) {
+                    setter.accept(this.routingBuilder());
+                }
+                return this;
+            }
+
+            public abstract CreateItemsForRoomEvent build();
+
+        }
+    }
+
+    public static CreateItemsForRoomEvent.CreateItemsForRoomBuilder itemForRoom() {
+        return CreateItemsForRoomEvent.builder();
+    }
+
+    @AutoValue
+    public static sealed abstract class CreateCreaturesForRoomEvent extends Event
+            permits AutoValue_Events_CreateCreaturesForRoomEvent {
+        public abstract RoomID forRoom();
+
+        public abstract ImmutableList<CreatureBuilderFactory.Builder> creatureBuilders();
+
+        static CreateCreaturesForRoomEvent.CreateCreaturesForRoomBuilder builder() {
+            return new AutoValue_Events_CreateCreaturesForRoomEvent.Builder();
+        }
+
+        public abstract Examinable.Name reason();
+
+        @AutoValue.Builder
+        public interface CreateCreaturesForRoomBuilder {
+            public abstract CreateCreaturesForRoomBuilder setForRoom(RoomID id);
+
+            public abstract CreateCreaturesForRoomBuilder setDescription(Optional<RichOutput> description);
+
+            public abstract ImmutableList.Builder<CreatureBuilderFactory.Builder> creatureBuildersBuilder();
+
+            public default CreateCreaturesForRoomBuilder addCreatureBuilder(CreatureBuilderFactory.Builder... builder) {
+                this.creatureBuildersBuilder().add(builder);
+                return this;
+            }
+
+            public default CreateCreaturesForRoomBuilder addCreatureBuilders(
+                    Collection<CreatureBuilderFactory.Builder> builders) {
+                this.creatureBuildersBuilder().addAll(builders);
+                return this;
+            }
+
+            public abstract CreateCreaturesForRoomBuilder setReason(Examinable.Name reason);
+
+            abstract EventRoutingBuilder routingBuilder();
+
+            public default CreateCreaturesForRoomBuilder setRouting(Consumer<EventRoutingBuilder> setter) {
+                if (setter != null) {
+                    setter.accept(this.routingBuilder());
+                }
+                return this;
+            }
+
+            public abstract CreateCreaturesForRoomEvent build();
+
+        }
+    }
+
+    public static CreateCreaturesForRoomEvent.CreateCreaturesForRoomBuilder creatureForRoom() {
+        return CreateCreaturesForRoomEvent.builder();
+    }
+
+    @AutoValue
+    public abstract sealed static class RoomChangeEvent extends Event permits AutoValue_Events_RoomChangeEvent {
+        public abstract ImmutableList<RoomEffect> effects();
+
+        @Override
+        public Optional<RichOutput> description() {
+            final Builder builder = RichOutput.builder().setSequenceName("Effects on Room")
+                    .setOnEmpty(Optional.of("none"))
+                    .setElementSeparator(Optional.of(RichOutputElement.ofString("\n - ")));
+            this.effects().stream().filter(effect -> effect != null)
+                    .forEachOrdered(effect -> builder.addExaminable(effect));
+            return Optional.of(builder.build());
+        }
+
+        static RoomChangeEvent.RoomChangeEventBuilder builder() {
+            return new AutoValue_Events_RoomChangeEvent.Builder();
+        }
+
+        @AutoValue.Builder
+        public static abstract class RoomChangeEventBuilder {
+            abstract ImmutableList.Builder<RoomEffect> effectsBuilder();
+
+            public abstract RoomChangeEventBuilder setEffects(Iterable<RoomEffect> effects);
+
+            public abstract RoomChangeEventBuilder setEffects(RoomEffect... effects);
+
+            public final RoomChangeEventBuilder setEffects(Collection<RoomEffect.Builder> effects) {
+                return this.setEffects(effects.stream().filter(effectBuilder -> effectBuilder != null)
+                        .map(effectBuilder -> effectBuilder.build()).toList());
+            }
+
+            public final RoomChangeEventBuilder addEffect(RoomEffect effect) {
+                this.effectsBuilder().add(effect);
+                return this;
+            }
+
+            public final RoomChangeEventBuilder addEffect(RoomEffect.Builder effect) {
+                this.effectsBuilder().add(effect.build());
+                return this;
+            }
+
+            abstract EventRoutingBuilder routingBuilder();
+
+            public final RoomChangeEventBuilder setRouting(Consumer<EventRoutingBuilder> setter) {
+                if (setter != null) {
+                    setter.accept(this.routingBuilder());
+                }
+                return this;
+            }
+
+            public abstract RoomChangeEvent build();
+        }
+    }
+
+    public static RoomChangeEvent.RoomChangeEventBuilder roomChange() {
+        return RoomChangeEvent.builder();
     }
 
     @AutoValue

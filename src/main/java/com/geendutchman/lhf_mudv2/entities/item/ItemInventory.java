@@ -3,49 +3,67 @@ package com.geendutchman.lhf_mudv2.entities.item;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.NavigableSet;
 import java.util.Optional;
+import java.util.SequencedSet;
 import java.util.TreeSet;
-import java.util.stream.Stream;
-
-import org.springframework.lang.NonNull;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
-import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory.BuildItem;
 import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory.LockedItemBuilder;
-import com.google.auto.value.AutoBuilder;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 
 public final class ItemInventory implements ItemContainer {
 
-    @AutoBuilder(callMethod = "buildInventory", ofClass = ItemInventory.class)
-    public abstract static class Builder {
+    public static final class Builder {
+        private Examinable.Name name;
+        private SequencedSet<ItemBuilderFactory.LockedItemBuilder> contents;
 
-        protected Builder() {
+        private Builder() {
+            this.name = null;
+            this.contents = new LinkedHashSet<>();
         }
 
-        public static Builder builder() {
-            return ItemInventory.builder();
+        public Examinable.Name name() {
+            if (this.name == null) {
+                throw new IllegalStateException("Property \"name\" has not been set");
+            }
+            return this.name;
         }
 
-        public abstract Examinable.Name name();
-
-        public abstract Builder setName(Examinable.Name name);
+        public Builder setName(Examinable.Name name) {
+            if (name == null) {
+                throw new NullPointerException("Null name");
+            }
+            this.name = name;
+            return this;
+        }
 
         public Builder setName(String name) {
             Examinable.Name eName = new Examinable.Name(name);
             return this.setName(eName);
         }
 
-        public abstract NavigableSet<ItemBuilderFactory.LockedItemBuilder> contents();
+        public SequencedSet<ItemBuilderFactory.LockedItemBuilder> contents() {
+            if (this.contents == null) {
+                throw new IllegalStateException("Property \"contents\" has not been set");
+            }
+            return contents;
+        }
 
-        public abstract Builder setContents(@NonNull NavigableSet<ItemBuilderFactory.LockedItemBuilder> contents);
+        public ItemInventory.Builder setContents(SequencedSet<ItemBuilderFactory.LockedItemBuilder> contents) {
+            if (contents == null) {
+                throw new NullPointerException("Null contents");
+            }
+            this.contents = contents;
+            return this;
+        }
 
         public final Builder addContents(ItemBuilderFactory.LockedItemBuilder... items) {
-            NavigableSet<ItemBuilderFactory.LockedItemBuilder> mycontents;
+            SequencedSet<ItemBuilderFactory.LockedItemBuilder> mycontents;
             try {
                 mycontents = this.contents();
             } catch (IllegalStateException e) {
@@ -61,35 +79,24 @@ public final class ItemInventory implements ItemContainer {
             return this.setContents(mycontents);
         }
 
-        protected abstract ItemInventory autoBuild();
-
-        public final ItemInventory build() {
-            final ItemInventory built = this.autoBuild();
+        public final ItemInventory build(ItemBuilderFactory itemFactory) {
+            Preconditions.checkNotNull(itemFactory, "item factory should be provided and not be null");
+            Preconditions.checkState(this.name != null, "name should not be null");
+            Preconditions.checkState(this.contents != null, "contents may be empty, but must not be null");
+            final ItemInventory built = new ItemInventory(this.name);
+            for (final LockedItemBuilder lockedItemBuilder : contents) {
+                if (lockedItemBuilder == null) {
+                    continue;
+                }
+                Item builtItem = lockedItemBuilder.build(itemFactory);
+                built.add(builtItem);
+            }
             return built;
         }
     }
 
     public static Builder builder() {
-        return new AutoBuilder_ItemInventory_Builder().setName("Inventory")
-                .setContents(new TreeSet<ItemBuilderFactory.LockedItemBuilder>(
-                        Comparator.<ItemBuilderFactory.LockedItemBuilder, String>comparing(locked -> String.format(
-                                "%s:%s:%s", locked.getName(), locked.getNickname().map(nn -> nn.toString()).orElse(""),
-                                locked.builderUuid()))));
-    }
-
-    public static ItemInventory buildInventory(Examinable.Name name,
-            NavigableSet<ItemBuilderFactory.LockedItemBuilder> contents) {
-        Preconditions.checkArgument(name != null, "name should not be null");
-        final ItemInventory inv = new ItemInventory(name);
-        if (contents != null) {
-            for (final ItemBuilderFactory.LockedItemBuilder locked : contents) {
-                if (locked == null) {
-                    continue;
-                }
-                inv.add(locked.build());
-            }
-        }
-        return inv;
+        return new Builder().setName("Inventory");
     }
 
     private ItemInventory(Examinable.Name name) {
@@ -157,8 +164,8 @@ public final class ItemInventory implements ItemContainer {
     }
 
     @Override
-    public Stream<Item> items() {
-        return this.cargo.values().stream().sequential();
+    public ImmutableSet<Item> items() {
+        return ImmutableSet.copyOf(this.cargo.values());
     }
 
     public ItemInventory.Builder toBuilder() {

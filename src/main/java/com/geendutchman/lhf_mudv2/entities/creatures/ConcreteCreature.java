@@ -6,7 +6,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.stream.Stream;
 
 import org.springframework.lang.Nullable;
 
@@ -18,7 +17,9 @@ import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
 import com.geendutchman.lhf_mudv2.events.Event;
 import com.geendutchman.lhf_mudv2.events.EventBus;
 import com.geendutchman.lhf_mudv2.events.EventProcessor;
+import com.geendutchman.lhf_mudv2.events.Events;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 
 final class ConcreteCreature implements Creature {
@@ -89,8 +90,21 @@ final class ConcreteCreature implements Creature {
 
     @Override
     public ProcessingResult processEvent(Event event, EventBus bus) {
-        return this.eventFunction != null ? this.eventFunction.apply(event, bus, this)
-                : new ProcessingResult.Unhandled();
+        if (this.eventFunction != null) {
+            ProcessingResult result = this.eventFunction.apply(event, bus, this);
+            if (result instanceof ProcessingResult.Handled) {
+                return result;
+            }
+        }
+        if (event != null && event instanceof Events.CreatureChangeEvent cce) {
+            for (final CreatureEffect creatureEffect : cce.effects()) {
+                for (final Creature.Delta delta : creatureEffect.deltas()) {
+                    this.applyDelta(delta);
+                }
+            }
+            return new ProcessingResult.Handled();
+        }
+        return new ProcessingResult.Unhandled();
     }
 
     @Override
@@ -103,11 +117,6 @@ final class ConcreteCreature implements Creature {
         return this.name;
     }
 
-    @Override
-    public ItemInventory inventory() {
-        return this.inventory;
-    }
-
     public boolean hasItem(Item item) {
         return inventory.hasItem(item);
     }
@@ -116,7 +125,7 @@ final class ConcreteCreature implements Creature {
         return inventory.byItemID(id);
     }
 
-    public Stream<Item> items() {
+    public ImmutableSet<Item> items() {
         return inventory.items();
     }
 
@@ -183,9 +192,7 @@ final class ConcreteCreature implements Creature {
                 item.applyDelta(Item.Delta.ofLocale(Optional.of(this.identifier().uri())));
             });
             break;
-        case INVENTORY_ITEM_BUILDER:
-            delta.inventoryItemBuilder().ifPresent(builder -> this.inventory.add(builder.build()));
-            break;
+
         case MODIFIER_DELTA:
             delta.modifierDelta().ifPresent(modEntry -> {
                 this.scoreModBonuses.merge(modEntry.getKey(), modEntry.getValue(), ConcreteCreature::addBytesCapped);

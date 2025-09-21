@@ -1,7 +1,6 @@
 package com.geendutchman.lhf_mudv2.entities.room;
 
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
@@ -9,12 +8,13 @@ import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery;
 import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 
 public interface RoomContainer extends Examinable {
     // TODO: change this to graphs
     // (e.g. graph of RoomID nodes paired with a hashmap // of RoomID -> Room)
-    public abstract Stream<Room> rooms();
+    public abstract ImmutableSet<Room> rooms();
 
     public abstract ImmutableMap<RoomID, Room> roomMap();
 
@@ -26,7 +26,7 @@ public interface RoomContainer extends Examinable {
     public default Optional<RichOutput> description() {
         RichOutput.Builder builder = RichOutput.builder().setOnEmpty(Optional.of("It is empty"))
                 .setTag(Optional.ofNullable(this.tag() + "-description"));
-        this.rooms().forEachOrdered(room -> builder.addTaggable(room));
+        this.rooms().forEach(room -> builder.addTaggable(room));
         return Optional.of(builder.build());
     }
 
@@ -46,16 +46,18 @@ public interface RoomContainer extends Examinable {
     public abstract ImmutableSortedMap<String, String> attributes();
 
     public default Optional<Room> queryOneRoom(IEntityQuery<? super Room> query) {
-        return this.rooms().sequential().filter(room -> query != null ? query.test(room) : room != null).findFirst();
+        return this.rooms().stream().sequential().filter(room -> query != null ? query.test(room) : room != null)
+                .findFirst();
     }
 
     public default Optional<Room> queryOneRoom(RoomQuery query) {
-        return this.rooms().sequential().filter(room -> query != null ? query.test(room) : room != null).findFirst();
+        return this.rooms().stream().sequential().filter(room -> query != null ? query.test(room) : room != null)
+                .findFirst();
     }
 
     public default RoomContainer queryRooms(IEntityQuery<? super Room> query) {
         ImmutableSortedMap.Builder<RoomID, Room> builder = ImmutableSortedMap.naturalOrder();
-        this.rooms().sequential().filter(room -> query != null ? query.test(room) : room != null)
+        this.rooms().stream().sequential().filter(room -> query != null ? query.test(room) : room != null)
                 .forEachOrdered(room -> builder.put(room.roomID(), room));
         ImmutableSortedMap<RoomID, Room> built = builder.build();
         final Examinable.Name queryName = new Examinable.Name("RoomQueryResult");
@@ -67,8 +69,8 @@ public interface RoomContainer extends Examinable {
             }
 
             @Override
-            public Stream<Room> rooms() {
-                return built.values().stream().sequential();
+            public ImmutableSet<Room> rooms() {
+                return ImmutableSet.copyOf(built.values());
             }
 
             @Override

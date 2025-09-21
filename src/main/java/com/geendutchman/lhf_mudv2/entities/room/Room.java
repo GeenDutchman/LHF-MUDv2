@@ -8,16 +8,16 @@ import java.util.UUID;
 
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.Taggable;
+import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
+import com.geendutchman.lhf_mudv2.entities.creatures.CreatureContainer;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
-import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
-import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
 import com.google.auto.value.AutoOneOf;
 import com.google.common.base.Preconditions;
 
-public interface Room extends Entity, ItemContainer {
+public interface Room extends Entity, ItemContainer, CreatureContainer {
     public record RoomID(EntityID delegate) implements IEntityID {
 
         public RoomID {
@@ -71,8 +71,20 @@ public interface Room extends Entity, ItemContainer {
         return ROOM_TAG;
     }
 
-    // Rooms can hold items in an inventory
-    public abstract ItemInventory inventory();
+    @Override
+    public default Optional<RichOutput> description() {
+        RichOutput.Builder builder = RichOutput.builder().setSequenceName(this.name().toString());
+        this.roomDescription().ifPresent(rdesc -> builder.addOutput(rdesc));
+        RichOutput.Builder itemsBuilder = RichOutput.builder().setSequenceName("Items")
+                .setOnEmpty(Optional.of("No items found here"));
+        this.items().stream().filter(i -> i != null).forEach(item -> itemsBuilder.addTaggable(item));
+        builder.addOutput(itemsBuilder.build());
+        RichOutput.Builder creaturesBuilder = RichOutput.builder().setSequenceName("Creatures")
+                .setOnEmpty(Optional.of("Nobody here"));
+        this.creatures().stream().filter(c -> c != null).forEach(creature -> creaturesBuilder.addTaggable(creature));
+        builder.addOutput(creaturesBuilder.build());
+        return Optional.of(builder.build());
+    }
 
     public abstract Optional<RichOutput> roomDescription();
 
@@ -84,26 +96,23 @@ public interface Room extends Entity, ItemContainer {
     @AutoOneOf(Delta.Kind.class)
     public static abstract class Delta implements Serializable {
         public enum Kind {
-            ITEM, ITEMBUILDER
+            ITEM, CREATURE
         }
 
         public abstract Kind kind();
 
         public abstract Optional<Item> item();
 
-        public abstract Optional<ItemBuilderFactory.LockedItemBuilder> itemBuilder();
+        public abstract Optional<Creature> creature();
 
         public static Delta ofItem(Item item) {
             return AutoOneOf_Room_Delta.item(Optional.of(item));
         }
 
-        public static Delta ofItemBuilder(ItemBuilderFactory.BuildItem itemBuilder) {
-            return AutoOneOf_Room_Delta.itemBuilder(Optional.of(itemBuilder.lock()));
+        public static Delta ofCreature(Creature creature) {
+            return AutoOneOf_Room_Delta.creature(Optional.of(creature));
         }
 
-        public static Delta ofItemBuilder(ItemBuilderFactory.LockedItemBuilder itemBuilder) {
-            return AutoOneOf_Room_Delta.itemBuilder(Optional.of(itemBuilder));
-        }
     }
 
     public abstract void applyDelta(Delta delta);

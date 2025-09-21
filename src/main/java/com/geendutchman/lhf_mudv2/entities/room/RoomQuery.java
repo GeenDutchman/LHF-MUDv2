@@ -138,7 +138,7 @@ public abstract class RoomQuery implements IEntityQuery<Room> {
             return false;
         }
         if (this.hasItemLike().isPresent()) {
-            if (t.inventory().queryOneItem(this.hasItemLike().get()).isEmpty()) {
+            if (t.queryOneItem(this.hasItemLike().get()).isEmpty()) {
                 return false;
             }
         }

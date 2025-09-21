@@ -1,5 +1,6 @@
 package com.geendutchman.lhf_mudv2.entities.room;
 
+import java.util.Collection;
 import java.util.Optional;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
@@ -53,6 +54,11 @@ public abstract class RoomEffect implements Examinable {
 
         public final Builder addDeltas(Room.Delta... deltas) {
             deltasBuilder().add(deltas);
+            return this;
+        }
+
+        public final Builder addDeltas(Collection<Room.Delta> deltas) {
+            deltasBuilder().addAll(deltas);
             return this;
         }
 

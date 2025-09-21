@@ -137,6 +137,9 @@ final class QueuedEventBus implements EventBus {
                             }
                         }
 
+                    } else {
+                        eventLogger.warning(String.format("No destination found for event %s, routing %s",
+                                event.getClass().getSimpleName(), event.routing()));
                     }
                 }
             } catch (InterruptedException e) {

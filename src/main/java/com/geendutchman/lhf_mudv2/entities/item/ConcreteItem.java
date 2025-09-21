@@ -14,6 +14,7 @@ import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.events.Event;
 import com.geendutchman.lhf_mudv2.events.EventBus;
 import com.geendutchman.lhf_mudv2.events.EventProcessor;
+import com.geendutchman.lhf_mudv2.events.Events;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSortedMap;
 
@@ -88,8 +89,21 @@ final class ConcreteItem implements Item {
 
     @Override
     public ProcessingResult processEvent(Event event, EventBus bus) {
-        return this.eventFunction != null ? this.eventFunction.apply(event, bus, this)
-                : new ProcessingResult.Unhandled();
+        if (this.eventFunction != null) {
+            ProcessingResult result = this.eventFunction.apply(event, bus, this);
+            if (result instanceof ProcessingResult.Handled) {
+                return result;
+            }
+        }
+        if (event != null && event instanceof Events.ItemChangeEvent ice) {
+            for (final ItemEffect effect : ice.effects()) {
+                for (final Item.Delta delta : effect.deltas()) {
+                    this.applyDelta(delta);
+                }
+            }
+            return new ProcessingResult.Handled();
+        }
+        return new ProcessingResult.Unhandled();
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.geendutchman.lhf_mudv2.entities.creatures;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Optional;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
@@ -56,6 +57,11 @@ public abstract class CreatureEffect implements Examinable, Serializable {
 
         public final Builder addDeltas(Creature.Delta... deltas) {
             deltasBuilder().add(deltas);
+            return this;
+        }
+
+        public final Builder addDeltas(Collection<Creature.Delta> newDeltas) {
+            deltasBuilder().addAll(newDeltas);
             return this;
         }
 

@@ -4,12 +4,12 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.stream.Stream;
 
 import org.springframework.stereotype.Repository;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature.CreatureID;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 
 @Repository
@@ -54,8 +54,8 @@ public final class CreatureRepository implements CreatureContainer {
     }
 
     @Override
-    public Stream<Creature> creatures() {
-        return this.beings.values().stream().sequential().map(concrete -> (Creature) concrete);
+    public ImmutableSet<Creature> creatures() {
+        return ImmutableSet.copyOf(this.beings.values());
     }
 
     @Override

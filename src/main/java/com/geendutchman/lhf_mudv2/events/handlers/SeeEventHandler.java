@@ -31,14 +31,16 @@ public class SeeEventHandler implements EventHandler<Events.SeeEvent> {
     }
 
     @Override
-    public void handle(SeeEvent event, EventProcessor processor, EventBus bus) {
+    public EventProcessor.ProcessingResult handle(SeeEvent event, EventProcessor processor, EventBus bus) {
         if (processor == null) {
-            return;
+            return new EventProcessor.ProcessingResult.Unhandled();
         }
         if (processor instanceof Examinable examinable) {
             Event reply = Events.addressed().reply(event.routing()).viewedEvent().setObserved(examinable).build();
             bus.publish(reply);
+            return new EventProcessor.ProcessingResult.Handled();
         }
+        return new EventProcessor.ProcessingResult.Unhandled();
     }
 
 }

@@ -4,13 +4,13 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.stream.Stream;
 
 import org.springframework.stereotype.Repository;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 
 @Repository
@@ -77,8 +77,8 @@ public final class RoomRepository implements RoomContainer {
     }
 
     @Override
-    public Stream<Room> rooms() {
-        return this.chambers.values().stream().sequential().map(concrete -> (Room) concrete);
+    public ImmutableSet<Room> rooms() {
+        return ImmutableSet.copyOf(this.chambers.values());
     }
 
     @Override

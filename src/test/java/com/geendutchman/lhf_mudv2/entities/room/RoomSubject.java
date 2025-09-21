@@ -23,8 +23,8 @@ public final class RoomSubject extends Subject {
         this.room = room;
     }
 
-    public ItemContainerSubject inventory() {
-        return check("inventory()").about(ItemContainerSubject.itemContainers()).that(this.room.inventory());
+    public ItemContainerSubject items() {
+        return check("items()").about(ItemContainerSubject.itemContainers()).that(this.room);
     }
 
     public OptionalSubject description() {

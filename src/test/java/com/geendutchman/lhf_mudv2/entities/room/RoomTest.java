@@ -16,10 +16,10 @@ public class RoomTest {
 
     @Test
     void testDisplay(@Autowired RoomBuilderFactory roomFactory, @Autowired ItemBuilderFactory itemFactory) {
-        RoomBuilderFactory.BuildRoom roomBuilder = roomFactory.builder().setName("First room")
+        RoomBuilderFactory.BuildRoom roomBuilder = RoomBuilderFactory.builder().setName("First room")
                 .setRoomDescription(Optional.of(RichOutput.builder().addString("This is a room").build()));
-        roomBuilder.addItem(itemFactory.builder().setName("dingus").lock());
-        roomBuilder.addItem(itemFactory.builder().setName("dongus").setNickname("alakazam").lock());
+        roomBuilder.addItem(ItemBuilderFactory.builder().setName("dingus").lock());
+        roomBuilder.addItem(ItemBuilderFactory.builder().setName("dongus").setNickname("alakazam").lock());
         final Room built = roomBuilder.build(roomFactory);
         RoomSubject.assertThat(built).name().isEqualTo("First room");
         final Optional<RichOutput> desc = built.description();
@@ -30,15 +30,15 @@ public class RoomTest {
 
     @Test
     void testDelta(@Autowired RoomBuilderFactory roomFactory, @Autowired ItemBuilderFactory itemFactory) {
-        RoomBuilderFactory.BuildRoom roomBuilder = roomFactory.builder().setName("First room")
+        RoomBuilderFactory.BuildRoom roomBuilder = RoomBuilderFactory.builder().setName("First room")
                 .setRoomDescription(Optional.of(RichOutput.builder().addString("This is a room").build()));
-        roomBuilder.addItem(itemFactory.builder().setName("dingus").lock());
-        roomBuilder.addItem(itemFactory.builder().setName("dongus").setNickname("alakazam").lock());
+        roomBuilder.addItem(ItemBuilderFactory.builder().setName("dingus").lock());
+        roomBuilder.addItem(ItemBuilderFactory.builder().setName("dongus").setNickname("alakazam").lock());
         final Room built = roomBuilder.build(roomFactory);
         RoomSubject.assertThat(built).name().isEqualTo("First room");
 
         RichOutputSubject.assertThat(built.description().get()).asXMLString().doesNotContain("lullaby");
-        Room.Delta delta = Room.Delta.ofItemBuilder(itemFactory.builder().setName("lullaby").lock());
+        Room.Delta delta = Room.Delta.ofItem(ItemBuilderFactory.builder().setName("lullaby").lock().build(itemFactory));
         built.applyDelta(delta);
         RichOutputSubject.assertThat(built.description().get()).asXMLString().contains("lullaby");
     }

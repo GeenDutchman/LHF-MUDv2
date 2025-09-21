@@ -172,7 +172,7 @@ public interface Item extends Entity {
     }
 
     public default ItemBuilderFactory.BuildItem toBuilder() {
-        return new AutoBuilder_ItemBuilderFactory_Builder().setVisibility(this.visibility()).setName(this.name())
+        return ItemBuilderFactory.builder().setName(this.name()).setVisibility(this.visibility())
                 .setItemTag(this.itemTag()).setNickname(this.nickname());
     }
 

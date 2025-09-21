@@ -84,22 +84,22 @@ public interface EntityResolver {
                 RoomContainer rooms) {
             ImmutableSortedSet.Builder<Entity> builder = ImmutableSortedSet.orderedBy(Entity.getEntityComparator());
             EntityQuery query = queryCodecFactory.defaultEntityQueryCodec().fromURI(uri);
-            this.items.items().filter(query).forEach(item -> builder.add(item));
-            this.rooms.rooms().filter(query).forEach(room -> builder.add(room));
+            this.items.items().stream().filter(query).forEach(item -> builder.add(item));
+            this.rooms.rooms().stream().filter(query).forEach(room -> builder.add(room));
             return builder.build();
         }
 
         private SortedSet<Entity> resolveItems(PathRemainingMatchInfo info, URI uri, ItemContainer itemContainer) {
             ImmutableSortedSet.Builder<Entity> builder = ImmutableSortedSet.orderedBy(Entity.getEntityComparator());
             ItemQuery query = queryCodecFactory.defaultItemQueryCodec().fromURI(uri);
-            this.items.items().filter(query).forEach(item -> builder.add(item));
+            this.items.items().stream().filter(query).forEach(item -> builder.add(item));
             return builder.build();
         }
 
         private SortedSet<Entity> resolveRooms(PathRemainingMatchInfo info, URI uri, RoomContainer roomContainer) {
             ImmutableSortedSet.Builder<Entity> builder = ImmutableSortedSet.orderedBy(Entity.getEntityComparator());
             RoomQuery query = queryCodecFactory.defaultRoomQueryCodec().fromURI(uri);
-            this.rooms.rooms().filter(query).forEach(room -> builder.add(room));
+            this.rooms.rooms().stream().filter(query).forEach(room -> builder.add(room));
             return builder.build();
         }
 

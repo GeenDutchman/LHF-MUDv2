@@ -16,9 +16,18 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.geendutchman.lhf_mudv2.dice.Difficulty;
 import com.geendutchman.lhf_mudv2.dice.Plain;
 import com.geendutchman.lhf_mudv2.display.Examinable;
+import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
+import com.geendutchman.lhf_mudv2.entities.creatures.CreatureEffect;
+import com.geendutchman.lhf_mudv2.entities.room.Room;
+import com.geendutchman.lhf_mudv2.entities.room.RoomEffect;
+import com.geendutchman.lhf_mudv2.events.Event;
 import com.geendutchman.lhf_mudv2.events.EventBus;
 import com.geendutchman.lhf_mudv2.events.EventProcessor;
+import com.geendutchman.lhf_mudv2.events.Events;
+import com.geendutchman.lhf_mudv2.events.Events.CreatureChangeEvent;
+import com.geendutchman.lhf_mudv2.events.Events.RoomChangeEvent;
 import com.google.auto.value.AutoBuilder;
+import com.google.common.collect.ImmutableList;
 
 @Component
 public final class ItemBuilderFactory implements EventProcessor {
@@ -119,14 +128,13 @@ public final class ItemBuilderFactory implements EventProcessor {
     public ItemBuilderFactory(ItemRepository repository, EventBus bus) {
         this.repository = repository;
         this.bus = bus;
-        this.processorURI = UriComponentsBuilder.fromPath("/builderFactory/items").path(UUID.randomUUID().toString())
-                .build().toUri();
+        this.processorURI = UriComponentsBuilder.fromPath("/builderFactory/items").build().toUri();
         this.bus.register(this);
     }
 
     @Bean({ "itembuilder", "itemBuilder" })
     @Scope("prototype")
-    public BuilderStart builder() {
+    public static BuilderStart builder() {
         final AutoBuilder_ItemBuilderFactory_Builder builder = new AutoBuilder_ItemBuilderFactory_Builder();
         builder.setVisibility(Plain.noDifficulty()).setItemTag(Item.ItemTag.ITEM).setLocale(Optional.empty());
         return builder;
@@ -142,9 +150,55 @@ public final class ItemBuilderFactory implements EventProcessor {
         return Optional.of(this.processorURI);
     }
 
+    @Override
+    public ProcessingResult processEvent(Event event, EventBus bus) {
+        switch (event) {
+        case Events.CreateItemsForCreatureEvent cifce -> {
+            ImmutableList<Creature.Delta> built = cifce.itemBuilders().stream().filter(lib -> lib != null)
+                    .map(lib -> lib.build(this)).filter(item -> item != null).map(Creature.Delta::ofItem)
+                    .collect(ImmutableList.toImmutableList());
+            if (built.size() > 0) {
+                CreatureChangeEvent forwarded = Events.creatureChange()
+                        .addEffect(CreatureEffect.builder().addDeltas(built)
+                                .setApplicationDescription(cifce.description()).setName(cifce.reason()))
+                        .setRouting(routing -> {
+                            routing.setDestination(cifce.forCreature().uri());
+                            routing.setReplyTo(cifce.routing().replyTo());
+                            routing.setSender(cifce.routing().sender());
+                        }).build();
+                bus.publish(forwarded);
+            }
+            return new ProcessingResult.Handled();
+        }
+        case Events.CreateItemsForRoomEvent cifre -> {
+            ImmutableList<Room.Delta> built = cifre.itemBuilders().stream().filter(lib -> lib != null)
+                    .map(lib -> lib.build(this)).filter(item -> item != null).map(Room.Delta::ofItem)
+                    .collect(ImmutableList.toImmutableList());
+            if (built.size() > 0) {
+                RoomChangeEvent forwarded = Events
+                        .roomChange().addEffect(RoomEffect.builder().addDeltas(built)
+                                .setApplicationDescription(cifre.description()).setName(cifre.reason()))
+                        .setRouting(routing -> {
+                            routing.setDestination(cifre.forRoom().uri());
+                            routing.setReplyTo(cifre.routing().replyTo());
+                            routing.setSender(cifre.routing().sender());
+                        }).build();
+                bus.publish(forwarded);
+            }
+            return new ProcessingResult.Handled();
+        }
+        case null -> {
+            return new ProcessingResult.Unhandled();
+        }
+        default -> {
+            return new ProcessingResult.Unhandled();
+        }
+        }
+    }
+
     @Bean
     public Item aRock() {
-        return this.builder().setName("defaultRock").build(this);
+        return ItemBuilderFactory.builder().setName("defaultRock").build(this);
     }
 
 }

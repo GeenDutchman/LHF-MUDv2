@@ -7,7 +7,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,14 +23,20 @@ import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.Examinable.Name;
 import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
+import com.geendutchman.lhf_mudv2.entities.room.Room;
+import com.geendutchman.lhf_mudv2.entities.room.RoomEffect;
+import com.geendutchman.lhf_mudv2.events.Event;
 import com.geendutchman.lhf_mudv2.events.EventBus;
 import com.geendutchman.lhf_mudv2.events.EventProcessor;
+import com.geendutchman.lhf_mudv2.events.Events;
+import com.geendutchman.lhf_mudv2.events.Events.RoomChangeEvent;
 import com.google.auto.value.AutoBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 @Component
 public final class CreatureBuilderFactory implements EventProcessor {
+    private final ItemBuilderFactory itemFactory;
     private final CreatureRepository repository;
     private final EventBus bus;
     private final char renameAttempts = 7;
@@ -217,17 +222,17 @@ public final class CreatureBuilderFactory implements EventProcessor {
     }
 
     @Autowired
-    public CreatureBuilderFactory(CreatureRepository repository, EventBus bus) {
+    public CreatureBuilderFactory(ItemBuilderFactory itemFactory, CreatureRepository repository, EventBus bus) {
+        this.itemFactory = itemFactory;
         this.repository = repository;
         this.bus = bus;
-        this.processorURI = UriComponentsBuilder.fromPath("/builderFactory/creatures")
-                .path(UUID.randomUUID().toString()).build().toUri();
+        this.processorURI = UriComponentsBuilder.fromPath("/builderFactory/creatures").build().toUri();
         this.bus.register(this);
     }
 
     @Bean({ "creaturebuilder", "creatureBuilder" })
     @Scope("prototype")
-    public Builder builder() {
+    public static Builder builder() {
         final Builder builder = new AutoBuilder_CreatureBuilderFactory_Builder()
                 .setScoreModifierBonuses(new EnumMap<>(AttributeScores.class));
         return builder;
@@ -243,8 +248,33 @@ public final class CreatureBuilderFactory implements EventProcessor {
         return Optional.of(this.processorURI);
     }
 
+    @Override
+    public ProcessingResult processEvent(Event event, EventBus bus) {
+        if (event != null && event instanceof Events.CreateCreaturesForRoomEvent ccfre) {
+            ImmutableList<Room.Delta> built = ccfre.creatureBuilders().stream().filter(cb -> cb != null)
+                    .map(cb -> cb.build(this)).filter(creature -> creature != null).map(Room.Delta::ofCreature)
+                    .collect(ImmutableList.toImmutableList());
+            if (built.size() > 0) {
+                RoomChangeEvent forwarded = Events
+                        .roomChange().addEffect(RoomEffect.builder().addDeltas(built)
+                                .setApplicationDescription(ccfre.description()).setName(ccfre.reason()))
+                        .setRouting(routing -> {
+                            routing.setDestination(ccfre.forRoom().uri());
+                            routing.setReplyTo(ccfre.routing().replyTo());
+                            routing.setSender(ccfre.routing().sender());
+                        }).build();
+                bus.publish(forwarded);
+            }
+            return new ProcessingResult.Handled();
+        }
+        return new ProcessingResult.Unhandled();
+    }
+
     @AutoBuilder(callMethod = "buildCreature", ofClass = ConcreteCreature.class)
     public abstract static class Builder implements Serializable {
+
+        private final ItemInventory.Builder inventoryBuilder = ItemInventory.builder();
+
         protected Builder() {
             this.setScoreModifierBonuses(new EnumMap<>(AttributeScores.class));
         }
@@ -279,6 +309,8 @@ public final class CreatureBuilderFactory implements EventProcessor {
             return this.setNameGenerationStrategy(NameGenerationStrategy.ofChecked(eName));
         }
 
+        protected abstract Builder setInventory(ItemInventory inventory);
+
         public abstract Builder setFaction(Faction faction);
 
         public abstract Builder setVitals(Map<CreatureStats, Integer> vitals);
@@ -295,7 +327,9 @@ public final class CreatureBuilderFactory implements EventProcessor {
             return this.setVitals(vitals);
         }
 
-        public abstract ItemInventory.Builder inventoryBuilder();
+        public ItemInventory.Builder inventoryBuilder() {
+            return this.inventoryBuilder;
+        }
 
         public final Builder addItem(ItemBuilderFactory.LockedItemBuilder... builder) {
             final ItemInventory.Builder set = this.inventoryBuilder();
@@ -362,7 +396,10 @@ public final class CreatureBuilderFactory implements EventProcessor {
                     throw new IllegalStateException("cannot use that name", e1);
                 }
             }
+            ItemInventory madeInventory = this.inventoryBuilder.build(factory.itemFactory);
+            this.setInventory(madeInventory);
             ConcreteCreature built = this.build();
+            this.setInventory(ItemInventory.builder().build(factory.itemFactory)); // undo
             factory.bus.register(built);
             factory.repository.add(built);
             factory.namesRegister.add(this.getName());

@@ -13,8 +13,8 @@ import com.geendutchman.lhf_mudv2.dice.Plain;
 public class ItemTest {
     @Test
     void testDisplayName(@Autowired ItemBuilderFactory factory) {
-        Item itemOne = factory.builder().setName("dingus").build(factory);
-        Item itemTwo = factory.builder().setName("dongus").setNickname("alakazam").build(factory);
+        Item itemOne = ItemBuilderFactory.builder().setName("dingus").build(factory);
+        Item itemTwo = ItemBuilderFactory.builder().setName("dongus").setNickname("alakazam").build(factory);
         ItemSubject.assertThat(itemOne).isNotEqualTo(itemTwo);
         ItemSubject.assertThat(itemOne).displayName().isEqualTo("dingus");
         ItemSubject.assertThat(itemTwo).displayName().isEqualTo("alakazam");
@@ -23,7 +23,7 @@ public class ItemTest {
 
     @Test
     void testDelta(@Autowired ItemBuilderFactory factory) {
-        final Item itemOne = factory.builder().setName("Thingy").build(factory);
+        final Item itemOne = ItemBuilderFactory.builder().setName("Thingy").build(factory);
         ItemSubject.assertThat(itemOne).nickname().isEmpty();
         ItemSubject.assertThat(itemOne).visibility().sum().isEqualTo(0);
         Item.Delta delta = Item.Delta.ofNickname("Dingus");

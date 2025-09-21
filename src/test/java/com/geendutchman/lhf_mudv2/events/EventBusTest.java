@@ -44,15 +44,16 @@ public class EventBusTest {
         Truth.assertThat(bus.listProcessors()).isNotEmpty();
 
         CountDownLatch latch = new CountDownLatch(1);
-        final Item sword = itemFactory.builder().setName("Sword").build(itemFactory);
-        final Item observer = itemFactory.builder().setName("Observer").setEventFunction((event, bus, processor) -> {
-            Truth.assertWithMessage("event should not be null").that(event).isNotNull();
-            Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
-            Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
-            System.out.println(event);
-            latch.countDown();
-            return new ProcessingResult.Handled();
-        }).build(itemFactory);
+        final Item sword = ItemBuilderFactory.builder().setName("Sword").build(itemFactory);
+        final Item observer = ItemBuilderFactory.builder().setName("Observer")
+                .setEventFunction((event, bus, processor) -> {
+                    Truth.assertWithMessage("event should not be null").that(event).isNotNull();
+                    Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
+                    Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
+                    System.out.println(event);
+                    latch.countDown();
+                    return new ProcessingResult.Handled();
+                }).build(itemFactory);
 
         final Event event = Events.addressed().setDestination(sword.processorURI())
                 .setReplyToSender(observer.processorURI()).seeEvent().build();
@@ -72,14 +73,15 @@ public class EventBusTest {
         Truth.assertThat(bus.listProcessors()).isNotEmpty();
 
         CountDownLatch latch = new CountDownLatch(1);
-        final Item sword = itemFactory.builder().setName("Sword").build(itemFactory);
-        final Item observer = itemFactory.builder().setName("Observer").setEventFunction((event, bus, processor) -> {
-            Truth.assertWithMessage("event should not be null").that(event).isNotNull();
-            Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
-            Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
-            latch.countDown();
-            return new ProcessingResult.Handled();
-        }).build(itemFactory);
+        final Item sword = ItemBuilderFactory.builder().setName("Sword").build(itemFactory);
+        final Item observer = ItemBuilderFactory.builder().setName("Observer")
+                .setEventFunction((event, bus, processor) -> {
+                    Truth.assertWithMessage("event should not be null").that(event).isNotNull();
+                    Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
+                    Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
+                    latch.countDown();
+                    return new ProcessingResult.Handled();
+                }).build(itemFactory);
 
         final Event event = Events.addressed().setDestination(sword.processorURI())
                 .setReplyToSender(observer.processorURI()).seeEvent().build();
@@ -98,7 +100,7 @@ public class EventBusTest {
         CountDownLatch hearerLatch = new CountDownLatch(1);
         CountDownLatch observerLatch = new CountDownLatch(1);
 
-        final Item talker = itemFactory.builder().setName("talker").setEventFunction((event, bus, processor) -> {
+        final Item talker = ItemBuilderFactory.builder().setName("talker").setEventFunction((event, bus, processor) -> {
             Truth.assertWithMessage("event should not be null").that(event).isNotNull();
             Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
             Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
@@ -109,7 +111,7 @@ public class EventBusTest {
             return new ProcessingResult.Unhandled();
         }).build(itemFactory);
 
-        final Item hearer = itemFactory.builder().setName("hearer").setEventFunction((event, bus, processor) -> {
+        final Item hearer = ItemBuilderFactory.builder().setName("hearer").setEventFunction((event, bus, processor) -> {
             Truth.assertWithMessage("event should not be null").that(event).isNotNull();
             Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
             Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
@@ -120,7 +122,7 @@ public class EventBusTest {
             return new ProcessingResult.Unhandled();
         }).build(itemFactory);
 
-        itemFactory.builder().setName("observer").setEventFunction((event, bus, processor) -> {
+        ItemBuilderFactory.builder().setName("observer").setEventFunction((event, bus, processor) -> {
             Truth.assertWithMessage("event should not be null").that(event).isNotNull();
             Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
             Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
@@ -158,7 +160,7 @@ public class EventBusTest {
         CountDownLatch hearerLatch = new CountDownLatch(1);
         CountDownLatch dumbdumb = new CountDownLatch(1);
 
-        final Item talker = itemFactory.builder().setName("talker").setEventFunction((event, bus, processor) -> {
+        final Item talker = ItemBuilderFactory.builder().setName("talker").setEventFunction((event, bus, processor) -> {
             Truth.assertWithMessage("event should not be null").that(event).isNotNull();
             Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
             Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
@@ -169,7 +171,7 @@ public class EventBusTest {
             return new ProcessingResult.Unhandled();
         }).build(itemFactory);
 
-        final Item hearer = itemFactory.builder().setName("hearer").setEventFunction((event, bus, processor) -> {
+        final Item hearer = ItemBuilderFactory.builder().setName("hearer").setEventFunction((event, bus, processor) -> {
             Truth.assertWithMessage("event should not be null").that(event).isNotNull();
             Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
             Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
@@ -180,7 +182,7 @@ public class EventBusTest {
             return new ProcessingResult.Unhandled();
         }).build(itemFactory);
 
-        itemFactory.builder().setName("dumbdumb").setEventFunction((event, bus, processor) -> {
+        ItemBuilderFactory.builder().setName("dumbdumb").setEventFunction((event, bus, processor) -> {
             Truth.assertWithMessage("event should not be null").that(event).isNotNull();
             Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
             Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();

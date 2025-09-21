@@ -5,7 +5,6 @@ import java.util.Objects;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.OptionalSubject;
-import com.google.common.truth.StreamSubject;
 import com.google.common.truth.StringSubject;
 import com.google.common.truth.Truth;
 
@@ -21,7 +20,7 @@ public class ItemContainerSubject extends IterableSubject {
     private final ItemContainer actual;
 
     protected ItemContainerSubject(FailureMetadata metadata, ItemContainer actual) {
-        super(metadata, actual != null ? actual.items().toList() : null);
+        super(metadata, actual != null ? actual.items() : null);
         this.actual = actual;
     }
 
@@ -30,11 +29,7 @@ public class ItemContainerSubject extends IterableSubject {
     }
 
     public IterableSubject items() {
-        return check("getItems()").that(actual.items().toList());
-    }
-
-    public StreamSubject itemsStream() {
-        return check("items()").that(actual.items());
+        return check("getItems()").that(actual.items());
     }
 
     // public void itemIsAdded(Item item) {
@@ -77,7 +72,7 @@ public class ItemContainerSubject extends IterableSubject {
         }
 
         if (expected instanceof ItemContainer expectedIC) {
-            containsExactlyElementsIn(expectedIC.items().toList());
+            containsExactlyElementsIn(expectedIC.items());
         } else {
             super.isEqualTo(expected);
         }

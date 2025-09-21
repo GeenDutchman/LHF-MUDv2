@@ -18,12 +18,9 @@ import com.geendutchman.lhf_mudv2.entities.creatures.CreatureBuilderFactory.Name
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
-import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
-import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
 import com.google.auto.value.AutoOneOf;
-
-import autovalue.shaded.com.google.common.base.Preconditions;
+import com.google.common.base.Preconditions;
 
 public interface Creature extends Entity, ItemContainer {
     public record CreatureID(EntityID delegate) implements IEntityID {
@@ -75,9 +72,6 @@ public interface Creature extends Entity, ItemContainer {
         return faction == null ? CREATURE_TAG : faction.tag();
     }
 
-    // Creatuers can hold items in an inventory
-    public abstract ItemInventory inventory();
-
     public abstract Faction faction();
 
     @Override
@@ -121,7 +115,7 @@ public interface Creature extends Entity, ItemContainer {
     @AutoOneOf(Delta.Kind.class)
     public static abstract class Delta implements Serializable {
         public enum Kind {
-            FACTION, INVENTORY_ITEM, INVENTORY_ITEM_BUILDER, SCORE_DELTA, MODIFIER_DELTA;
+            FACTION, INVENTORY_ITEM, SCORE_DELTA, MODIFIER_DELTA, LOCALE;
         }
 
         public abstract Kind kind();
@@ -130,11 +124,11 @@ public interface Creature extends Entity, ItemContainer {
 
         public abstract Optional<Item> inventoryItem();
 
-        public abstract Optional<ItemBuilderFactory.LockedItemBuilder> inventoryItemBuilder();
-
         public abstract Optional<AbstractMap.SimpleImmutableEntry<AttributeScores, Byte>> scoreDelta();
 
         public abstract Optional<AbstractMap.SimpleImmutableEntry<AttributeScores, Byte>> modifierDelta();
+
+        public abstract Optional<URI> locale();
 
         public static Delta ofFaction(Faction faction) {
             return AutoOneOf_Creature_Delta.faction(Optional.of(faction));
@@ -142,14 +136,6 @@ public interface Creature extends Entity, ItemContainer {
 
         public static Delta ofItem(Item item) {
             return AutoOneOf_Creature_Delta.inventoryItem(Optional.of(item));
-        }
-
-        public static Delta ofItemBuilder(ItemBuilderFactory.LockedItemBuilder itemBuilder) {
-            return AutoOneOf_Creature_Delta.inventoryItemBuilder(Optional.of(itemBuilder));
-        }
-
-        public static Delta ofItemBuilder(ItemBuilderFactory.BuildItem itemBuilder) {
-            return AutoOneOf_Creature_Delta.inventoryItemBuilder(Optional.of(itemBuilder.lock()));
         }
 
         public static Delta ofScoreDelta(AttributeScores score, byte change) {
@@ -162,6 +148,15 @@ public interface Creature extends Entity, ItemContainer {
             Preconditions.checkArgument(mod != null, "mod should not be null");
             return AutoOneOf_Creature_Delta.modifierDelta(
                     Optional.of(new AbstractMap.SimpleImmutableEntry<AttributeScores, Byte>(mod, change)));
+        }
+
+        public static Delta ofLocale(URI locale) {
+            return AutoOneOf_Creature_Delta.locale(Optional.of(locale));
+        }
+
+        public static Delta ofLocale(Optional<URI> locale) {
+            Preconditions.checkNotNull(locale, "locale should not be null");
+            return AutoOneOf_Creature_Delta.locale(locale);
         }
 
     }
@@ -188,8 +183,7 @@ public interface Creature extends Entity, ItemContainer {
     }
 
     public default CreatureBuilderFactory.Builder toBuilder() {
-        Builder builder = new AutoBuilder_CreatureBuilderFactory_Builder().setHealth(this.maximumHealth())
-                .useRandomName();
+        Builder builder = CreatureBuilderFactory.builder().setHealth(this.maximumHealth()).useRandomName();
         final String[] splits = this.name().toString().split(" ");
         if (splits.length > 1) {
             for (int i = splits.length - 1; i >= 0; i--) {

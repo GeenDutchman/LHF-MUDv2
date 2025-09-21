@@ -1,9 +1,9 @@
 package com.geendutchman.lhf_mudv2.entities.room;
 
 import com.google.common.truth.FailureMetadata;
+import com.google.common.truth.IterableSubject;
 import com.google.common.truth.MapSubject;
 import com.google.common.truth.OptionalSubject;
-import com.google.common.truth.StreamSubject;
 import com.google.common.truth.StringSubject;
 import com.google.common.truth.Truth;
 
@@ -27,7 +27,7 @@ public class RoomContainerSubject extends MapSubject {
         return check("name()").that(actual.name().toString());
     }
 
-    public StreamSubject rooms() {
+    public IterableSubject rooms() {
         return check("rooms()").that(actual.rooms());
     }
 
