@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
@@ -22,19 +23,21 @@ public interface Room extends Entity, ItemContainer, CreatureContainer {
 
         public RoomID {
             Preconditions.checkNotNull(delegate, "RoomID should not have a null delegate");
-            Preconditions.checkState(delegate.entityClass().equals("rooms"),
+            Preconditions.checkState(delegate.entityClass().equals(ENTITY_CLASS_ROOM),
                     "an room id must be about rooms, but was %s", delegate.entityClass());
         }
 
-        public static RoomID make(String name) {
-            return new RoomID(new EntityID("rooms", name, UUID.randomUUID()));
+        public static final Taggable.Tag ENTITY_CLASS_ROOM = new Tag("rooms");
+
+        public static RoomID make(Examinable.Name name) {
+            return new RoomID(new EntityID(ENTITY_CLASS_ROOM, name, UUID.randomUUID()));
         }
 
-        public String entityClass() {
+        public Taggable.Tag entityClass() {
             return this.delegate.entityClass();
         }
 
-        public String name() {
+        public Examinable.Name name() {
             return this.delegate.name();
         }
 

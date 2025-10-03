@@ -15,6 +15,8 @@ import java.util.regex.Pattern;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.geendutchman.lhf_mudv2.display.Examinable;
+import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID.EntityID;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Preconditions;
@@ -51,7 +53,7 @@ public interface IEntityQuery<E extends Entity> extends Predicate<E>, Serializab
     public abstract class EntityQuery implements IEntityQuery<Entity> {
         public abstract Optional<IEntityID> identifier();
 
-        public abstract Optional<String> name();
+        public abstract Optional<Examinable.Name> name();
 
         public abstract Optional<Pattern> namePattern();
 
@@ -64,9 +66,14 @@ public interface IEntityQuery<E extends Entity> extends Predicate<E>, Serializab
 
             public abstract EntityQueryBuilder setIdentifier(IEntityID identifier);
 
-            public abstract EntityQueryBuilder setName(Optional<String> name);
+            public abstract EntityQueryBuilder setName(Optional<Examinable.Name> name);
 
-            public abstract EntityQueryBuilder setName(String name);
+            public abstract EntityQueryBuilder setName(Examinable.Name name);
+
+            public EntityQueryBuilder setName(String name) {
+                Examinable.Name eName = new Examinable.Name(name);
+                return this.setName(eName);
+            }
 
             public abstract EntityQueryBuilder setNamePattern(Optional<Pattern> pattern);
 
@@ -89,7 +96,7 @@ public interface IEntityQuery<E extends Entity> extends Predicate<E>, Serializab
                     }
                     switch (q.getKey().toLowerCase()) {
                     case "name":
-                        this.setName(Optional.ofNullable(value));
+                        this.setName(Optional.ofNullable(new Examinable.Name(value)));
                         break;
                     case "namepatttern":
                         this.setNamePattern(value);
@@ -104,8 +111,8 @@ public interface IEntityQuery<E extends Entity> extends Predicate<E>, Serializab
                             continue;
                         }
                         try {
-                            this.setIdentifier(
-                                    new EntityID(segments.get(0), segments.get(1), UUID.fromString(segments.get(2))));
+                            this.setIdentifier(new EntityID(new Taggable.Tag(segments.get(0)),
+                                    new Examinable.Name(segments.get(1)), UUID.fromString(segments.get(2))));
                         } catch (IllegalArgumentException | NullPointerException e) {
                             continue;
                         }
@@ -134,7 +141,7 @@ public interface IEntityQuery<E extends Entity> extends Predicate<E>, Serializab
                 kv.put("identifier", this.identifier().get().toString());
             }
             if (this.name().isPresent()) {
-                kv.put("name", this.name().orElse(""));
+                kv.put("name", this.name().map(n -> n.toString()).orElse(""));
             }
             if (this.namePattern().isPresent()) {
                 kv.put("namePattern", this.namePattern().get().toString());
@@ -156,7 +163,7 @@ public interface IEntityQuery<E extends Entity> extends Predicate<E>, Serializab
                 }
             }
             if (this.name().isPresent()) {
-                if (!this.name().get().equals(t.name().toString())) {
+                if (!this.name().get().equals(t.name())) {
                     return false;
                 }
             }

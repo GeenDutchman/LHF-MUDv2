@@ -56,7 +56,7 @@ class ConcreteRoom implements Room {
         this.locale = locale;
         this.inventory = inventory;
         this.eventFunction = eventFunction;
-        this.roomID = RoomID.make(name.toString());
+        this.roomID = RoomID.make(name);
         this.creatures = new LinkedHashMap<>();
     }
 

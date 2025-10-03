@@ -21,19 +21,21 @@ public interface Item extends Entity {
     public record ItemID(EntityID delegate) implements IEntityID {
         public ItemID {
             Preconditions.checkNotNull(delegate, "ItemID should not have null delegate");
-            Preconditions.checkState(delegate.entityClass().equals("items"),
+            Preconditions.checkState(delegate.entityClass().equals(ENTITY_CLASS_ITEM),
                     "an item id must be about items, but was %s", delegate.entityClass());
         }
 
-        public static ItemID make(String name) {
-            return new ItemID(new EntityID("items", name, UUID.randomUUID()));
+        public static final Taggable.Tag ENTITY_CLASS_ITEM = new Tag("items");
+
+        public static ItemID make(Examinable.Name name) {
+            return new ItemID(new EntityID(ENTITY_CLASS_ITEM, name, UUID.randomUUID()));
         }
 
-        public String entityClass() {
+        public Taggable.Tag entityClass() {
             return this.delegate.entityClass();
         }
 
-        public String name() {
+        public Examinable.Name name() {
             return this.delegate.name();
         }
 

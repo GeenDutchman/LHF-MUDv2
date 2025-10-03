@@ -55,7 +55,7 @@ final class ConcreteCreature implements Creature {
         this.name = name;
         this.inventory = inventory;
         this.faction = faction != null ? faction : Faction.RENEGADE;
-        this.creatureID = CreatureID.make(name.toString());
+        this.creatureID = CreatureID.make(name);
         this.eventFunction = eventFunction != null ? eventFunction : (e, b, c) -> new ProcessingResult.Unhandled();
         this.scores = new ConcurrentSkipListMap<>(scores);
         this.scoreModBonuses = new ConcurrentSkipListMap<>(scoreModifierBonuses);

@@ -44,7 +44,7 @@ final class ConcreteItem implements Item {
         this.name = name;
         this.itemTag = itemTag;
         this.eventFunction = eventFunction != null ? eventFunction : (e, b, i) -> new ProcessingResult.Unhandled();
-        this.itemID = ItemID.make(name.toString());
+        this.itemID = ItemID.make(name);
         this.visibility = visibility;
         this.nickname = nickname;
     }

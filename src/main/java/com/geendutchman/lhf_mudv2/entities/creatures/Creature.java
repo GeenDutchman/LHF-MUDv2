@@ -26,19 +26,21 @@ public interface Creature extends Entity, ItemContainer {
     public record CreatureID(EntityID delegate) implements IEntityID {
         public CreatureID {
             Preconditions.checkNotNull(delegate, "CreatureID should not have a null delegate");
-            Preconditions.checkState(delegate.entityClass().equals("creatures"),
+            Preconditions.checkState(delegate.entityClass().equals(ENTITY_CLASS_CREATURE),
                     "a creature id should be about creatures, but was '%s'", delegate.entityClass());
         }
 
-        public static CreatureID make(String name) {
-            return new CreatureID(new EntityID("creatures", name, UUID.randomUUID()));
+        public static final Taggable.Tag ENTITY_CLASS_CREATURE = new Tag("creatures");
+
+        public static CreatureID make(Examinable.Name name) {
+            return new CreatureID(new EntityID(ENTITY_CLASS_CREATURE, name, UUID.randomUUID()));
         }
 
-        public String entityClass() {
+        public Taggable.Tag entityClass() {
             return this.delegate.entityClass();
         }
 
-        public String name() {
+        public Examinable.Name name() {
             return this.delegate.name();
         }
 

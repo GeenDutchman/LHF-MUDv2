@@ -16,6 +16,7 @@ import org.springframework.web.util.pattern.PathPattern;
 import org.springframework.web.util.pattern.PathPattern.PathRemainingMatchInfo;
 import org.springframework.web.util.pattern.PathPatternParser;
 
+import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID.EntityID;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery.EntityQuery;
@@ -66,8 +67,8 @@ public interface EntityResolver {
             } catch (IllegalArgumentException | NullPointerException e) {
                 return Optional.empty();
             }
-            ItemID itemID = new ItemID(
-                    new EntityID("items", info.getUriVariables().getOrDefault("item-name", ""), itemUUID));
+            ItemID itemID = new ItemID(new EntityID(ItemID.ENTITY_CLASS_ITEM,
+                    new Examinable.Name(info.getUriVariables().getOrDefault("item-name", "")), itemUUID));
             Optional<Item> retrieved = itemContainer.byItemID(itemID);
             return retrieved;
         }
@@ -110,7 +111,8 @@ public interface EntityResolver {
             } catch (IllegalArgumentException | NullPointerException e) {
                 return Optional.empty();
             }
-            EntityID entityID = new EntityID("rooms", info.getUriVariables().getOrDefault("room-name", ""), id);
+            EntityID entityID = new EntityID(RoomID.ENTITY_CLASS_ROOM,
+                    new Examinable.Name(info.getUriVariables().getOrDefault("room-name", "")), id);
             RoomID roomID = new RoomID(entityID);
             Optional<Room> found = this.rooms.byRoomID(roomID);
             return found;
