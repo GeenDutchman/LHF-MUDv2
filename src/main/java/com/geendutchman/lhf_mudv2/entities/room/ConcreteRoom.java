@@ -76,21 +76,22 @@ class ConcreteRoom implements Room {
             return;
         }
 
-        switch (delta.kind()) {
-        case ITEM:
-            delta.item().ifPresent(item -> {
-                this.inventory.add(item);
-                item.applyDelta(Item.Delta.ofLocale(Optional.of(this.identifier().uri())));
-            });
-            break;
-        case CREATURE:
-            delta.creature().ifPresent(creature -> {
-                this.creatures.put(creature.creatureID(), creature);
-                creature.applyDelta(Creature.Delta.ofLocale(Optional.of(this.identifier().uri())));
-            });
-        default:
-            break;
+        switch (delta) {
+        case Delta.AddItemDelta(Item item) -> {
+            this.inventory.add(item);
+            item.applyDelta(Item.Delta.ofLocale(Optional.of(this.identifier().uri())));
         }
+        case Delta.AddCreatureDelta(Creature creature) -> {
+            this.creatures.put(creature.creatureID(), creature);
+            creature.applyDelta(Creature.Delta.ofLocale(Optional.of(this.identifier().uri())));
+        }
+        case null -> {
+        }
+        default -> {
+        }
+
+        }
+
     }
 
     @Override
@@ -159,7 +160,7 @@ class ConcreteRoom implements Room {
 
     @Override
     public Optional<RichOutput> description() {
-        RichOutput.Builder builder = RichOutput.builder().setTag(Optional.ofNullable(this.tag() + "-description"));
+        RichOutput.Builder builder = RichOutput.builder().setTag(this.tag() + "-description");
         if (this.roomDescription.isPresent()) {
             builder.addOutput(this.roomDescription.get());
         }

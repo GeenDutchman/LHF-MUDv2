@@ -3,7 +3,7 @@ package com.geendutchman.lhf_mudv2.display;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
-import com.geendutchman.lhf_mudv2.display.RichOutput.OutputBuilderConversionError;
+import com.geendutchman.lhf_mudv2.display.RichOutputElementVisitor.OutputBuilderConversionError;
 import com.google.common.truth.Fact;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.IterableSubject;
@@ -31,7 +31,7 @@ public final class RichOutputSubject extends Subject {
 
     public StringSubject asXMLString() {
         try {
-            return check("asXMLString()").that(this.actual.xmlString());
+            return check("XMLVisitor.xmlString()").that(XMLVisitor.xmlString(actual));
         } catch (OutputBuilderConversionError | TransformerException | ParserConfigurationException
                 | IllegalArgumentException e) {
             failWithActual(Fact.fact("Failed the printing to XML", e));

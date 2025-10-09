@@ -25,7 +25,7 @@ public interface RoomContainer extends Examinable {
     @Override
     public default Optional<RichOutput> description() {
         RichOutput.Builder builder = RichOutput.builder().setOnEmpty(Optional.of("It is empty"))
-                .setTag(Optional.ofNullable(this.tag() + "-description"));
+                .setTag(this.tag() + "-description");
         this.rooms().forEach(room -> builder.addTaggable(room));
         return Optional.of(builder.build());
     }

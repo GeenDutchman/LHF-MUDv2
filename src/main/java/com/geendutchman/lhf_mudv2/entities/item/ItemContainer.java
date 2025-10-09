@@ -21,7 +21,7 @@ public interface ItemContainer extends Examinable {
     @Override
     public default Optional<RichOutput> description() {
         RichOutput.Builder builder = RichOutput.builder().setOnEmpty(Optional.of("It is empty"))
-                .setTag(Optional.ofNullable(this.tag() + "-description"));
+                .setTag(this.tag() + "-description");
         this.items().forEach(item -> builder.addTaggable(item));
         return Optional.of(builder.build());
     }

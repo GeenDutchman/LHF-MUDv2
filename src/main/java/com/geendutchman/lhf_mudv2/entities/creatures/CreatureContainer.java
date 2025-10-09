@@ -20,7 +20,7 @@ public interface CreatureContainer extends Examinable {
     @Override
     public default Optional<RichOutput> description() {
         RichOutput.Builder builder = RichOutput.builder().setOnEmpty(Optional.of("It is empty"))
-                .setTag(Optional.ofNullable(this.tag() + "-description"));
+                .setTag(this.tag() + "-description");
         this.creatures().forEach(creature -> builder.addTaggable(creature));
         return Optional.of(builder.build());
     }

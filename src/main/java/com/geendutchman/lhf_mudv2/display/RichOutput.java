@@ -1,35 +1,16 @@
 package com.geendutchman.lhf_mudv2.display;
 
 import java.io.Serializable;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
-import org.w3c.dom.DOMException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedMap;
 
 @AutoValue
 public abstract class RichOutput implements Serializable {
 
-    public abstract Optional<String> sequenceName();
+    public abstract Optional<Examinable.Name> sequenceName();
 
     public abstract ImmutableList<RichOutputElement> elements();
 
@@ -37,7 +18,7 @@ public abstract class RichOutput implements Serializable {
 
     public abstract boolean isAndLast();
 
-    public abstract Optional<String> tag();
+    public abstract Optional<Taggable.Tag> tag();
 
     public abstract ImmutableSortedMap<String, String> attributes();
 
@@ -45,19 +26,19 @@ public abstract class RichOutput implements Serializable {
 
     public static Builder builder() {
         return new AutoValue_RichOutput.Builder().setElementSeparator(Optional.of(RichOutputElement.ofString(" ")))
-                .setTag(Optional.of("output")).setIsAndLast(false);
+                .setTag("output").setIsAndLast(false);
     }
 
     public abstract Builder toBuilder();
 
-    public final static Pattern SEQUENCE_NAME_PATTERN = Pattern.compile("^\\w{1,}([ -]\\w+)*$");
-    public final static Pattern TAG_PATTERN = Pattern.compile("^\\w{3,}(-\\w+)*$");
-
     @AutoValue.Builder
     public abstract static class Builder {
-        public abstract Builder setSequenceName(Optional<String> sequenceName);
+        public abstract Builder setSequenceName(Optional<Examinable.Name> sequenceName);
 
-        public abstract Builder setSequenceName(String sequenceName);
+        public Builder setSequenceName(String sequenceName) {
+            Examinable.Name ename = new Examinable.Name(sequenceName);
+            return this.setSequenceName(Optional.ofNullable(ename));
+        }
 
         public abstract Builder setElements(Iterable<RichOutputElement> elements);
 
@@ -67,7 +48,12 @@ public abstract class RichOutput implements Serializable {
 
         public abstract Builder setIsAndLast(boolean andLast);
 
-        public abstract Builder setTag(Optional<String> tag);
+        public abstract Builder setTag(Optional<Taggable.Tag> tag);
+
+        public Builder setTag(String tag) {
+            Taggable.Tag ttag = new Taggable.Tag(tag);
+            return this.setTag(Optional.ofNullable(ttag));
+        }
 
         abstract ImmutableSortedMap.Builder<String, String> attributesBuilder();
 
@@ -122,80 +108,12 @@ public abstract class RichOutput implements Serializable {
             return this.addExaminable(examinable);
         }
 
-        abstract RichOutput autoBuild();
+        public abstract RichOutput build();
 
-        public final RichOutput build() {
-            RichOutput output = autoBuild();
-            Preconditions.checkState(
-                    output.sequenceName().isEmpty()
-                            || output.sequenceName().get().matches(SEQUENCE_NAME_PATTERN.pattern()),
-                    "sequence name '%s' must match: %s", output.sequenceName().orElse(""), SEQUENCE_NAME_PATTERN);
-            Preconditions.checkState(output.tag().isEmpty() || output.tag().get().matches(TAG_PATTERN.pattern()),
-                    "tag is '%s' but must match: %s", output.tag().orElse(""), TAG_PATTERN);
-            return output;
-        }
-    }
-
-    public final static class OutputBuilderConversionError extends RuntimeException {
-        public OutputBuilderConversionError(String message, Throwable cause) {
-            super(message, cause);
-        }
     }
 
     public final String printIt() {
-        final StringBuilder builder = new StringBuilder();
-        // Delegate to a RichOutputElement
-        final RichOutputElement myself = RichOutputElement.ofNested(this);
-        myself.printIt(builder);
-        return builder.toString();
-    }
-
-    public final Document xmlDocument() throws ParserConfigurationException {
-        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newDefaultInstance();
-        DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-        Document document = documentBuilder.newDocument();
-        Element root = null;
-        try {
-            root = document.createElement("DOCUMENT");
-            document.appendChild(root);
-        } catch (DOMException e) {
-            throw new OutputBuilderConversionError(String.format("Error creating document for %s", this.sequenceName()),
-                    e);
-        }
-
-        try {
-            // Delegate to a RichOutputElement
-            final RichOutputElement myself = RichOutputElement.ofNested(this);
-            myself.xmlNode(document, root);
-        } catch (OutputBuilderConversionError e) {
-            throw new OutputBuilderConversionError("Error creating root element", e);
-        }
-
-        return document;
-    }
-
-    public final void writeXml(Writer writer) throws ParserConfigurationException, TransformerException {
-        final Document document = this.xmlDocument();
-        Transformer transformer = TransformerFactory.newDefaultInstance().newTransformer();
-        for (Map.Entry<String, String> entry : Map.of(OutputKeys.INDENT, "no", OutputKeys.OMIT_XML_DECLARATION, "yes")
-                .entrySet()) {
-            if (entry == null) {
-                continue;
-            }
-            final String key = entry.getKey();
-            final String value = entry.getValue();
-            if (key == null || value == null) {
-                continue;
-            }
-            transformer.setOutputProperty(key, value);
-        }
-        transformer.transform(new DOMSource(document), new StreamResult(writer));
-    }
-
-    public final String xmlString() throws ParserConfigurationException, TransformerException {
-        StringWriter writer = new StringWriter();
-        this.writeXml(writer);
-        return writer.toString();
+        return StringVisitor.buildString(this);
     }
 
 }

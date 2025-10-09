@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.springframework.lang.Nullable;
 
 import com.geendutchman.lhf_mudv2.dice.Difficulty;
+import com.geendutchman.lhf_mudv2.dice.DifficultyMods;
 import com.geendutchman.lhf_mudv2.dice.Plain;
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
@@ -72,19 +73,26 @@ final class ConcreteItem implements Item {
         if (delta == null) {
             return;
         }
-        switch (delta.kind()) {
-        case NICKNAME:
-            this.nickname = delta.nickname();
-            break;
-        case VISIBILITY:
-            delta.visibility().ifPresent(mod -> this.visibility = mod.apply(this.visibility));
-            break;
-        case LOCALE:
-            this.locale = delta.locale();
-            break;
-        default:
-            break;
+
+        switch (delta) {
+        case Delta.SetVisibilityDelta(DifficultyMods<Plain> visible) -> {
+            if (visible != null) {
+                this.visibility = visible.apply(this.visibility);
+            }
         }
+        case Delta.SetNicknameDelta(Optional<Examinable.Name> nickname) -> {
+            this.nickname = nickname != null ? nickname : Optional.empty();
+        }
+        case Delta.SetLocale(Optional<URI> locale) -> {
+            this.locale = locale != null ? locale : Optional.empty();
+        }
+        case null -> {
+        }
+        default -> {
+        }
+
+        }
+
     }
 
     @Override

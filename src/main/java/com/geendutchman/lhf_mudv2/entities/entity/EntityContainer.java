@@ -22,7 +22,7 @@ public interface EntityContainer extends Examinable {
     @Override
     public default Optional<RichOutput> description() {
         RichOutput.Builder builder = RichOutput.builder().setOnEmpty(Optional.of("It is empty"))
-                .setTag(Optional.ofNullable(this.tag() + "-description"));
+                .setTag(this.tag() + "-description");
         for (final Entity entity : this.entities().values()) {
             builder.addTaggable(entity);
         }

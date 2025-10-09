@@ -2,10 +2,8 @@ package com.geendutchman.lhf_mudv2.display;
 
 import java.io.Serializable;
 import java.util.Comparator;
-import java.util.NavigableMap;
 import java.util.Optional;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSortedMap;
 
@@ -76,25 +74,19 @@ public interface Examinable extends Taggable {
      * @return
      */
     public default BasicExaminable basicExaminable() {
-        return BasicExaminable.customExaminable(this.name(), this.description(), this.attributes(), this.content(),
-                this.tag());
+        return new BasicExaminable(this.name(), this.description(), this.attributes(), this.content(), this.tag());
     }
 
     /**
      * A concretion of Examinable
      */
-    @AutoValue
-    public static abstract class BasicExaminable implements Examinable, Serializable {
-        public static BasicExaminable customExaminable(Name name, Optional<RichOutput> description,
-                NavigableMap<String, String> attributes, String content, Tag tag) {
+    public static record BasicExaminable(Name name, Optional<RichOutput> description,
+            ImmutableSortedMap<String, String> attributes, String content, Tag tag)
+            implements Examinable, Serializable {
+        public BasicExaminable {
             Taggable.taggablepreconditions(tag, content, attributes);
             Preconditions.checkNotNull(name, "examinable name must not be null");
-            return new AutoValue_Examinable_BasicExaminable(content, tag, name, description,
-                    ImmutableSortedMap.copyOf(attributes));
         }
-
-        @Override
-        public abstract ImmutableSortedMap<String, String> attributes();
 
         @Override
         public final BasicExaminable basicExaminable() {

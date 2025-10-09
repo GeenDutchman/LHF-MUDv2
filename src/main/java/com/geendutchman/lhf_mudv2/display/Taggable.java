@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSortedMap;
 
@@ -108,7 +107,7 @@ public interface Taggable {
      * @return
      */
     public default BasicTaggable basicTaggable() {
-        return BasicTaggable.customTaggable(this.tag(), this.content(), this.attributes());
+        return new BasicTaggable(this.tag(), this.content(), this.attributes());
     }
 
     /**
@@ -127,18 +126,11 @@ public interface Taggable {
     /**
      * A concretion of Taggable
      */
-    @AutoValue
-    public static abstract class BasicTaggable implements Taggable, Serializable {
-        public static BasicTaggable customTaggable(Tag tag, String content, NavigableMap<String, String> attributes) {
+    public static record BasicTaggable(Tag tag, String content, ImmutableSortedMap<String, String> attributes)
+            implements Taggable, Serializable {
+        public BasicTaggable {
             Taggable.taggablepreconditions(tag, content, attributes);
-            return new AutoValue_Taggable_BasicTaggable(tag, content, ImmutableSortedMap.copyOf(attributes));
         }
-
-        protected BasicTaggable() {
-        }
-
-        @Override
-        public abstract ImmutableSortedMap<String, String> attributes();
 
         @Override
         public final BasicTaggable basicTaggable() {

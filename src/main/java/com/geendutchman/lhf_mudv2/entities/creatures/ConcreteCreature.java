@@ -182,31 +182,28 @@ final class ConcreteCreature implements Creature {
         if (delta == null) {
             return;
         }
-        switch (delta.kind()) {
-        case FACTION:
-            delta.faction().ifPresent(f -> this.faction = f);
-            break;
-        case INVENTORY_ITEM:
-            delta.inventoryItem().ifPresent(item -> {
-                this.inventory.add(item);
-                item.applyDelta(Item.Delta.ofLocale(Optional.of(this.identifier().uri())));
-            });
-            break;
-
-        case MODIFIER_DELTA:
-            delta.modifierDelta().ifPresent(modEntry -> {
-                this.scoreModBonuses.merge(modEntry.getKey(), modEntry.getValue(), ConcreteCreature::addBytesCapped);
-            });
-            break;
-        case SCORE_DELTA:
-            delta.scoreDelta().ifPresent(scoreEntry -> {
-                this.scores.merge(scoreEntry.getKey(), scoreEntry.getValue(), ConcreteCreature::addBytesCapped);
-            });
-            break;
-        default:
-            break;
-
+        switch (delta) {
+        case Delta.SetFactionDelta(Faction faction) -> {
+            this.faction = faction != null ? faction : Faction.RENEGADE;
         }
+        case Delta.AddItemDelta(Item inventoryItem) -> {
+            this.inventory.add(inventoryItem);
+        }
+        case Delta.SetAttributeScoreDelta(AttributeScores attr, byte amount) -> {
+            this.scores.merge(attr, amount, ConcreteCreature::addBytesCapped);
+        }
+        case Delta.SetAttributeModDelta(AttributeScores attr, byte amount) -> {
+            this.scoreModBonuses.merge(attr, amount, ConcreteCreature::addBytesCapped);
+        }
+        case Delta.SetLocale(Optional<URI> locale) -> {
+            this.locale = locale != null ? locale : Optional.empty();
+        }
+        case null -> {
+        }
+        default -> {
+        }
+        }
+
     }
 
     @Override

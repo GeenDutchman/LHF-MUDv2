@@ -13,7 +13,6 @@ import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
-import com.google.auto.value.AutoOneOf;
 import com.google.common.base.Preconditions;
 
 public interface Item extends Entity {
@@ -112,30 +111,34 @@ public interface Item extends Entity {
         return itemTag.asTag();
     }
 
-    @AutoOneOf(Delta.Kind.class)
-    public static abstract class Delta implements Serializable {
-        public enum Kind {
-            VISIBILITY, NICKNAME, LOCALE
+    public sealed static interface Delta extends Serializable {
+
+        public record SetVisibilityDelta(DifficultyMods<Plain> visibililty) implements Delta {
+            public SetVisibilityDelta {
+                Preconditions.checkNotNull(visibililty, "visibility delta must not be null");
+            }
         }
 
-        public abstract Kind kind();
+        public record SetNicknameDelta(Optional<Examinable.Name> nickname) implements Delta {
+            public SetNicknameDelta {
+                Preconditions.checkNotNull(nickname, "nickname may be empty but must not be null");
+            }
+        }
 
-        public abstract Optional<DifficultyMods<Plain>> visibility();
-
-        public abstract Optional<Examinable.Name> nickname();
-
-        public abstract Optional<URI> locale();
-
-        public static Delta ofVisibility(Optional<DifficultyMods<Plain>> visible) {
-            return AutoOneOf_Item_Delta.visibility(visible);
+        public record SetLocale(Optional<URI> locale) implements Delta {
+            public SetLocale {
+                Preconditions.checkNotNull(locale, "locale must not be null, but may be empty");
+                Preconditions.checkArgument(locale.filter(l -> l.getQuery() == null).isPresent(),
+                        "locale must not have a query, but had '%s'", locale.get().getQuery());
+            }
         }
 
         public static Delta ofVisibility(DifficultyMods<Plain> visible) {
-            return AutoOneOf_Item_Delta.visibility(Optional.of(visible));
+            return new SetVisibilityDelta(visible);
         }
 
         public static Delta ofNickname(Optional<Examinable.Name> nickname) {
-            return AutoOneOf_Item_Delta.nickname(nickname);
+            return new SetNicknameDelta(nickname);
         }
 
         public static Delta ofNickname(String name) {
@@ -144,7 +147,7 @@ public interface Item extends Entity {
         }
 
         public static Delta ofLocale(Optional<URI> locale) {
-            return AutoOneOf_Item_Delta.locale(locale);
+            return new SetLocale(locale);
         }
     }
 

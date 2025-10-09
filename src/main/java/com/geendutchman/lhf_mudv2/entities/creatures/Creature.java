@@ -2,7 +2,6 @@ package com.geendutchman.lhf_mudv2.entities.creatures;
 
 import java.io.Serializable;
 import java.net.URI;
-import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,7 +18,6 @@ import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
-import com.google.auto.value.AutoOneOf;
 import com.google.common.base.Preconditions;
 
 public interface Creature extends Entity, ItemContainer {
@@ -114,51 +112,57 @@ public interface Creature extends Entity, ItemContainer {
 
     public byte getModifier(final AttributeScores mod);
 
-    @AutoOneOf(Delta.Kind.class)
-    public static abstract class Delta implements Serializable {
-        public enum Kind {
-            FACTION, INVENTORY_ITEM, SCORE_DELTA, MODIFIER_DELTA, LOCALE;
+    public static sealed interface Delta extends Serializable {
+        public record SetFactionDelta(Faction faction) implements Delta {
+            public SetFactionDelta {
+                Preconditions.checkNotNull(faction, "faction must not be null");
+            }
         }
 
-        public abstract Kind kind();
+        public record AddItemDelta(Item inventoryItem) implements Delta {
+            public AddItemDelta {
+                Preconditions.checkNotNull(inventoryItem, "inventory item not null");
+            }
+        }
 
-        public abstract Optional<Faction> faction();
+        public record SetAttributeScoreDelta(AttributeScores attr, byte amount) implements Delta {
+            public SetAttributeScoreDelta {
+                Preconditions.checkNotNull(attr, "attribute must not be null");
+            }
+        }
 
-        public abstract Optional<Item> inventoryItem();
+        public record SetAttributeModDelta(AttributeScores attr, byte amount) implements Delta {
+            public SetAttributeModDelta {
+                Preconditions.checkNotNull(attr, "attribute must not be null");
+            }
+        }
 
-        public abstract Optional<AbstractMap.SimpleImmutableEntry<AttributeScores, Byte>> scoreDelta();
-
-        public abstract Optional<AbstractMap.SimpleImmutableEntry<AttributeScores, Byte>> modifierDelta();
-
-        public abstract Optional<URI> locale();
+        public record SetLocale(Optional<URI> locale) implements Delta {
+            public SetLocale {
+                Preconditions.checkNotNull(locale, "locale must not be null, but may be empty");
+                Preconditions.checkArgument(locale.filter(l -> l.getQuery() == null).isPresent(),
+                        "locale must not have a query, but had '%s'", locale.get().getQuery());
+            }
+        }
 
         public static Delta ofFaction(Faction faction) {
-            return AutoOneOf_Creature_Delta.faction(Optional.of(faction));
+            return new SetFactionDelta(faction);
         }
 
         public static Delta ofItem(Item item) {
-            return AutoOneOf_Creature_Delta.inventoryItem(Optional.of(item));
+            return new AddItemDelta(item);
         }
 
         public static Delta ofScoreDelta(AttributeScores score, byte change) {
-            Preconditions.checkArgument(score != null, "score should not be null");
-            return AutoOneOf_Creature_Delta.scoreDelta(
-                    Optional.of(new AbstractMap.SimpleImmutableEntry<AttributeScores, Byte>(score, change)));
+            return new SetAttributeScoreDelta(score, change);
         }
 
         public static Delta ofModifierDelta(AttributeScores mod, byte change) {
-            Preconditions.checkArgument(mod != null, "mod should not be null");
-            return AutoOneOf_Creature_Delta.modifierDelta(
-                    Optional.of(new AbstractMap.SimpleImmutableEntry<AttributeScores, Byte>(mod, change)));
-        }
-
-        public static Delta ofLocale(URI locale) {
-            return AutoOneOf_Creature_Delta.locale(Optional.of(locale));
+            return new SetAttributeModDelta(mod, change);
         }
 
         public static Delta ofLocale(Optional<URI> locale) {
-            Preconditions.checkNotNull(locale, "locale should not be null");
-            return AutoOneOf_Creature_Delta.locale(locale);
+            return new SetLocale(locale);
         }
 
     }

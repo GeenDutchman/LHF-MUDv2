@@ -15,7 +15,6 @@ import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
-import com.google.auto.value.AutoOneOf;
 import com.google.common.base.Preconditions;
 
 public interface Room extends Entity, ItemContainer, CreatureContainer {
@@ -96,24 +95,26 @@ public interface Room extends Entity, ItemContainer, CreatureContainer {
         return this.name().toString();
     }
 
-    @AutoOneOf(Delta.Kind.class)
-    public static abstract class Delta implements Serializable {
-        public enum Kind {
-            ITEM, CREATURE
+    public sealed static interface Delta extends Serializable {
+
+        public record AddItemDelta(Item item) implements Delta {
+            public AddItemDelta {
+                Preconditions.checkNotNull(item, "item to add must not be null");
+            }
         }
 
-        public abstract Kind kind();
-
-        public abstract Optional<Item> item();
-
-        public abstract Optional<Creature> creature();
+        public record AddCreatureDelta(Creature creature) implements Delta {
+            public AddCreatureDelta {
+                Preconditions.checkNotNull(creature, "creature to add must not be null");
+            }
+        }
 
         public static Delta ofItem(Item item) {
-            return AutoOneOf_Room_Delta.item(Optional.of(item));
+            return new AddItemDelta(item);
         }
 
         public static Delta ofCreature(Creature creature) {
-            return AutoOneOf_Room_Delta.creature(Optional.of(creature));
+            return new AddCreatureDelta(creature);
         }
 
     }
