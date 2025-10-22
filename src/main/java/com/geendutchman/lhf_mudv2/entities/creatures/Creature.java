@@ -72,6 +72,12 @@ public interface Creature extends Entity, ItemContainer {
         return faction == null ? CREATURE_TAG : faction.tag();
     }
 
+    @Override
+    public default ImmutableSortedMap<String, String> attributes() {
+        return ImmutableSortedMap.<String, String>naturalOrder().putAll(Entity.super.attributes())
+                .put("faction", this.faction().toString()).put("healthBucket", this.healthBucket().toString()).build();
+    }
+
     public abstract Faction faction();
 
     @Override

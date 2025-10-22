@@ -74,6 +74,11 @@ public interface Room extends Entity, ItemContainer, CreatureContainer {
     }
 
     @Override
+    public default ImmutableSortedMap<String, String> attributes() {
+        return ImmutableSortedMap.<String, String>naturalOrder().putAll(Entity.super.attributes()).build();
+    }
+
+    @Override
     public default Optional<RichOutput> description() {
         RichOutput.Builder builder = RichOutput.builder().setSequenceName(this.name().toString());
         this.roomDescription().ifPresent(rdesc -> builder.addOutput(rdesc));

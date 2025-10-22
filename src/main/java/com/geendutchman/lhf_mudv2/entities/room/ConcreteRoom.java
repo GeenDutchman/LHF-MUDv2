@@ -180,11 +180,6 @@ class ConcreteRoom implements Room {
     }
 
     @Override
-    public ImmutableSortedMap<String, String> attributes() {
-        return ImmutableSortedMap.copyOf(Taggable.produceBasicTagAttributes());
-    }
-
-    @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("ConcreteRoom [roomID=").append(roomID).append(", name=").append(name).append(", locale=");

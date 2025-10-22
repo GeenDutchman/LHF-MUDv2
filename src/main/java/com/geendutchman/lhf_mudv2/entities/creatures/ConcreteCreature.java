@@ -130,11 +130,6 @@ final class ConcreteCreature implements Creature {
     }
 
     @Override
-    public ImmutableSortedMap<String, String> attributes() {
-        return ImmutableSortedMap.copyOf(Taggable.produceBasicTagAttributes());
-    }
-
-    @Override
     public int currentHealth() {
         return this.vitals.getOrDefault(CreatureStats.HEALTH, 0);
     }

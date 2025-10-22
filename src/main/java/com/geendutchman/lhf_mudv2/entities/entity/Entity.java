@@ -6,6 +6,7 @@ import java.util.Comparator;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.events.EventProcessor;
+import com.google.common.collect.ImmutableSortedMap;
 
 public interface Entity extends Examinable, EventProcessor, Serializable {
     /*
@@ -16,6 +17,12 @@ public interface Entity extends Examinable, EventProcessor, Serializable {
     @Override
     public default URI processorURI() {
         return this.identifier().uri();
+    }
+
+    @Override
+    public default ImmutableSortedMap<String, String> attributes() {
+        return ImmutableSortedMap.<String, String>naturalOrder().putAll(Examinable.super.attributes())
+                .put("identifier", this.identifier().uri().toString()).build();
     }
 
     public static class EntityComparator<E extends Entity> implements Comparator<E>, Serializable {

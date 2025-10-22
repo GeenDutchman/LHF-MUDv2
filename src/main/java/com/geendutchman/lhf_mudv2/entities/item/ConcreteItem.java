@@ -149,11 +149,6 @@ final class ConcreteItem implements Item {
     }
 
     @Override
-    public ImmutableSortedMap<String, String> attributes() {
-        return ImmutableSortedMap.copyOf(Taggable.produceBasicTagAttributes());
-    }
-
-    @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("ConcreteItem [itemID=").append(itemID).append(", name=").append(name).append(", itemTag=")
