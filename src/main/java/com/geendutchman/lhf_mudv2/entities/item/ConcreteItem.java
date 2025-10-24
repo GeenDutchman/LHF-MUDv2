@@ -6,6 +6,8 @@ import java.util.Optional;
 
 import org.springframework.lang.Nullable;
 
+import com.geendutchman.lhf_mudv2.commands.Command;
+import com.geendutchman.lhf_mudv2.commands.LHFCommand;
 import com.geendutchman.lhf_mudv2.dice.Difficulty;
 import com.geendutchman.lhf_mudv2.dice.DifficultyMods;
 import com.geendutchman.lhf_mudv2.dice.Plain;
@@ -13,11 +15,8 @@ import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.events.Event;
-import com.geendutchman.lhf_mudv2.events.EventBus;
 import com.geendutchman.lhf_mudv2.events.EventProcessor;
-import com.geendutchman.lhf_mudv2.events.Events;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableSortedMap;
 
 final class ConcreteItem implements Item {
     final private ItemID itemID;
@@ -44,7 +43,7 @@ final class ConcreteItem implements Item {
             ItemTag itemTag, @Nullable EventProcessor.EventFunction<Item> eventFunction) {
         this.name = name;
         this.itemTag = itemTag;
-        this.eventFunction = eventFunction != null ? eventFunction : (e, b, i) -> new ProcessingResult.Unhandled();
+        this.eventFunction = eventFunction != null ? eventFunction : (e, i) -> new ProcessingResult.Unhandled();
         this.itemID = ItemID.make(name);
         this.visibility = visibility;
         this.nickname = nickname;
@@ -96,22 +95,31 @@ final class ConcreteItem implements Item {
     }
 
     @Override
-    public ProcessingResult processEvent(Event event, EventBus bus) {
+    public ProcessingResult processEvent(Event event) {
         if (this.eventFunction != null) {
-            ProcessingResult result = this.eventFunction.apply(event, bus, this);
+            ProcessingResult result = this.eventFunction.apply(event, this);
             if (result instanceof ProcessingResult.Handled) {
                 return result;
             }
         }
-        if (event != null && event instanceof Events.ItemChangeEvent ice) {
-            for (final ItemEffect effect : ice.effects()) {
+        return Item.super.processEvent(event);
+    }
+
+    @Override
+    public CommandResult processCommand(Command command) {
+        if (command != null && command instanceof LHFCommand.ChangeItemCommand cic) {
+            RichOutput.Builder out = RichOutput.builder().setOnEmpty(Optional.of("The Item changed"));
+            for (final ItemEffect effect : cic.effects()) {
                 for (final Item.Delta delta : effect.deltas()) {
                     this.applyDelta(delta);
                 }
+                effect.applicationDescription().ifPresent(d -> out.addOutput(d));
             }
-            return new ProcessingResult.Handled();
+            return new CommandResult.Handled(Event.ItemChangedEvent.builder().setItem(this)
+                    .adjustDescription(dout -> dout.addOutput(out.build()))
+                    .setSender(this.locale().orElse(this.processorURI())).setDestination(this.processorURI()).build());
         }
-        return new ProcessingResult.Unhandled();
+        return Item.super.processCommand(command);
     }
 
     @Override

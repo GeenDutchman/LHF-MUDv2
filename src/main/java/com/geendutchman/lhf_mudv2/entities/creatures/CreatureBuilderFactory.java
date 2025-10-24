@@ -7,6 +7,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,29 +17,33 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.geendutchman.lhf_mudv2.commands.Command;
+import com.geendutchman.lhf_mudv2.commands.CommandBus;
+import com.geendutchman.lhf_mudv2.commands.CommandProcessor;
+import com.geendutchman.lhf_mudv2.commands.LHFCommand;
+import com.geendutchman.lhf_mudv2.commands.UserCommand.UserCommandType;
 import com.geendutchman.lhf_mudv2.dice.D6Set;
 import com.geendutchman.lhf_mudv2.dice.DiceSet;
 import com.geendutchman.lhf_mudv2.dice.Plain;
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.Examinable.Name;
+import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
 import com.geendutchman.lhf_mudv2.entities.room.Room;
 import com.geendutchman.lhf_mudv2.entities.room.RoomEffect;
-import com.geendutchman.lhf_mudv2.events.Event;
 import com.geendutchman.lhf_mudv2.events.EventBus;
 import com.geendutchman.lhf_mudv2.events.EventProcessor;
-import com.geendutchman.lhf_mudv2.events.Events;
-import com.geendutchman.lhf_mudv2.events.Events.RoomChangeEvent;
 import com.google.auto.value.AutoBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 @Component
-public final class CreatureBuilderFactory implements EventProcessor {
+public final class CreatureBuilderFactory implements CommandProcessor {
     private final ItemBuilderFactory itemFactory;
     private final CreatureRepository repository;
-    private final EventBus bus;
+    private final CommandBus bus;
+    private final EventBus eventBus;
     private final char renameAttempts = 7;
     private final URI processorURI;
 
@@ -222,12 +227,14 @@ public final class CreatureBuilderFactory implements EventProcessor {
     }
 
     @Autowired
-    public CreatureBuilderFactory(ItemBuilderFactory itemFactory, CreatureRepository repository, EventBus bus) {
+    public CreatureBuilderFactory(ItemBuilderFactory itemFactory, CreatureRepository repository, CommandBus bus,
+            EventBus eventBus) {
         this.itemFactory = itemFactory;
         this.repository = repository;
         this.bus = bus;
+        this.eventBus = eventBus;
         this.processorURI = UriComponentsBuilder.fromPath("/builderFactory/creatures").build().toUri();
-        this.bus.register(this);
+        this.bus.registerCommandProcessor(this);
     }
 
     @Bean({ "creaturebuilder", "creatureBuilder" })
@@ -249,25 +256,25 @@ public final class CreatureBuilderFactory implements EventProcessor {
     }
 
     @Override
-    public ProcessingResult processEvent(Event event, EventBus bus) {
-        if (event != null && event instanceof Events.CreateCreaturesForRoomEvent ccfre) {
-            ImmutableList<Room.Delta> built = ccfre.creatureBuilders().stream().filter(cb -> cb != null)
-                    .map(cb -> cb.build(this)).filter(creature -> creature != null).map(Room.Delta::ofCreature)
-                    .collect(ImmutableList.toImmutableList());
-            if (built.size() > 0) {
-                RoomChangeEvent forwarded = Events
-                        .roomChange().addEffect(RoomEffect.builder().addDeltas(built)
-                                .setApplicationDescription(ccfre.description()).setName(ccfre.reason()))
-                        .setRouting(routing -> {
-                            routing.setDestination(ccfre.forRoom().uri());
-                            routing.setReplyTo(ccfre.routing().replyTo());
-                            routing.setSender(ccfre.routing().sender());
-                        }).build();
-                bus.publish(forwarded);
-            }
-            return new ProcessingResult.Handled();
+    public ImmutableSet<UserCommandType> canHandle() {
+        return ImmutableSet.of();
+    }
+
+    @Override
+    public CommandResult processCommand(Command command) {
+        if (command != null && command instanceof LHFCommand.CreateCreaturesForRoomCommand ccfrc) {
+            Creature built = ccfrc.creatureBuilder().build(this);
+            Room.Delta addCreature = Room.Delta.ofCreature(built);
+            RoomEffect addCreatureEffect = RoomEffect.builder().addDeltas(addCreature).setName("Adding Creature")
+                    .setApplicationDescriptionFromBuilder(
+                            RichOutput.builder().addTaggable(built).addString("enters the room"))
+                    .setDescriptionFromBuilder(RichOutput.builder().addString("Adds creature to room")).build();
+            LHFCommand.ChangeRoomCommand crc = new LHFCommand.ChangeRoomCommand(
+                    new Command.CommandRouting(processorURI, ccfrc.forRoom().uri()), UUID.randomUUID(),
+                    ImmutableList.of(addCreatureEffect));
+            return this.bus.send(crc);
         }
-        return new ProcessingResult.Unhandled();
+        return CommandProcessor.super.processCommand(command);
     }
 
     @AutoBuilder(callMethod = "buildCreature", ofClass = ConcreteCreature.class)
@@ -400,7 +407,8 @@ public final class CreatureBuilderFactory implements EventProcessor {
             this.setInventory(madeInventory);
             ConcreteCreature built = this.build();
             this.setInventory(ItemInventory.builder().build(factory.itemFactory)); // undo
-            factory.bus.register(built);
+            factory.bus.registerCommandProcessor(built);
+            factory.eventBus.register(built);
             factory.repository.add(built);
             factory.namesRegister.add(this.getName());
             return built;

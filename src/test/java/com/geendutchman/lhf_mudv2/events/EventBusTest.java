@@ -45,18 +45,18 @@ public class EventBusTest {
 
         CountDownLatch latch = new CountDownLatch(1);
         final Item sword = ItemBuilderFactory.builder().setName("Sword").build(itemFactory);
-        final Item observer = ItemBuilderFactory.builder().setName("Observer")
-                .setEventFunction((event, bus, processor) -> {
-                    Truth.assertWithMessage("event should not be null").that(event).isNotNull();
-                    Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
-                    Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
-                    System.out.println(event);
-                    latch.countDown();
-                    return new ProcessingResult.Handled();
-                }).build(itemFactory);
+        final Item observer = ItemBuilderFactory.builder().setName("Observer").setEventFunction((event, processor) -> {
+            Truth.assertWithMessage("event should not be null").that(event).isNotNull();
+            Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
+            Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
+            System.out.println(event);
+            latch.countDown();
+            return new ProcessingResult.Handled();
+        }).build(itemFactory);
 
-        final Event event = Events.addressed().setDestination(sword.processorURI())
-                .setReplyToSender(observer.processorURI()).seeEvent().build();
+        final Event event = Event.ItemSeenEvent.builder().setItem(sword)
+                .adjustDescription(output -> output.addString("Something was seen?")).setSender(sword.processorURI())
+                .setDestination(observer.processorURI()).build();
 
         bus.publish(event);
 
@@ -74,17 +74,17 @@ public class EventBusTest {
 
         CountDownLatch latch = new CountDownLatch(1);
         final Item sword = ItemBuilderFactory.builder().setName("Sword").build(itemFactory);
-        final Item observer = ItemBuilderFactory.builder().setName("Observer")
-                .setEventFunction((event, bus, processor) -> {
-                    Truth.assertWithMessage("event should not be null").that(event).isNotNull();
-                    Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
-                    Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
-                    latch.countDown();
-                    return new ProcessingResult.Handled();
-                }).build(itemFactory);
+        final Item observer = ItemBuilderFactory.builder().setName("Observer").setEventFunction((event, processor) -> {
+            Truth.assertWithMessage("event should not be null").that(event).isNotNull();
+            Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
+            Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
+            latch.countDown();
+            return new ProcessingResult.Handled();
+        }).build(itemFactory);
 
-        final Event event = Events.addressed().setDestination(sword.processorURI())
-                .setReplyToSender(observer.processorURI()).seeEvent().build();
+        final Event event = Event.ItemSeenEvent.builder().setItem(sword)
+                .adjustDescription(output -> output.addString("Something was seen?")).setSender(sword.processorURI())
+                .setDestination(observer.processorURI()).build();
 
         bus.publish(event);
 
@@ -100,45 +100,46 @@ public class EventBusTest {
         CountDownLatch hearerLatch = new CountDownLatch(1);
         CountDownLatch observerLatch = new CountDownLatch(1);
 
-        final Item talker = ItemBuilderFactory.builder().setName("talker").setEventFunction((event, bus, processor) -> {
+        final Item talker = ItemBuilderFactory.builder().setName("talker").setEventFunction((event, processor) -> {
             Truth.assertWithMessage("event should not be null").that(event).isNotNull();
             Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
             Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
-            if (event.description().isPresent() && event.description().get().printIt().contains("talker")) {
+            if (event.description().printIt().contains("talker")) {
                 talkerLatch.countDown();
                 return new ProcessingResult.Handled();
             }
             return new ProcessingResult.Unhandled();
         }).build(itemFactory);
 
-        final Item hearer = ItemBuilderFactory.builder().setName("hearer").setEventFunction((event, bus, processor) -> {
+        final Item hearer = ItemBuilderFactory.builder().setName("hearer").setEventFunction((event, processor) -> {
             Truth.assertWithMessage("event should not be null").that(event).isNotNull();
             Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
             Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
-            if (event.description().isPresent() && event.description().get().printIt().contains("hearer")) {
+            if (event.description().printIt().contains("hearer")) {
                 hearerLatch.countDown();
                 return new ProcessingResult.Handled();
             }
             return new ProcessingResult.Unhandled();
         }).build(itemFactory);
 
-        ItemBuilderFactory.builder().setName("observer").setEventFunction((event, bus, processor) -> {
+        ItemBuilderFactory.builder().setName("observer").setEventFunction((event, processor) -> {
             Truth.assertWithMessage("event should not be null").that(event).isNotNull();
             Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
             Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
-            if (event.description().isPresent() && event.description().get().printIt().contains("hearer")) {
+            if (event.description().printIt().contains("hearer")) {
                 observerLatch.countDown();
                 return new ProcessingResult.Handled();
             }
             return new ProcessingResult.Unhandled();
         }).build(itemFactory);
 
-        final Event event = Events.sayEvent().setSpeaker(talker).setListener(hearer)
-                .setRouting(routing -> routing.setDestination(UriComponentsBuilder.fromPath("/items").build().toUri()))
-                .setMessage(RichOutput.builder().addPolymorphic("I say unto thee, listen!").build()).build();
-        System.out.println(event.description().get().printIt());
-        Truth.assertThat(event.description().get().printIt()).contains(talker.name());
-        Truth.assertThat(event.description().get().printIt()).contains(hearer.name());
+        final Event event = Event.SpokenEvent.builder().whoSpeaks(talker).whoListens(hearer)
+                .setMessage(RichOutput.builder().addString("I say unto thee, listen!").build())
+                .setSender(talker.processorURI())
+                .setDestination(UriComponentsBuilder.fromPath("/items").build().toUri()).build();
+        System.out.println(event.description().printIt());
+        Truth.assertThat(event.description().printIt()).contains(talker.name());
+        Truth.assertThat(event.description().printIt()).contains(hearer.name());
 
         bus.publish(event);
 
@@ -160,33 +161,33 @@ public class EventBusTest {
         CountDownLatch hearerLatch = new CountDownLatch(1);
         CountDownLatch dumbdumb = new CountDownLatch(1);
 
-        final Item talker = ItemBuilderFactory.builder().setName("talker").setEventFunction((event, bus, processor) -> {
+        final Item talker = ItemBuilderFactory.builder().setName("talker").setEventFunction((event, processor) -> {
             Truth.assertWithMessage("event should not be null").that(event).isNotNull();
             Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
             Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
-            if (event.description().isPresent() && event.description().get().printIt().contains("talker")) {
+            if (event.description().printIt().contains("talker")) {
                 talkerLatch.countDown();
                 return new ProcessingResult.Handled();
             }
             return new ProcessingResult.Unhandled();
         }).build(itemFactory);
 
-        final Item hearer = ItemBuilderFactory.builder().setName("hearer").setEventFunction((event, bus, processor) -> {
+        final Item hearer = ItemBuilderFactory.builder().setName("hearer").setEventFunction((event, processor) -> {
             Truth.assertWithMessage("event should not be null").that(event).isNotNull();
             Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
             Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
-            if (event.description().isPresent() && event.description().get().printIt().contains("hearer")) {
+            if (event.description().printIt().contains("hearer")) {
                 hearerLatch.countDown();
                 return new ProcessingResult.Handled();
             }
             return new ProcessingResult.Unhandled();
         }).build(itemFactory);
 
-        ItemBuilderFactory.builder().setName("dumbdumb").setEventFunction((event, bus, processor) -> {
+        ItemBuilderFactory.builder().setName("dumbdumb").setEventFunction((event, processor) -> {
             Truth.assertWithMessage("event should not be null").that(event).isNotNull();
             Truth.assertWithMessage("bus should not be null").that(bus).isNotNull();
             Truth.assertWithMessage("processor should not be null").that(processor).isNotNull();
-            if (event.description().isPresent() && event.description().get().printIt().contains("hearer")) {
+            if (event.description().printIt().contains("hearer")) {
                 dumbdumb.countDown();
                 return new ProcessingResult.Handled();
             }
@@ -195,13 +196,14 @@ public class EventBusTest {
 
         ItemQuery query = ItemQuery.builder().setDisplayNamePattern(".*er.*").build();
 
-        final Event event = Events.sayEvent().setSpeaker(talker).setListener(hearer)
-                .setRouting(routing -> routing.setDestination(queryFactory.defaultEntityQueryCodec()
-                        .toURI(query, UriComponentsBuilder.fromPath("/items")).build().toUri()))
-                .setMessage(RichOutput.builder().addPolymorphic("I say unto thee, listen!").build()).build();
-        System.out.println(event.description().get().printIt());
-        Truth.assertThat(event.description().get().printIt()).contains(talker.name());
-        Truth.assertThat(event.description().get().printIt()).contains(hearer.name());
+        final Event event = Event.SpokenEvent.builder().whoSpeaks(talker).whoListens(hearer)
+                .setMessage(RichOutput.builder().addPolymorphic("I say unto thee, listen!").build())
+                .setSender(talker.processorURI()).setDestination(queryFactory.defaultEntityQueryCodec()
+                        .toURI(query, UriComponentsBuilder.fromPath("/items")).build().toUri())
+                .build();
+        System.out.println(event.description().printIt());
+        Truth.assertThat(event.description().printIt()).contains(talker.name());
+        Truth.assertThat(event.description().printIt()).contains(hearer.name());
 
         bus.publish(event);
 

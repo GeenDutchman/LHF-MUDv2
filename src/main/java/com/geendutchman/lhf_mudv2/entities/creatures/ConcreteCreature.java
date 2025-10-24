@@ -9,18 +9,18 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 import org.springframework.lang.Nullable;
 
+import com.geendutchman.lhf_mudv2.commands.Command;
+import com.geendutchman.lhf_mudv2.commands.LHFCommand;
+import com.geendutchman.lhf_mudv2.commands.UserCommand.UserCommandType;
 import com.geendutchman.lhf_mudv2.display.Examinable;
-import com.geendutchman.lhf_mudv2.display.Taggable;
+import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
 import com.geendutchman.lhf_mudv2.events.Event;
-import com.geendutchman.lhf_mudv2.events.EventBus;
 import com.geendutchman.lhf_mudv2.events.EventProcessor;
-import com.geendutchman.lhf_mudv2.events.Events;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedMap;
 
 final class ConcreteCreature implements Creature {
     final private CreatureID creatureID;
@@ -56,7 +56,7 @@ final class ConcreteCreature implements Creature {
         this.inventory = inventory;
         this.faction = faction != null ? faction : Faction.RENEGADE;
         this.creatureID = CreatureID.make(name);
-        this.eventFunction = eventFunction != null ? eventFunction : (e, b, c) -> new ProcessingResult.Unhandled();
+        this.eventFunction = eventFunction != null ? eventFunction : (e, c) -> ProcessingResult.UNHANDLED;
         this.scores = new ConcurrentSkipListMap<>(scores);
         this.scoreModBonuses = new ConcurrentSkipListMap<>(scoreModifierBonuses);
         this.vitals = new ConcurrentSkipListMap<>(vitals);
@@ -89,22 +89,37 @@ final class ConcreteCreature implements Creature {
     }
 
     @Override
-    public ProcessingResult processEvent(Event event, EventBus bus) {
+    public ProcessingResult processEvent(Event event) {
         if (this.eventFunction != null) {
-            ProcessingResult result = this.eventFunction.apply(event, bus, this);
-            if (result instanceof ProcessingResult.Handled) {
-                return result;
-            }
+            return this.eventFunction.apply(event, this);
         }
-        if (event != null && event instanceof Events.CreatureChangeEvent cce) {
-            for (final CreatureEffect creatureEffect : cce.effects()) {
+        return ProcessingResult.UNHANDLED;
+    }
+
+    @Override
+    public ImmutableSet<UserCommandType> canHandle() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("creature canhandle not yet implemented");
+    }
+
+    @Override
+    public CommandResult processCommand(Command command) {
+        if (command != null && command instanceof LHFCommand.ChangeCreatureCommand ccc) {
+            RichOutput.Builder applications = RichOutput.builder();
+            for (final CreatureEffect creatureEffect : ccc.effects()) {
                 for (final Creature.Delta delta : creatureEffect.deltas()) {
                     this.applyDelta(delta);
                 }
+                creatureEffect.applicationDescription().ifPresent(ro -> applications.addOutput(ro));
             }
-            return new ProcessingResult.Handled();
+            // TODO: combine applicationdescriptions and *broadcast* them
+            return new CommandResult.Handled(Event.CreatureChangedEvent.builder().setCreature(this)
+                    .adjustDescription(out -> out.addOutput(applications.build()))
+                    .setSender(this.locale().orElse(this.processorURI())).setDestination(this.processorURI()).build());
         }
-        return new ProcessingResult.Unhandled();
+        return new CommandResult.CannotHandle(ImmutableSet.<String>builder()
+                .add(command != null ? command.getClass().getSimpleName() : "null command!!")
+                .addAll(this.canHandle().stream().map(uct -> uct.toString()).iterator()).build());
     }
 
     @Override

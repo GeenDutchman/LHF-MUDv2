@@ -11,6 +11,7 @@ import com.geendutchman.lhf_mudv2.dice.DieType;
 import com.geendutchman.lhf_mudv2.dice.Plain;
 import com.geendutchman.lhf_mudv2.dice.RollSet;
 import com.geendutchman.lhf_mudv2.display.Examinable;
+import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureBuilderFactory.Builder;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureBuilderFactory.NameGenerationStrategy;
@@ -19,6 +20,7 @@ import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSortedMap;
 
 public interface Creature extends Entity, ItemContainer {
     public record CreatureID(EntityID delegate) implements IEntityID {
@@ -70,6 +72,13 @@ public interface Creature extends Entity, ItemContainer {
     default Tag tag() {
         final Faction faction = this.faction();
         return faction == null ? CREATURE_TAG : faction.tag();
+    }
+
+    @Override
+    public default Optional<RichOutput> description() {
+        return Optional.of(RichOutput.builder().addString("A creature named").addPolymorphic(this.name().toString())
+                .addString("of the").addPolymorphic(this.faction()).addString("faction, whose health is")
+                .addPolymorphic(this.healthBucket().toString()).addString(".").build());
     }
 
     @Override

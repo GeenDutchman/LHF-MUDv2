@@ -4,11 +4,12 @@ import java.io.Serializable;
 import java.net.URI;
 import java.util.Comparator;
 
+import com.geendutchman.lhf_mudv2.commands.CommandProcessor;
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.events.EventProcessor;
 import com.google.common.collect.ImmutableSortedMap;
 
-public interface Entity extends Examinable, EventProcessor, Serializable {
+public interface Entity extends Examinable, CommandProcessor, EventProcessor, Serializable {
     /*
      * A way to specify the item
      */

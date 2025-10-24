@@ -24,6 +24,7 @@ import java.util.concurrent.TimeoutException;
 import com.geendutchman.lhf_mudv2.commands.CommandProcessor.CommandResult;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.repository.EntityResolver;
+import com.geendutchman.lhf_mudv2.events.Event;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 
@@ -56,8 +57,8 @@ public final class VirtualCommandBus implements CommandBus {
         if (processor == null) {
             return;
         }
-        this.logger.finer(() -> String.format("registering command processor %s", processor.commandProcessorURI()));
-        this.processors.put(processor.commandProcessorURI(), processor);
+        this.logger.finer(() -> String.format("registering command processor %s", processor.processorURI()));
+        this.processors.put(processor.processorURI(), processor);
     }
 
     @Override
@@ -65,8 +66,8 @@ public final class VirtualCommandBus implements CommandBus {
         if (processor == null) {
             return;
         }
-        this.logger.finer(() -> String.format("deregistering command processor %s", processor.commandProcessorURI()));
-        this.processors.remove(processor.commandProcessorURI());
+        this.logger.finer(() -> String.format("deregistering command processor %s", processor.processorURI()));
+        this.processors.remove(processor.processorURI());
     }
 
     protected CommandProcessor lookup(final URI dest) {
@@ -113,7 +114,7 @@ public final class VirtualCommandBus implements CommandBus {
 
                 CommandResult result = null;
                 try {
-                    result = executor.submit(() -> target.processCommand(command, this)).get(timing.toNanos(),
+                    result = executor.submit(() -> target.processCommand(command)).get(timing.toNanos(),
                             TimeUnit.NANOSECONDS);
                 } catch (InterruptedException e) {
                     commandLogger.log(Level.SEVERE, "was interrupted", e);

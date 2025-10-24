@@ -91,8 +91,7 @@ public final class VirtualBus implements EventBus {
             if (target != null) {
                 eventLogger.finest("Directly addressed event");
                 // we can do blocking calls with virtual threads
-                switch (executor.submit(() -> target.processEvent(event, this)).get(timing.toNanos(),
-                        TimeUnit.NANOSECONDS)) {
+                switch (executor.submit(() -> target.processEvent(event)).get(timing.toNanos(), TimeUnit.NANOSECONDS)) {
                 case ProcessingResult.Handled h -> {
                     // done
                 }
@@ -118,7 +117,7 @@ public final class VirtualBus implements EventBus {
                                     event.routing().destination()));
                             continue;
                         }
-                        switch (executor.submit(() -> entity.processEvent(event, this)).get(timing.toNanos(),
+                        switch (executor.submit(() -> entity.processEvent(event)).get(timing.toNanos(),
                                 TimeUnit.NANOSECONDS)) {
                         case ProcessingResult.Handled h -> {
                             // done

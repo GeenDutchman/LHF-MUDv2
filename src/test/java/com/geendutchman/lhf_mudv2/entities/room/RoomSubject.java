@@ -28,7 +28,7 @@ public final class RoomSubject extends Subject {
     }
 
     public OptionalSubject description() {
-        return check("roomDescription()").that(this.room.roomDescription());
+        return check("roomDescription()").that(this.room.description());
     }
 
     public StringSubject name() {

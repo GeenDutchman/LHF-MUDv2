@@ -12,13 +12,13 @@ public sealed interface UserCommand extends Command {
 
     public abstract UserCommandType commandType();
 
-    static void userCommandPreconditions(UserCommandType expected, UserCommandType commandType, MessageRouting routing,
+    static void userCommandPreconditions(UserCommandType expected, UserCommandType commandType, CommandRouting routing,
             UUID uuid) {
         Preconditions.checkArgument(commandType == expected, "this should only be a %s", expected.name());
         Command.commandPreconditions(routing, uuid);
     }
 
-    record SeeCommand(UserCommandType commandType, MessageRouting routing, UUID uuid, Optional<String> what)
+    record SeeCommand(UserCommandType commandType, CommandRouting routing, UUID uuid, Optional<String> what)
             implements UserCommand {
         public SeeCommand {
             userCommandPreconditions(UserCommandType.SEE, commandType, routing, uuid);
@@ -26,7 +26,7 @@ public sealed interface UserCommand extends Command {
         }
     }
 
-    record SayCommand(UserCommandType commandType, MessageRouting routing, UUID uuid, String message,
+    record SayCommand(UserCommandType commandType, CommandRouting routing, UUID uuid, String message,
             Optional<String> toWhom) implements UserCommand {
         public SayCommand {
             userCommandPreconditions(UserCommandType.SAY, commandType, routing, uuid);
@@ -36,7 +36,7 @@ public sealed interface UserCommand extends Command {
         }
     }
 
-    record TakeCommand(UserCommandType commandType, MessageRouting routing, UUID uuid, String what)
+    record TakeCommand(UserCommandType commandType, CommandRouting routing, UUID uuid, String what)
             implements UserCommand {
         public TakeCommand {
             userCommandPreconditions(UserCommandType.TAKE, commandType, routing, uuid);
@@ -46,7 +46,7 @@ public sealed interface UserCommand extends Command {
 
     }
 
-    record DropCommand(UserCommandType commandType, MessageRouting routing, UUID uuid, String what)
+    record DropCommand(UserCommandType commandType, CommandRouting routing, UUID uuid, String what)
             implements UserCommand {
         public DropCommand {
             userCommandPreconditions(UserCommandType.DROP, commandType, routing, uuid);

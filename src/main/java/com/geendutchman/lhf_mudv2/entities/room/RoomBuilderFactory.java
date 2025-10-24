@@ -14,6 +14,8 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.geendutchman.lhf_mudv2.commands.CommandBus;
+import com.geendutchman.lhf_mudv2.commands.CommandProcessor;
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
@@ -25,7 +27,7 @@ import com.geendutchman.lhf_mudv2.events.EventProcessor;
 import com.google.auto.value.AutoBuilder;
 
 @Component
-public final class RoomBuilderFactory implements EventProcessor {
+public final class RoomBuilderFactory implements CommandProcessor {
 
     public static sealed interface BuilderStart extends Serializable permits BuildRoom {
         public BuildRoom setName(Examinable.Name name);
@@ -111,7 +113,8 @@ public final class RoomBuilderFactory implements EventProcessor {
                 built.applyDelta(Room.Delta.ofCreature(builtCreature));
             }
             factory.repository.add(built);
-            factory.bus.register(built);
+            factory.bus.registerCommandProcessor(built);
+            factory.eventBus.register(built);
             return built;
         }
     }
@@ -119,18 +122,20 @@ public final class RoomBuilderFactory implements EventProcessor {
     private final CreatureBuilderFactory creatureFactory;
     private final ItemBuilderFactory itemFactory;
     private final RoomRepository repository;
-    private final EventBus bus;
+    private final CommandBus bus;
+    private final EventBus eventBus;
     private final URI processorURI;
 
     @Autowired
     public RoomBuilderFactory(CreatureBuilderFactory creatureFactory, ItemBuilderFactory itemFactory,
-            RoomRepository repository, EventBus bus) {
+            RoomRepository repository, CommandBus bus, EventBus eventBus) {
         this.creatureFactory = creatureFactory;
         this.itemFactory = itemFactory;
         this.repository = repository;
         this.bus = bus;
+        this.eventBus = eventBus;
         this.processorURI = UriComponentsBuilder.fromPath("/builderFactory/rooms").build().toUri();
-        this.bus.register(this);
+        this.bus.registerCommandProcessor(this);
     }
 
     @Override

@@ -16,6 +16,7 @@ import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSortedMap;
 
 public interface Room extends Entity, ItemContainer, CreatureContainer {
     public record RoomID(EntityID delegate) implements IEntityID {
@@ -79,21 +80,7 @@ public interface Room extends Entity, ItemContainer, CreatureContainer {
     }
 
     @Override
-    public default Optional<RichOutput> description() {
-        RichOutput.Builder builder = RichOutput.builder().setSequenceName(this.name().toString());
-        this.roomDescription().ifPresent(rdesc -> builder.addOutput(rdesc));
-        RichOutput.Builder itemsBuilder = RichOutput.builder().setSequenceName("Items")
-                .setOnEmpty(Optional.of("No items found here"));
-        this.items().stream().filter(i -> i != null).forEach(item -> itemsBuilder.addTaggable(item));
-        builder.addOutput(itemsBuilder.build());
-        RichOutput.Builder creaturesBuilder = RichOutput.builder().setSequenceName("Creatures")
-                .setOnEmpty(Optional.of("Nobody here"));
-        this.creatures().stream().filter(c -> c != null).forEach(creature -> creaturesBuilder.addTaggable(creature));
-        builder.addOutput(creaturesBuilder.build());
-        return Optional.of(builder.build());
-    }
-
-    public abstract Optional<RichOutput> roomDescription();
+    public abstract Optional<RichOutput> description();
 
     @Override
     public default String content() {

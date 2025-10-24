@@ -95,7 +95,7 @@ final class QueuedEventBus implements EventBus {
                 final EventProcessor target = this.processors.get(event.routing().destination());
                 if (target != null) {
                     eventLogger.finest("Directly addressed event");
-                    switch (target.processEvent(event, this)) {
+                    switch (target.processEvent(event)) {
                     case ProcessingResult.Handled h -> {
                         // done
                     }
@@ -120,7 +120,7 @@ final class QueuedEventBus implements EventBus {
                                         event.routing().destination()));
                                 continue;
                             }
-                            switch (entity.processEvent(event, this)) {
+                            switch (entity.processEvent(event)) {
                             case ProcessingResult.Handled h -> {
                                 // done
                             }

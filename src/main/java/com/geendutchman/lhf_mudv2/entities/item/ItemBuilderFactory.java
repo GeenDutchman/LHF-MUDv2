@@ -13,24 +13,25 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.geendutchman.lhf_mudv2.commands.Command;
+import com.geendutchman.lhf_mudv2.commands.CommandBus;
+import com.geendutchman.lhf_mudv2.commands.CommandProcessor;
+import com.geendutchman.lhf_mudv2.commands.LHFCommand;
 import com.geendutchman.lhf_mudv2.dice.Difficulty;
 import com.geendutchman.lhf_mudv2.dice.Plain;
 import com.geendutchman.lhf_mudv2.display.Examinable;
+import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureEffect;
 import com.geendutchman.lhf_mudv2.entities.room.Room;
 import com.geendutchman.lhf_mudv2.entities.room.RoomEffect;
-import com.geendutchman.lhf_mudv2.events.Event;
 import com.geendutchman.lhf_mudv2.events.EventBus;
 import com.geendutchman.lhf_mudv2.events.EventProcessor;
-import com.geendutchman.lhf_mudv2.events.Events;
-import com.geendutchman.lhf_mudv2.events.Events.CreatureChangeEvent;
-import com.geendutchman.lhf_mudv2.events.Events.RoomChangeEvent;
 import com.google.auto.value.AutoBuilder;
 import com.google.common.collect.ImmutableList;
 
 @Component
-public final class ItemBuilderFactory implements EventProcessor {
+public final class ItemBuilderFactory implements CommandProcessor {
 
     public static sealed interface BuilderStart extends Serializable permits BuildItem {
         public ItemBuilderFactory.BuildItem setName(@NonNull Examinable.Name name);
@@ -113,7 +114,8 @@ public final class ItemBuilderFactory implements EventProcessor {
                 throw new NullPointerException("factory must be provided");
             }
             ConcreteItem built = this.autoBuild();
-            factory.bus.register(built);
+            factory.bus.registerCommandProcessor(built);
+            factory.eventBus.register(built);
             factory.repository.add(built);
             return built;
         }
@@ -121,15 +123,17 @@ public final class ItemBuilderFactory implements EventProcessor {
     }
 
     private final ItemRepository repository;
-    private final EventBus bus;
+    private final CommandBus bus;
+    private final EventBus eventBus;
     private final URI processorURI;
 
     @Autowired
-    public ItemBuilderFactory(ItemRepository repository, EventBus bus) {
+    public ItemBuilderFactory(ItemRepository repository, CommandBus bus, EventBus eventBus) {
         this.repository = repository;
         this.bus = bus;
+        this.eventBus = eventBus;
         this.processorURI = UriComponentsBuilder.fromPath("/builderFactory/items").build().toUri();
-        this.bus.register(this);
+        this.bus.registerCommandProcessor(this);
     }
 
     @Bean({ "itembuilder", "itemBuilder" })
@@ -151,48 +155,31 @@ public final class ItemBuilderFactory implements EventProcessor {
     }
 
     @Override
-    public ProcessingResult processEvent(Event event, EventBus bus) {
-        switch (event) {
-        case Events.CreateItemsForCreatureEvent cifce -> {
-            ImmutableList<Creature.Delta> built = cifce.itemBuilders().stream().filter(lib -> lib != null)
-                    .map(lib -> lib.build(this)).filter(item -> item != null).map(Creature.Delta::ofItem)
-                    .collect(ImmutableList.toImmutableList());
-            if (built.size() > 0) {
-                CreatureChangeEvent forwarded = Events.creatureChange()
-                        .addEffect(CreatureEffect.builder().addDeltas(built)
-                                .setApplicationDescription(cifce.description()).setName(cifce.reason()))
-                        .setRouting(routing -> {
-                            routing.setDestination(cifce.forCreature().uri());
-                            routing.setReplyTo(cifce.routing().replyTo());
-                            routing.setSender(cifce.routing().sender());
-                        }).build();
-                bus.publish(forwarded);
-            }
-            return new ProcessingResult.Handled();
-        }
-        case Events.CreateItemsForRoomEvent cifre -> {
-            ImmutableList<Room.Delta> built = cifre.itemBuilders().stream().filter(lib -> lib != null)
-                    .map(lib -> lib.build(this)).filter(item -> item != null).map(Room.Delta::ofItem)
-                    .collect(ImmutableList.toImmutableList());
-            if (built.size() > 0) {
-                RoomChangeEvent forwarded = Events
-                        .roomChange().addEffect(RoomEffect.builder().addDeltas(built)
-                                .setApplicationDescription(cifre.description()).setName(cifre.reason()))
-                        .setRouting(routing -> {
-                            routing.setDestination(cifre.forRoom().uri());
-                            routing.setReplyTo(cifre.routing().replyTo());
-                            routing.setSender(cifre.routing().sender());
-                        }).build();
-                bus.publish(forwarded);
-            }
-            return new ProcessingResult.Handled();
-        }
-        case null -> {
-            return new ProcessingResult.Unhandled();
-        }
-        default -> {
-            return new ProcessingResult.Unhandled();
-        }
+    public CommandResult processCommand(Command command) {
+        if (command != null && command instanceof LHFCommand.CreateItemsForCreatureCommand cifcc) {
+            Item built = cifcc.itemBuilder().build(this);
+            Creature.Delta addItem = Creature.Delta.ofItem(built);
+            CreatureEffect addItemEffect = CreatureEffect.builder().addDeltas(addItem).setName("Adding Item")
+                    .setApplicationDescriptionFromBuilder(RichOutput.builder().addTaggable(cifcc.forCreature())
+                            .addString("now has").addTaggable(built))
+                    .setDescriptionFromBuilder(RichOutput.builder().addString("Adds item to creature")).build();
+            LHFCommand.ChangeCreatureCommand crc = new LHFCommand.ChangeCreatureCommand(
+                    new Command.CommandRouting(processorURI, cifcc.forCreature().uri()), UUID.randomUUID(),
+                    ImmutableList.of(addItemEffect));
+            return bus.send(crc);
+        } else if (command != null && command instanceof LHFCommand.CreateItemsForRoomCommand cifrc) {
+            Item built = cifrc.itemBuilder().build(this);
+            Room.Delta addItem = Room.Delta.ofItem(built);
+            RoomEffect addItemEffect = RoomEffect.builder().addDeltas(addItem).setName("Adding Item")
+                    .setApplicationDescriptionFromBuilder(
+                            RichOutput.builder().addTaggable(built).addString("is now in the room"))
+                    .setDescriptionFromBuilder(RichOutput.builder().addString("Adds item to room")).build();
+            LHFCommand.ChangeRoomCommand crc = new LHFCommand.ChangeRoomCommand(
+                    new Command.CommandRouting(processorURI, cifrc.forRoom().uri()), UUID.randomUUID(),
+                    ImmutableList.of(addItemEffect));
+            return bus.send(crc);
+        } else {
+            return CommandProcessor.super.processCommand(command);
         }
     }
 
