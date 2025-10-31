@@ -9,13 +9,16 @@ import org.springframework.lang.Nullable;
 
 import com.geendutchman.lhf_mudv2.commands.Command;
 import com.geendutchman.lhf_mudv2.commands.LHFCommand;
+import com.geendutchman.lhf_mudv2.commands.UserCommand;
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature.CreatureID;
+import com.geendutchman.lhf_mudv2.entities.creatures.CreatureQuery;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
+import com.geendutchman.lhf_mudv2.entities.item.ItemQuery;
 import com.geendutchman.lhf_mudv2.events.Event;
 import com.geendutchman.lhf_mudv2.events.EventProcessor;
 import com.google.common.base.Preconditions;
@@ -108,6 +111,30 @@ class ConcreteRoom implements Room {
             return new CommandResult.Handled(Event.RoomChangedEvent.builder().setRoom(this)
                     .adjustDescription(dout -> dout.addOutput(out.build()))
                     .setSender(this.locale().orElse(this.processorURI())).setDestination(this.processorURI()).build());
+        } else if (command != null && command instanceof UserCommand.SeeCommand seeCommand) {
+            if (seeCommand.what().isPresent()) {
+                // final EntityQuery query =
+                // EntityQuery.builder().setName(seeCommand.what().orElse("")).build();
+                final Optional<Creature> findCreature = this
+                        .queryOneCreature(CreatureQuery.builder().setName(seeCommand.what().orElse("")).build());
+                if (findCreature != null && findCreature.isPresent()) {
+                    return new CommandResult.Handled(
+                            Event.CreatureSeenEvent.builder().setCreature(findCreature.get()).adjustDescription(out -> {
+                            }).setSender(this.processorURI()).setDestination(seeCommand.routing().sender()).build());
+                }
+                final Optional<Item> findItem = this
+                        .queryOneItem(ItemQuery.builder().setNickname(seeCommand.what().orElse("")).build());
+                if (findItem != null && findItem.isPresent()) {
+                    return new CommandResult.Handled(
+                            Event.ItemSeenEvent.builder().setItem(findItem.get()).adjustDescription(out -> {
+                            }).setSender(this.processorURI()).setDestination(seeCommand.routing().sender()).build());
+                }
+            }
+
+            // TODO: need to make checks
+            return new CommandResult.Handled(
+                    Event.RoomSeenEvent.builder().autoRoom(this, item -> item != null, creature -> creature != null)
+                            .setSender(this.processorURI()).setDestination(seeCommand.routing().sender()).build());
         }
         return Room.super.processCommand(command);
     }
