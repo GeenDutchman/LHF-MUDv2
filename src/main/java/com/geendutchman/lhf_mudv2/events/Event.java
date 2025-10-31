@@ -376,6 +376,10 @@ public sealed interface Event {
             public RoutingStep autoRoom(Room room, Predicate<Item> filterItems, Predicate<Creature> filterCreatures);
         }
 
+        public static RoomSeenStep builder() {
+            return new AutoBuilder_Event_RoomSeenEvent_RoomSeenEventBuilder();
+        }
+
         @AutoBuilder(ofClass = EventImpl.RoomSeenEventImpl.class)
         public static abstract class RoomSeenEventBuilder extends AbstractEventBuilder implements RoomSeenStep {
 
@@ -481,12 +485,16 @@ public sealed interface Event {
 
         public abstract ResourcePoolSize healthBucket();
 
-        public static DescriptionStep builder() {
+        public interface CreatureStep {
+            public DescriptionStep setCreature(final Creature creature);
+        }
+
+        public static CreatureStep builder() {
             return new AutoBuilder_Event_CreatureSeenEvent_CreatureSeenEventBuilder();
         }
 
         @AutoBuilder(ofClass = EventImpl.CreatureSeenEventImpl.class)
-        public static abstract class CreatureSeenEventBuilder extends AbstractEventBuilder {
+        public static abstract class CreatureSeenEventBuilder extends AbstractEventBuilder implements CreatureStep {
             protected abstract CreatureSeenEventBuilder setCreature(BasicExaminable id);
 
             public abstract CreatureSeenEventBuilder setFaction(Faction faction);
