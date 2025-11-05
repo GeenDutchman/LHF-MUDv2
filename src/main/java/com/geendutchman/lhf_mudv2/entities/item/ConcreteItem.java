@@ -4,54 +4,39 @@ import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.springframework.lang.Nullable;
-
-import com.geendutchman.lhf_mudv2.commands.Command;
-import com.geendutchman.lhf_mudv2.commands.LHFCommand;
 import com.geendutchman.lhf_mudv2.dice.Difficulty;
 import com.geendutchman.lhf_mudv2.dice.DifficultyMods;
 import com.geendutchman.lhf_mudv2.dice.Plain;
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.Taggable;
-import com.geendutchman.lhf_mudv2.events.Event;
-import com.geendutchman.lhf_mudv2.events.EventProcessor;
 import com.google.common.base.Preconditions;
 
 final class ConcreteItem implements Item {
     final private ItemID itemID;
     final private Examinable.Name name;
     final private ItemTag itemTag;
-    @Nullable
-    final private transient EventProcessor.EventFunction<Item> eventFunction;
     private Difficulty<Plain> visibility;
     private Optional<Examinable.Name> nickname;
     private Optional<URI> locale = Optional.empty();
 
     protected static ConcreteItem buildItem(Examinable.Name name, Difficulty<Plain> visibility,
-            Optional<Examinable.Name> nickname, ItemTag itemTag, Optional<URI> locale,
-            @Nullable EventProcessor.EventFunction<Item> eventFunction) {
+            Optional<Examinable.Name> nickname, ItemTag itemTag, Optional<URI> locale) {
         Preconditions.checkNotNull(name, "name should not be null");
         Preconditions.checkNotNull(nickname, "nickname can be empty but should not be null");
         Preconditions.checkNotNull(visibility, "visibility difficulty can be zero but must not be null");
         Preconditions.checkNotNull(locale, "locale is null, did you mean empty?");
-        ConcreteItem item = new ConcreteItem(name, visibility, nickname, itemTag, eventFunction);
+        ConcreteItem item = new ConcreteItem(name, visibility, nickname, itemTag);
         return item;
     }
 
     private ConcreteItem(Examinable.Name name, Difficulty<Plain> visibility, Optional<Examinable.Name> nickname,
-            ItemTag itemTag, @Nullable EventProcessor.EventFunction<Item> eventFunction) {
+            ItemTag itemTag) {
         this.name = name;
         this.itemTag = itemTag;
-        this.eventFunction = eventFunction != null ? eventFunction : (e, i) -> new ProcessingResult.Unhandled();
         this.itemID = ItemID.make(name);
         this.visibility = visibility;
         this.nickname = nickname;
-    }
-
-    @Override
-    public URI processorURI() {
-        return this.itemID.uri();
     }
 
     @Override
@@ -92,34 +77,6 @@ final class ConcreteItem implements Item {
 
         }
 
-    }
-
-    @Override
-    public ProcessingResult processEvent(Event event) {
-        if (this.eventFunction != null) {
-            ProcessingResult result = this.eventFunction.apply(event, this);
-            if (result instanceof ProcessingResult.Handled) {
-                return result;
-            }
-        }
-        return Item.super.processEvent(event);
-    }
-
-    @Override
-    public CommandResult processCommand(Command command) {
-        if (command != null && command instanceof LHFCommand.ChangeItemCommand cic) {
-            RichOutput.Builder out = RichOutput.builder().setOnEmpty(Optional.of("The Item changed"));
-            for (final ItemEffect effect : cic.effects()) {
-                for (final Item.Delta delta : effect.deltas()) {
-                    this.applyDelta(delta);
-                }
-                effect.applicationDescription().ifPresent(d -> out.addOutput(d));
-            }
-            return new CommandResult.Handled(Event.ItemChangedEvent.builder().setItem(this)
-                    .adjustDescription(dout -> dout.addOutput(out.build()))
-                    .setSender(this.locale().orElse(this.processorURI())).setDestination(this.processorURI()).build());
-        }
-        return Item.super.processCommand(command);
     }
 
     @Override

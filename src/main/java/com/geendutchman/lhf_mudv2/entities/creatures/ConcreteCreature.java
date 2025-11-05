@@ -7,18 +7,10 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-import org.springframework.lang.Nullable;
-
-import com.geendutchman.lhf_mudv2.commands.Command;
-import com.geendutchman.lhf_mudv2.commands.LHFCommand;
-import com.geendutchman.lhf_mudv2.commands.UserCommand.UserCommandType;
 import com.geendutchman.lhf_mudv2.display.Examinable;
-import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
-import com.geendutchman.lhf_mudv2.events.Event;
-import com.geendutchman.lhf_mudv2.events.EventProcessor;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 
@@ -34,29 +26,25 @@ final class ConcreteCreature implements Creature {
     private final ConcurrentNavigableMap<AttributeScores, Byte> scoreModBonuses;
     private final ConcurrentNavigableMap<CreatureStats, Integer> vitals;
 
-    @Nullable
-    final private transient EventProcessor.EventFunction<Creature> eventFunction;
-
     protected static ConcreteCreature buildCreature(Examinable.Name name, ItemInventory inventory, Faction faction,
             Map<AttributeScores, Byte> scores, Map<AttributeScores, Byte> scoreModifierBonuses,
-            Map<CreatureStats, Integer> vitals, @Nullable EventProcessor.EventFunction<Creature> eventFunction) {
+            Map<CreatureStats, Integer> vitals) {
         Preconditions.checkNotNull(name, "name should not be null");
         Preconditions.checkNotNull(inventory, "inventory should not be null");
         Preconditions.checkNotNull(scores, "scores may be empty, but must not be null");
         Preconditions.checkNotNull(scoreModifierBonuses, "score modifier bonuses may be empty, but must not be null");
         Preconditions.checkNotNull(vitals, "vitals should not be null");
 
-        return new ConcreteCreature(name, inventory, faction, scores, scoreModifierBonuses, vitals, eventFunction);
+        return new ConcreteCreature(name, inventory, faction, scores, scoreModifierBonuses, vitals);
     }
 
     private ConcreteCreature(Examinable.Name name, ItemInventory inventory, Faction faction,
             Map<AttributeScores, Byte> scores, Map<AttributeScores, Byte> scoreModifierBonuses,
-            Map<CreatureStats, Integer> vitals, @Nullable EventProcessor.EventFunction<Creature> eventFunction) {
+            Map<CreatureStats, Integer> vitals) {
         this.name = name;
         this.inventory = inventory;
         this.faction = faction != null ? faction : Faction.RENEGADE;
         this.creatureID = CreatureID.make(name);
-        this.eventFunction = eventFunction != null ? eventFunction : (e, c) -> ProcessingResult.UNHANDLED;
         this.scores = new ConcurrentSkipListMap<>(scores);
         this.scoreModBonuses = new ConcurrentSkipListMap<>(scoreModifierBonuses);
         this.vitals = new ConcurrentSkipListMap<>(vitals);
@@ -71,11 +59,6 @@ final class ConcreteCreature implements Creature {
     }
 
     @Override
-    public URI processorURI() {
-        return this.creatureID.uri();
-    }
-
-    @Override
     public Optional<URI> locale() {
         return this.locale;
     }
@@ -86,40 +69,6 @@ final class ConcreteCreature implements Creature {
         } else {
             this.locale = nextPlace;
         }
-    }
-
-    @Override
-    public ProcessingResult processEvent(Event event) {
-        if (this.eventFunction != null) {
-            return this.eventFunction.apply(event, this);
-        }
-        return ProcessingResult.UNHANDLED;
-    }
-
-    @Override
-    public ImmutableSet<UserCommandType> canHandle() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("creature canhandle not yet implemented");
-    }
-
-    @Override
-    public CommandResult processCommand(Command command) {
-        if (command != null && command instanceof LHFCommand.ChangeCreatureCommand ccc) {
-            RichOutput.Builder applications = RichOutput.builder();
-            for (final CreatureEffect creatureEffect : ccc.effects()) {
-                for (final Creature.Delta delta : creatureEffect.deltas()) {
-                    this.applyDelta(delta);
-                }
-                creatureEffect.applicationDescription().ifPresent(ro -> applications.addOutput(ro));
-            }
-            // TODO: combine applicationdescriptions and *broadcast* them
-            return new CommandResult.Handled(Event.CreatureChangedEvent.builder().setCreature(this)
-                    .adjustDescription(out -> out.addOutput(applications.build()))
-                    .setSender(this.locale().orElse(this.processorURI())).setDestination(this.processorURI()).build());
-        }
-        return new CommandResult.CannotHandle(ImmutableSet.<String>builder()
-                .add(command != null ? command.getClass().getSimpleName() : "null command!!")
-                .addAll(this.canHandle().stream().map(uct -> uct.toString()).iterator()).build());
     }
 
     @Override

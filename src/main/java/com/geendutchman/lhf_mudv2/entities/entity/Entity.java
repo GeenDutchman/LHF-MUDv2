@@ -3,22 +3,23 @@ package com.geendutchman.lhf_mudv2.entities.entity;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.Comparator;
+import java.util.Optional;
 
-import com.geendutchman.lhf_mudv2.commands.CommandProcessor;
 import com.geendutchman.lhf_mudv2.display.Examinable;
-import com.geendutchman.lhf_mudv2.events.EventProcessor;
 import com.google.common.collect.ImmutableSortedMap;
 
-public interface Entity extends Examinable, CommandProcessor, EventProcessor, Serializable {
+public interface Entity extends Examinable, Serializable {
     /*
      * A way to specify the item
      */
     public abstract IEntityID identifier();
 
-    @Override
-    public default URI processorURI() {
-        return this.identifier().uri();
-    }
+    /**
+     * Where does this item find itself?
+     * 
+     * @return
+     */
+    public Optional<URI> locale();
 
     @Override
     public default ImmutableSortedMap<String, String> attributes() {
@@ -41,7 +42,7 @@ public interface Entity extends Examinable, CommandProcessor, EventProcessor, Se
             if (comparison != 0) {
                 return comparison;
             }
-            return o1.processorURI().compareTo(o2.processorURI());
+            return o1.identifier().compareTo(o2.identifier());
         }
     }
 

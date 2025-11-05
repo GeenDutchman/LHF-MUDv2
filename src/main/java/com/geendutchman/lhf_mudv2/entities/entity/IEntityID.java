@@ -43,6 +43,10 @@ public interface IEntityID extends Comparable<IEntityID>, Taggable {
         if (classCompare != 0) {
             return classCompare;
         }
+        int nameCompare = this.name().compareTo(o.name());
+        if (nameCompare != 0) {
+            return nameCompare;
+        }
         return this.uuid().compareTo(o.uuid());
     }
 
@@ -55,6 +59,11 @@ public interface IEntityID extends Comparable<IEntityID>, Taggable {
             Preconditions.checkNotNull(entityClass, "entity class must not be null");
             Preconditions.checkNotNull(name, "name must not be null");
             Preconditions.checkNotNull(uuid, "uuid must not be null");
+        }
+
+        @Override
+        public final String toString() {
+            return this.uri().toString();
         }
 
     }
