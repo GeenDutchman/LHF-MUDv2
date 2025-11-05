@@ -9,6 +9,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.geendutchman.lhf_mudv2.entities.creatures.CreatureQuery;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery.EntityQuery;
@@ -60,6 +61,26 @@ public interface QueryCodec {
 
     public static final ItemQueryCodec ITEM_QUERY_CODEC = new ItemQueryCodec();
 
+    public final class CreatureQueryCodec implements QueryCodec {
+        private CreatureQueryCodec() {
+        }
+
+        @Override
+        public CreatureQuery fromURI(UriComponents uri) {
+            CreatureQuery.Builder builder = CreatureQuery.builder();
+            MultiValueMap<String, String> uriQuery = uri.getQueryParams();
+            builder.fromKeyValue(uriQuery.asSingleValueMap());
+            return builder.build();
+        }
+
+        @Override
+        public CreatureQuery fromURI(URI uri) {
+            return this.fromURI(UriComponentsBuilder.fromUri(uri).build());
+        }
+    }
+
+    public static final CreatureQueryCodec CREATURE_QUERY_CODEC = new CreatureQueryCodec();
+
     public final class RoomQueryCodec implements QueryCodec {
         private RoomQueryCodec() {
         }
@@ -83,7 +104,8 @@ public interface QueryCodec {
         private final Map<String, QueryCodec> codecs;
 
         public Factory() {
-            this.codecs = Map.of("item", ITEM_QUERY_CODEC, "room", ROOM_QUERY_CODEC, "entity", ENTITY_QUERY_CODEC);
+            this.codecs = Map.of("item", ITEM_QUERY_CODEC, "room", ROOM_QUERY_CODEC, "entity", ENTITY_QUERY_CODEC,
+                    "creature", CREATURE_QUERY_CODEC);
         }
 
         public Factory(@NonNull Map<String, QueryCodec> codecs) {
@@ -104,6 +126,10 @@ public interface QueryCodec {
 
         public EntityQueryCodec defaultEntityQueryCodec() {
             return ENTITY_QUERY_CODEC;
+        }
+
+        public CreatureQueryCodec defaultCreatureQueryCodec() {
+            return CREATURE_QUERY_CODEC;
         }
 
     }

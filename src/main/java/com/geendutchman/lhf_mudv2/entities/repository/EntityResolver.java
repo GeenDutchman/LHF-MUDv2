@@ -17,6 +17,11 @@ import org.springframework.web.util.pattern.PathPattern.PathRemainingMatchInfo;
 import org.springframework.web.util.pattern.PathPatternParser;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
+import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
+import com.geendutchman.lhf_mudv2.entities.creatures.CreatureContainer;
+import com.geendutchman.lhf_mudv2.entities.creatures.CreatureQuery;
+import com.geendutchman.lhf_mudv2.entities.creatures.CreatureRepository;
+import com.geendutchman.lhf_mudv2.entities.creatures.Creature.CreatureID;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID.EntityID;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery.EntityQuery;
@@ -42,6 +47,9 @@ public interface EntityResolver {
         private final ItemRepository items;
 
         @Autowired
+        private final CreatureRepository creatures;
+
+        @Autowired
         private final RoomRepository rooms;
 
         @Autowired
@@ -50,9 +58,11 @@ public interface EntityResolver {
         private final transient SortedMap<PathPattern, BiFunction<PathPattern.PathRemainingMatchInfo, URI, SortedSet<Entity>>> routes;
 
         @Autowired
-        public DefaultEntityResolver(QueryCodec.Factory queryCodecFactory, ItemRepository items, RoomRepository rooms) {
+        public DefaultEntityResolver(QueryCodec.Factory queryCodecFactory, ItemRepository items,
+                CreatureRepository creatures, RoomRepository rooms) {
             this.queryCodecFactory = queryCodecFactory;
             this.items = items;
+            this.creatures = creatures;
             this.rooms = rooms;
             this.routes = this.createRoutes();
         }
@@ -81,11 +91,38 @@ public interface EntityResolver {
             return ImmutableSortedSet.of();
         }
 
+        private Optional<Creature> getCreature(PathRemainingMatchInfo info, URI uri,
+                CreatureContainer creatureContainer) {
+            if (creatureContainer == null || uri == null || info == null) {
+                return Optional.empty();
+            }
+            UUID creatureUUID;
+            try {
+                creatureUUID = UUID.fromString(info.getUriVariables().getOrDefault("creature-id", null));
+            } catch (IllegalArgumentException | NullPointerException e) {
+                return Optional.empty();
+            }
+            CreatureID creatureID = new CreatureID(new EntityID(CreatureID.ENTITY_CLASS_CREATURE,
+                    new Examinable.Name(info.getUriVariables().getOrDefault("creature-name", "")), creatureUUID));
+            Optional<Creature> retrieved = creatureContainer.byCreatureID(creatureID);
+            return retrieved;
+        }
+
+        private SortedSet<Entity> resolveCreature(PathRemainingMatchInfo info, URI uri,
+                CreatureContainer creatureContainer) {
+            Optional<Creature> retrieved = this.getCreature(info, uri, creatureContainer);
+            if (retrieved != null && retrieved.isPresent()) {
+                return ImmutableSortedSet.orderedBy(Entity.getEntityComparator()).add(retrieved.get()).build();
+            }
+            return ImmutableSortedSet.of();
+        }
+
         private SortedSet<Entity> resolveAllEntities(PathRemainingMatchInfo info, URI uri, ItemContainer itemContainer,
-                RoomContainer rooms) {
+                CreatureContainer creatures, RoomContainer rooms) {
             ImmutableSortedSet.Builder<Entity> builder = ImmutableSortedSet.orderedBy(Entity.getEntityComparator());
             EntityQuery query = queryCodecFactory.defaultEntityQueryCodec().fromURI(uri);
             this.items.items().stream().filter(query).forEach(item -> builder.add(item));
+            this.creatures.creatures().stream().filter(query).forEach(creature -> builder.add(creature));
             this.rooms.rooms().stream().filter(query).forEach(room -> builder.add(room));
             return builder.build();
         }
@@ -94,6 +131,32 @@ public interface EntityResolver {
             ImmutableSortedSet.Builder<Entity> builder = ImmutableSortedSet.orderedBy(Entity.getEntityComparator());
             ItemQuery query = queryCodecFactory.defaultItemQueryCodec().fromURI(uri);
             this.items.items().stream().filter(query).forEach(item -> builder.add(item));
+            return builder.build();
+        }
+
+        private SortedSet<Entity> resolveCreatureItems(PathRemainingMatchInfo info, URI uri,
+                CreatureContainer creatureContainer) {
+            Optional<Creature> found = this.getCreature(info, uri, creatureContainer);
+            if (found != null && found.isPresent()) {
+                return this.resolveItems(info, uri, found.get());
+            }
+            return ImmutableSortedSet.of();
+        }
+
+        private SortedSet<Entity> resolveItemInCreature(PathRemainingMatchInfo info, URI uri,
+                CreatureContainer creatureContainer) {
+            Optional<Creature> found = this.getCreature(info, uri, creatureContainer);
+            if (found != null && found.isPresent()) {
+                return this.resolveItem(info, uri, found.get());
+            }
+            return ImmutableSortedSet.of();
+        }
+
+        private SortedSet<Entity> resolveCreatures(PathRemainingMatchInfo info, URI uri,
+                CreatureContainer creatureContainer) {
+            ImmutableSortedSet.Builder<Entity> builder = ImmutableSortedSet.orderedBy(Entity.getEntityComparator());
+            CreatureQuery query = queryCodecFactory.defaultCreatureQueryCodec().fromURI(uri);
+            this.creatures.creatures().stream().filter(query).forEach(creature -> builder.add(creature));
             return builder.build();
         }
 
@@ -142,11 +205,20 @@ public interface EntityResolver {
             return ImmutableSortedSet.of();
         }
 
+        private SortedSet<Entity> resolveCreatureInRoom(PathRemainingMatchInfo info, URI uri,
+                RoomContainer roomContainer) {
+            Optional<Room> found = this.getRoom(info, uri, roomContainer);
+            if (found != null && found.isPresent()) {
+                return this.resolveCreature(info, uri, found.get());
+            }
+            return ImmutableSortedSet.of();
+        }
+
         private SortedMap<PathPattern, BiFunction<PathPattern.PathRemainingMatchInfo, URI, SortedSet<Entity>>> createRoutes() {
             SortedMap<PathPattern, BiFunction<PathPattern.PathRemainingMatchInfo, URI, SortedSet<Entity>>> routes = new ConcurrentSkipListMap<>();
             PathPatternParser pathParser = new PathPatternParser();
             routes.put(pathParser.parse("/entities"), (info, uri) -> {
-                return this.resolveAllEntities(info, uri, items, rooms);
+                return this.resolveAllEntities(info, uri, items, creatures, rooms);
             });
             routes.put(pathParser.parse("/items"), (info, uri) -> {
                 return this.resolveItems(info, uri, items);
@@ -154,6 +226,21 @@ public interface EntityResolver {
             routes.put(pathParser.parse("/items/{item-name}/{item-id:[a-fA-F0-9-]+}"), (info, url) -> {
                 return this.resolveItem(info, url, items);
             });
+            routes.put(pathParser.parse("/creatures"), (info, uri) -> {
+                return this.resolveCreatures(info, uri, creatures);
+            });
+            routes.put(pathParser.parse("/creatures/{creature-name}/{creature-id:[a-fA-F0-9-]+}"), (info, url) -> {
+                return this.resolveCreature(info, url, creatures);
+            });
+            routes.put(pathParser.parse("/creatures/{creature-name}/{creature-id:[a-fA-F0-9-]+}/items"),
+                    (info, uri) -> {
+                        return this.resolveCreatureItems(info, uri, creatures);
+                    });
+            routes.put(pathParser.parse(
+                    "/creatures/{creature-name}/{creature-id:[a-fA-F0-9-]+}/items/{item-name}/{item-id:[a-fA-F0-9-]+}"),
+                    (info, url) -> {
+                        return this.resolveItemInCreature(info, url, creatures);
+                    });
             routes.put(pathParser.parse("/rooms"), (info, uri) -> {
                 return this.resolveRooms(info, uri, rooms);
             });
@@ -168,6 +255,11 @@ public interface EntityResolver {
                             "/rooms/{room-name}/{room-id:[a-fA-F0-9-]+}/items/{item-name}/{item-id:[a-fA-F0-9-]+}"),
                     (info, url) -> {
                         return this.resolveItemInRoom(info, url, rooms);
+                    });
+            routes.put(pathParser.parse(
+                    "/rooms/{room-name}/{room-id:[a-fA-F0-9-]+}/creatures/{creature-name}/{creature-id:[a-fA-F0-9-]+}"),
+                    (info, url) -> {
+                        return this.resolveCreatureInRoom(info, url, rooms);
                     });
             return routes;
         }
