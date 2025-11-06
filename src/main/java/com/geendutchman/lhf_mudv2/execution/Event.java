@@ -29,10 +29,11 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.Multimaps;
 
-public sealed interface Event {
+public sealed interface Event extends Message {
 
     public abstract PlainEvent plain();
 
+    @Override
     public default UUID uuid() {
         return this.plain().uuid();
     }
@@ -41,6 +42,7 @@ public sealed interface Event {
         return this.plain().description();
     }
 
+    @Override
     public default EventRouting routing() {
         return this.plain().routing();
     }

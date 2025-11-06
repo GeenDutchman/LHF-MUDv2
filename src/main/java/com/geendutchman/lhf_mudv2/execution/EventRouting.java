@@ -5,7 +5,7 @@ import java.net.URI;
 import com.google.auto.value.AutoBuilder;
 import com.google.common.base.Preconditions;
 
-public record EventRouting(URI sender, URI destination) {
+public record EventRouting(URI sender, URI destination) implements MessageRouting {
     public EventRouting {
         Preconditions.checkNotNull(sender, "send must not be null");
         Preconditions.checkNotNull(destination, "destination must not be null");
