@@ -1,4 +1,4 @@
-package com.geendutchman.lhf_mudv2.events;
+package com.geendutchman.lhf_mudv2.execution;
 
 import java.net.URI;
 import java.util.Collection;
@@ -21,6 +21,7 @@ import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.geendutchman.lhf_mudv2.entities.room.Room;
 import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
+import com.geendutchman.lhf_mudv2.execution.EventRouting.EventRoutingBuilder;
 import com.google.auto.value.AutoBuilder;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -166,7 +167,7 @@ public sealed interface Event {
     }
 
     public final class PlainEventBuilder implements BuildStep, DescriptionStep, RoutingStep, RoutingDestinationStep {
-        private EventRouting.EventRoutingBuilder routingBuilder;
+        private EventRoutingBuilder routingBuilder;
 
         private RichOutput.Builder descriptionBuilder;
 

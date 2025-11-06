@@ -1,15 +1,15 @@
-package com.geendutchman.lhf_mudv2.events;
+package com.geendutchman.lhf_mudv2.execution;
 
 import java.net.URI;
 import java.util.function.Consumer;
 
 import com.geendutchman.lhf_mudv2.display.RichOutput;
-import com.geendutchman.lhf_mudv2.events.Event.BuildStep;
-import com.geendutchman.lhf_mudv2.events.Event.DescriptionStep;
-import com.geendutchman.lhf_mudv2.events.Event.PlainEventBuilder;
-import com.geendutchman.lhf_mudv2.events.Event.RoutingDestinationStep;
-import com.geendutchman.lhf_mudv2.events.Event.RoutingStep;
-import com.geendutchman.lhf_mudv2.events.EventRouting.EventRoutingBuilder;
+import com.geendutchman.lhf_mudv2.execution.Event.BuildStep;
+import com.geendutchman.lhf_mudv2.execution.Event.DescriptionStep;
+import com.geendutchman.lhf_mudv2.execution.Event.PlainEventBuilder;
+import com.geendutchman.lhf_mudv2.execution.Event.RoutingDestinationStep;
+import com.geendutchman.lhf_mudv2.execution.Event.RoutingStep;
+import com.geendutchman.lhf_mudv2.execution.EventRouting.EventRoutingBuilder;
 
 /**
  * An abstraction of a builder for an Event using common build steps
