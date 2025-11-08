@@ -10,6 +10,7 @@ import java.util.function.Consumer;
 
 import com.geendutchman.lhf_mudv2.dice.Difficulty;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature.CreatureID;
+import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery;
 import com.geendutchman.lhf_mudv2.entities.item.ItemQuery;
@@ -249,7 +250,15 @@ public abstract class CreatureQuery implements IEntityQuery<Creature> {
     }
 
     @Override
-    public final boolean test(final Creature c) {
+    public boolean test(Entity toTest) {
+        if (toTest instanceof Creature asCreature) {
+            return this.typedTest(asCreature);
+        }
+        return false;
+    }
+
+    @Override
+    public final boolean typedTest(final Creature c) {
         if (c == null) {
             return false;
         }

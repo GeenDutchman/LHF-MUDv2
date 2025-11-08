@@ -6,6 +6,8 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import com.geendutchman.lhf_mudv2.entities.creatures.CreatureQuery;
+import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
@@ -15,6 +17,8 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 public abstract class RoomQuery implements IEntityQuery<Room> {
     public abstract Optional<ItemQuery> hasItemLike();
+
+    public abstract Optional<CreatureQuery> hasCreatureLike();
 
     public abstract EntityQuery entityQuery();
 
@@ -36,6 +40,12 @@ public abstract class RoomQuery implements IEntityQuery<Room> {
         if (oiq.isPresent()) {
             oiq.get().toKeyValue().forEach((key, value) -> {
                 kv.put("itemquery." + key, value);
+            });
+        }
+        Optional<CreatureQuery> ocq = this.hasCreatureLike();
+        if (ocq.isPresent()) {
+            ocq.get().toKeyValue().forEach((key, value) -> {
+                kv.put("creaturequery." + key, value);
             });
         }
         return kv;
@@ -92,6 +102,29 @@ public abstract class RoomQuery implements IEntityQuery<Room> {
             return this.setHasItemLike(asBuilder.build());
         }
 
+        public abstract Builder setHasCreatureLike(Optional<CreatureQuery> creatureQuery);
+
+        public abstract Builder setHasCreatureLike(CreatureQuery creatureQuery);
+
+        public Builder setHasCreatureLike(CreatureQuery.Builder iqBuilder) {
+            if (iqBuilder != null) {
+                return this.setHasCreatureLike(iqBuilder.build());
+            }
+            return this;
+        }
+
+        public abstract Optional<CreatureQuery> hasCreatureLike();
+
+        public Builder adjustHasCreatureLike(Consumer<CreatureQuery.Builder> adjustor) {
+            if (adjustor == null) {
+                return this;
+            }
+            CreatureQuery.Builder asBuilder = this.hasCreatureLike().map(query -> query.toCreatureQueryBuilder())
+                    .orElse(CreatureQuery.builder());
+            adjustor.accept(asBuilder);
+            return this.setHasCreatureLike(asBuilder.build());
+        }
+
         public Builder fromKeyValue(Map<String, String> kv) {
             if (kv == null) {
                 return this;
@@ -111,6 +144,13 @@ public abstract class RoomQuery implements IEntityQuery<Room> {
                         b.fromKeyValue(Map.of(key.replaceFirst("itemquery.", ""), value));
                     });
                     continue;
+                } else if (key.startsWith("creaturequery.")) {
+                    this.adjustHasCreatureLike(b -> {
+                        if (b == null) {
+                            return;
+                        }
+                        b.fromKeyValue(Map.of(key.replaceFirst("creaturequery.", ""), value));
+                    });
                 }
                 switch (key) {
 
@@ -129,7 +169,15 @@ public abstract class RoomQuery implements IEntityQuery<Room> {
     }
 
     @Override
-    public final boolean test(Room t) {
+    public boolean test(Entity toTest) {
+        if (toTest instanceof Room asRoom) {
+            return this.typedTest(asRoom);
+        }
+        return false;
+    }
+
+    @Override
+    public final boolean typedTest(Room t) {
         if (t == null) {
             return false;
         }
@@ -139,6 +187,11 @@ public abstract class RoomQuery implements IEntityQuery<Room> {
         }
         if (this.hasItemLike().isPresent()) {
             if (t.queryOneItem(this.hasItemLike().get()).isEmpty()) {
+                return false;
+            }
+        }
+        if (this.hasCreatureLike().isPresent()) {
+            if (t.queryOneCreature(this.hasCreatureLike().get()).isEmpty()) {
                 return false;
             }
         }

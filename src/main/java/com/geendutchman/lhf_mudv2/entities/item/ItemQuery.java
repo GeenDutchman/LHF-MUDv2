@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
+import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
@@ -144,7 +145,15 @@ public abstract class ItemQuery implements IEntityQuery<Item> {
     }
 
     @Override
-    public final boolean test(Item t) {
+    public boolean test(Entity toTest) {
+        if (toTest instanceof Item asItem) {
+            return this.typedTest(asItem);
+        }
+        return false;
+    }
+
+    @Override
+    public final boolean typedTest(Item t) {
         if (t == null) {
             return false;
         }

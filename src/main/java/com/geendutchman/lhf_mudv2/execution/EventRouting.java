@@ -1,11 +1,14 @@
 package com.geendutchman.lhf_mudv2.execution;
 
-import java.net.URI;
+import java.util.Optional;
 
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery;
 import com.google.auto.value.AutoBuilder;
 import com.google.common.base.Preconditions;
 
-public record EventRouting(URI sender, URI destination) implements MessageRouting {
+public record EventRouting(IEntityID sender, IEntityID destination, Optional<IEntityQuery<?>> forwarding)
+        implements MessageRouting {
     public EventRouting {
         Preconditions.checkNotNull(sender, "send must not be null");
         Preconditions.checkNotNull(destination, "destination must not be null");
@@ -21,13 +24,17 @@ public record EventRouting(URI sender, URI destination) implements MessageRoutin
 
     @AutoBuilder(ofClass = EventRouting.class)
     public interface EventRoutingBuilder {
-        public abstract EventRoutingBuilder setSender(URI sender);
+        public abstract EventRoutingBuilder setSender(IEntityID sender);
 
-        public abstract EventRoutingBuilder setDestination(URI destination);
+        public abstract EventRoutingBuilder setDestination(IEntityID destination);
 
-        public abstract URI sender();
+        public abstract EventRoutingBuilder setForwarding(Optional<IEntityQuery<?>> forwarding);
 
-        public abstract URI destination();
+        public abstract EventRoutingBuilder setForwarding(IEntityQuery<?> forwarding);
+
+        public abstract IEntityID sender();
+
+        public abstract IEntityID destination();
 
         public abstract EventRouting build();
     }

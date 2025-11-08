@@ -23,7 +23,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.BoundType;
 import com.google.common.collect.Range;
 
-public interface IEntityQuery<E extends Entity> extends Predicate<E>, Serializable {
+public interface IEntityQuery<E extends Entity> extends Predicate<Entity>, Serializable {
 
     /**
      * Transforms a string to a Range
@@ -153,7 +153,12 @@ public interface IEntityQuery<E extends Entity> extends Predicate<E>, Serializab
         }
 
         @Override
-        public boolean test(Entity t) {
+        public boolean test(Entity toTest) {
+            return this.typedTest(toTest);
+        }
+
+        @Override
+        public boolean typedTest(Entity t) {
             if (t == null) {
                 return false;
             }
@@ -187,10 +192,17 @@ public interface IEntityQuery<E extends Entity> extends Predicate<E>, Serializab
         return builder;
     }
 
-    @Override
-    public default boolean test(E t) {
-        return t != null;
+    public default boolean test(Entity toTest) {
+        try {
+            @SuppressWarnings("unchecked")
+            final E asE = (E) toTest;
+            return this.typedTest(asE);
+        } catch (ClassCastException castException) {
+            return false;
+        }
     }
+
+    public abstract boolean typedTest(E t);
 
     public Map<String, String> toKeyValue();
 
