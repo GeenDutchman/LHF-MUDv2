@@ -1,9 +1,9 @@
 package com.geendutchman.lhf_mudv2.execution;
 
-import java.net.URI;
 import java.util.function.Consumer;
 
 import com.geendutchman.lhf_mudv2.display.RichOutput;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.execution.Event.BuildStep;
 import com.geendutchman.lhf_mudv2.execution.Event.DescriptionStep;
 import com.geendutchman.lhf_mudv2.execution.Event.PlainEventBuilder;
@@ -21,7 +21,7 @@ abstract non-sealed class AbstractEventBuilder
     protected abstract PlainEventBuilder plainBuilder();
 
     @Override
-    public BuildStep setDestination(URI dest) {
+    public BuildStep setDestination(IEntityID dest) {
         this.plainBuilder().setDestination(dest);
         return this;
     }
@@ -39,7 +39,7 @@ abstract non-sealed class AbstractEventBuilder
     }
 
     @Override
-    public RoutingDestinationStep setSender(URI sender) {
+    public RoutingDestinationStep setSender(IEntityID sender) {
         this.plainBuilder().setSender(sender);
         return this;
     }

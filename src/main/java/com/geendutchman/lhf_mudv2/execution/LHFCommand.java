@@ -5,8 +5,10 @@ import java.util.UUID;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureEffect;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature.CreatureID;
+import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.item.ItemEffect;
+import com.geendutchman.lhf_mudv2.entities.room.Room;
 import com.geendutchman.lhf_mudv2.entities.room.RoomEffect;
 import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
 import com.google.common.base.Preconditions;
@@ -18,7 +20,7 @@ public sealed interface LHFCommand extends Command {
             ItemBuilderFactory.LockedItemBuilder itemBuilder, CreatureID forCreature) implements LHFCommand {
         public CreateItemsForCreatureCommand {
             Command.commandPreconditions(routing, uuid);
-            Preconditions.checkArgument(routing.destination().getPath().contains("/builderFactory/items"),
+            Preconditions.checkArgument(routing.destination().toString().contains("/builderFactory/items"),
                     "should be directed to \"/builderFactory/items\" and not %s", routing.destination());
             Preconditions.checkNotNull(itemBuilder, "Itembuilder should not be null");
             Preconditions.checkNotNull(forCreature, "must target a creature");
@@ -30,7 +32,7 @@ public sealed interface LHFCommand extends Command {
         public ChangeCreatureCommand {
             Command.commandPreconditions(routing, uuid);
             Preconditions.checkNotNull(effects, "effects may be empty but must not be null");
-            Preconditions.checkArgument(routing.destination().getPath().contains("/creatures/"),
+            Preconditions.checkArgument(routing.destination().toString().contains("/creatures/"),
                     "must be targeted at a creature");
         }
     }
@@ -39,7 +41,7 @@ public sealed interface LHFCommand extends Command {
             ItemBuilderFactory.LockedItemBuilder itemBuilder, RoomID forRoom) implements LHFCommand {
         public CreateItemsForRoomCommand {
             Command.commandPreconditions(routing, uuid);
-            Preconditions.checkArgument(routing.destination().getPath().contains("/builderFactory/items"),
+            Preconditions.checkArgument(routing.destination().toString().contains("/builderFactory/items"),
                     "should be directed to \"/builderFactory/items\" and not %s", routing.destination());
             Preconditions.checkNotNull(itemBuilder, "Itembuilder should not be null");
             Preconditions.checkNotNull(forRoom, "must target a room");
@@ -50,7 +52,7 @@ public sealed interface LHFCommand extends Command {
             CreatureBuilderFactory.Builder creatureBuilder, RoomID forRoom) implements LHFCommand {
         public CreateCreaturesForRoomCommand {
             Command.commandPreconditions(routing, uuid);
-            Preconditions.checkArgument(routing.destination().getPath().contains("/builderFactory/creatures"),
+            Preconditions.checkArgument(routing.destination().toString().contains("/builderFactory/creatures"),
                     "should be directed to \"/builderFactory/creatures\" and not %s", routing.destination());
             Preconditions.checkNotNull(creatureBuilder, "CreatureBuilder should not be null");
             Preconditions.checkNotNull(forRoom, "must target a room");
@@ -62,7 +64,7 @@ public sealed interface LHFCommand extends Command {
         public ChangeRoomCommand {
             Command.commandPreconditions(routing, uuid);
             Preconditions.checkNotNull(effects, "effects may be empty but must not be null");
-            Preconditions.checkArgument(routing.destination().getPath().contains("/rooms/"),
+            Preconditions.checkArgument(routing.destination().entityClass().equals(Room.ROOM_TAG),
                     "must be targeted at a room");
         }
     }
@@ -72,7 +74,7 @@ public sealed interface LHFCommand extends Command {
         public ChangeItemCommand {
             Command.commandPreconditions(routing, uuid);
             Preconditions.checkNotNull(effects, "effects may be empty but must not be null");
-            Preconditions.checkArgument(routing.destination().getPath().contains("/items/"),
+            Preconditions.checkArgument(routing.destination().entityClass().equals(Item.ItemID.ENTITY_CLASS_ITEM),
                     "must be targeted at an item");
         }
     }

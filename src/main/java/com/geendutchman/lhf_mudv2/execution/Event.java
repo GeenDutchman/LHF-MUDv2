@@ -1,6 +1,5 @@
 package com.geendutchman.lhf_mudv2.execution;
 
-import java.net.URI;
 import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -17,6 +16,7 @@ import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature.CreatureID;
 import com.geendutchman.lhf_mudv2.entities.creatures.Faction;
 import com.geendutchman.lhf_mudv2.entities.creatures.ResourcePoolSize;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.geendutchman.lhf_mudv2.entities.room.Room;
@@ -92,7 +92,7 @@ public sealed interface Event extends Message {
          * @param dest
          * @return
          */
-        public BuildStep setDestination(URI dest);
+        public BuildStep setDestination(IEntityID dest);
     }
 
     /**
@@ -128,7 +128,7 @@ public sealed interface Event extends Message {
          * @param sender
          * @return
          */
-        public RoutingDestinationStep setSender(URI sender);
+        public RoutingDestinationStep setSender(IEntityID sender);
 
     }
 
@@ -209,7 +209,7 @@ public sealed interface Event extends Message {
         }
 
         @Override
-        public PlainEventBuilder setDestination(URI dest) {
+        public PlainEventBuilder setDestination(IEntityID dest) {
             if (dest == null) {
                 throw new NullPointerException("destination should not be null");
             }
@@ -221,7 +221,7 @@ public sealed interface Event extends Message {
         }
 
         @Override
-        public PlainEventBuilder setSender(URI sender) {
+        public PlainEventBuilder setSender(IEntityID sender) {
             if (sender == null) {
                 throw new NullPointerException("sender should not be null");
             }

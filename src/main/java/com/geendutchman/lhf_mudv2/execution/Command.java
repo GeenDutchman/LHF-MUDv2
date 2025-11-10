@@ -14,8 +14,6 @@ public sealed interface Command extends Message permits UserCommand, LHFCommand 
 
     static void commandPreconditions(CommandRouting routing, UUID uuid) {
         Preconditions.checkArgument(routing != null, "routing must be set");
-        Preconditions.checkArgument(routing.destination().getQuery() == null,
-                "commands are direct, should not have a query");
         Preconditions.checkArgument(uuid != null, "uuid must not be null");
     }
 

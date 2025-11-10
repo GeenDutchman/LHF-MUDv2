@@ -1,9 +1,9 @@
 package com.geendutchman.lhf_mudv2.execution;
 
-import java.net.URI;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 
 public interface MessageRouting {
-    public URI sender();
+    public IEntityID sender();
 
-    public URI destination();
+    public IEntityID destination();
 }
