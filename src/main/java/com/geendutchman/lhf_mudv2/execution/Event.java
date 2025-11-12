@@ -540,8 +540,7 @@ public sealed interface Event extends Message {
             public DescriptionStep setItem(Item item) {
                 this.setDescription(item.description().orElse(
                         RichOutput.builder().addString("The item").addString(item.displayName().toString()).build()));
-                return this.setItem(new BasicExaminable(item.displayName(), item.description(), item.attributes(),
-                        item.content(), item.tag()));
+                return this.setItem(item.basicExaminable());
             }
 
             public abstract EventImpl.ItemSeenEventImpl build();

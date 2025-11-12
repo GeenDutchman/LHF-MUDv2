@@ -1,4 +1,4 @@
-package com.geendutchman.lhf_mudv2.execution;
+package com.geendutchman.lhf_mudv2.execution.controllers;
 
 import java.util.UUID;
 
@@ -8,15 +8,21 @@ import org.springframework.stereotype.Component;
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.Taggable;
-import com.geendutchman.lhf_mudv2.entities.creatures.CreatureEffect;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature.CreatureID;
+import com.geendutchman.lhf_mudv2.entities.creatures.CreatureEffect;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.room.Room;
-import com.geendutchman.lhf_mudv2.entities.room.RoomEffect;
 import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
+import com.geendutchman.lhf_mudv2.entities.room.RoomEffect;
+import com.geendutchman.lhf_mudv2.execution.Command;
+import com.geendutchman.lhf_mudv2.execution.CommandRouting;
+import com.geendutchman.lhf_mudv2.execution.LHFCommand;
+import com.geendutchman.lhf_mudv2.execution.Message;
+import com.geendutchman.lhf_mudv2.execution.MessageBus;
+import com.geendutchman.lhf_mudv2.execution.MessageProcessor;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
@@ -63,8 +69,8 @@ public class ItemFactoryController implements MessageProcessor {
             }
             yield bus.send(new LHFCommand.ChangeCreatureCommand(new CommandRouting(id, forCreature), UUID.randomUUID(),
                     ImmutableList.of(CreatureEffect.builder().addDeltas(Creature.Delta.ofItem(made))
-                            .setApplicationDescriptionFromBuilder(RichOutput.builder()
-                                    .addString(forCreature.name().toString()).addString("now has a new item"))
+                            .setApplicationDescriptionFromBuilder(RichOutput.builder().addTaggable(forCreature)
+                                    .addString("now has a new item").addTaggable(made))
                             .build())));
         }
         case LHFCommand.CreateItemsForRoomCommand(CommandRouting routing, UUID uuid, ItemBuilderFactory.LockedItemBuilder itemBuilder, RoomID forRoom) -> {
@@ -72,12 +78,11 @@ public class ItemFactoryController implements MessageProcessor {
             if (made == null) {
                 yield MessageProcessingResult.Failed("created null item");
             }
-            yield bus
-                    .send(new LHFCommand.ChangeRoomCommand(new CommandRouting(id, forRoom), UUID.randomUUID(),
-                            ImmutableList.of(RoomEffect.builder().addDeltas(Room.Delta.ofItem(made))
-                                    .setApplicationDescriptionFromBuilder(RichOutput.builder()
-                                            .addString(forRoom.name().toString()).addString("now has a new item"))
-                                    .build())));
+            yield bus.send(new LHFCommand.ChangeRoomCommand(
+                    new CommandRouting(id, forRoom), UUID.randomUUID(), ImmutableList.of(RoomEffect.builder()
+                            .addDeltas(Room.Delta.ofItem(made)).setApplicationDescriptionFromBuilder(RichOutput
+                                    .builder().addTaggable(forRoom).addString("now has a new item").addTaggable(made))
+                            .build())));
         }
         default -> MessageProcessingResult.Failed("Only handles create items commands");
 

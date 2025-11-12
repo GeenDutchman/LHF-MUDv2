@@ -18,6 +18,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
+import com.geendutchman.lhf_mudv2.display.Taggable;
+import com.geendutchman.lhf_mudv2.display.Taggable.Tag;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
@@ -33,6 +35,8 @@ public interface MessageBus {
 
     public abstract void registerProcessor(MessageProcessor processor);
 
+    public abstract void registerProcessorDefault(MessageProcessor processor, Taggable.Tag entityClass);
+
     public abstract void registerEntity(final Entity entity, final MessageProcessorID processorID);
 
     public abstract void registerEntity(final IEntityID id, final MessageProcessorID processorID);
@@ -43,6 +47,7 @@ public interface MessageBus {
 
     public abstract class AbstractMessageBus implements MessageBus {
         final private ConcurrentMap<IEntityID, MessageProcessorID> entityToProcessor = new ConcurrentHashMap<>();
+        final private ConcurrentMap<Taggable.Tag, MessageProcessorID> entityClassDefaults = new ConcurrentHashMap<>();
         final private HashBiMap<MessageProcessorID, MessageProcessor> processorIDToProcessor = HashBiMap.create();
         protected final Logger logger = Logger.getLogger(this.getClass().getName());
         final private MessageProcessingResult.Failed NO_RESULT = MessageProcessingResult.Failed("no result");
@@ -63,6 +68,18 @@ public interface MessageBus {
         @Override
         public final ImmutableBiMap<MessageProcessorID, MessageProcessor> processorIDToProcessor() {
             return ImmutableBiMap.copyOf(this.processorIDToProcessor);
+        }
+
+        @Override
+        public final void registerProcessorDefault(MessageProcessor processor, Tag entityClass) {
+            if (processor == null) {
+                throw new NullPointerException("Cannot register null processor");
+            }
+            this.processorIDToProcessor.put(processor.messageProcessorID(), processor);
+            if (entityClass != null) {
+                this.entityClassDefaults.put(entityClass, processor.messageProcessorID());
+            }
+
         }
 
         @Override
@@ -134,6 +151,18 @@ public interface MessageBus {
             }
 
             try (final ExecutorService executor = this.executor(logname)) {
+                if (message instanceof Event asEvent) {
+                    executor.submit(() -> {
+                        MessageProcessingResult myResult = NO_RESULT;
+                        try {
+                            eventLogger.fine("Started processing event");
+                            myResult = processor.process(asEvent);
+                        } finally {
+                            eventLogger.finer(String.format("Processing finished: %s", myResult));
+                        }
+                    });
+                    return MessageProcessingResult.HANDLED;
+                }
                 return executor.submit(() -> {
                     MessageProcessingResult value = NO_RESULT;
                     try {
