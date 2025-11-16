@@ -41,9 +41,9 @@ public interface MessageBus {
 
     public abstract void registerEntity(final IEntityID id, final MessageProcessorID processorID);
 
-    public abstract MessageProcessingResult publish(final Event event);
+    public abstract MessageProcessingResult publish(final MessageContext context, final Event event);
 
-    public abstract MessageProcessingResult send(final Command command);
+    public abstract MessageProcessingResult send(final MessageContext context, final Command command);
 
     public abstract class AbstractMessageBus implements MessageBus {
         final private ConcurrentMap<IEntityID, MessageProcessorID> entityToProcessor = new ConcurrentHashMap<>();
@@ -112,40 +112,44 @@ public interface MessageBus {
         }
 
         @Override
-        public MessageProcessingResult publish(Event event) {
+        public MessageProcessingResult publish(MessageContext context, Event event) {
             if (event == null) {
                 return MessageProcessingResult.Failed("cannot publish null event");
             }
 
             final String logname = String.format("%s.event.%s.%s", this.logger.getName(),
                     event.getClass().getSimpleName(), event.uuid());
-            return this.handle(event, logname);
+            return this.handle(context, event, logname);
         }
 
         @Override
-        public MessageProcessingResult send(Command command) {
+        public MessageProcessingResult send(MessageContext context, Command command) {
             if (command == null) {
                 return MessageProcessingResult.Failed("cannot send null command");
             }
 
             final String logname = String.format("%s.command.%s.%s", this.logger.getName(),
                     command.getClass().getSimpleName(), command.uuid());
-            return this.handle(command, logname);
+            return this.handle(context, command, logname);
         }
 
         protected abstract ExecutorService executor(String logname);
 
-        private MessageProcessingResult handle(final Message message, final String logname) {
+        private MessageProcessingResult handle(final MessageContext context, final Message message,
+                final String logname) {
             if (message == null) {
                 return MessageProcessingResult.Failed("cannot handle null message");
+            }
+            if (context == null) {
+                return MessageProcessingResult.Failed("cannot direct message with null context");
             }
 
             final Logger eventLogger = Logger.getLogger(logname);
             final MessageProcessor processor = this.processorIDToProcessor
-                    .get(this.entityToProcessor.get(message.routing().destination()));
+                    .get(this.entityToProcessor.get(context.destination()));
             if (processor == null) {
                 final String noDestFound = String.format("No destination found for message %s, routing %s",
-                        message.getClass().getSimpleName(), message.routing());
+                        message.getClass().getSimpleName(), context);
                 eventLogger.warning(noDestFound);
                 return MessageProcessingResult.Failed(noDestFound);
             }
@@ -156,7 +160,7 @@ public interface MessageBus {
                         MessageProcessingResult myResult = NO_RESULT;
                         try {
                             eventLogger.fine("Started processing event");
-                            myResult = processor.process(asEvent);
+                            myResult = processor.process(context, asEvent);
                         } finally {
                             eventLogger.finer(String.format("Processing finished: %s", myResult));
                         }
@@ -167,7 +171,7 @@ public interface MessageBus {
                     MessageProcessingResult value = NO_RESULT;
                     try {
                         eventLogger.fine("Starting processing");
-                        value = processor.process(message);
+                        value = processor.process(context, message);
                         return value;
                     } finally {
                         final String logMessage = String.format("Processing finished: %s", value);

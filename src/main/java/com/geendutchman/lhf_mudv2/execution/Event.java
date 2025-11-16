@@ -1,10 +1,10 @@
 package com.geendutchman.lhf_mudv2.execution;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.lang.NonNull;
 
@@ -27,16 +27,17 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.Multimaps;
 
-public sealed interface Event extends Serializable {
+public sealed interface Event extends Message {
 
     public default PlainEvent plain() {
-        return new PlainEvent(this.description());
+        return new PlainEvent(this.uuid(), this.description());
     }
 
     public RichOutput description();
 
-    public record PlainEvent(RichOutput description) implements Event {
+    public record PlainEvent(UUID uuid, RichOutput description) implements Event {
         public PlainEvent {
+            Preconditions.checkNotNull(uuid, "uuid must not be null");
             Preconditions.checkArgument(description != null, "description must not be null");
         }
 
@@ -46,8 +47,9 @@ public sealed interface Event extends Serializable {
 
     }
 
-    public record ItemChangedEvent(ItemID itemID, RichOutput description) implements Event {
+    public record ItemChangedEvent(UUID uuid, ItemID itemID, RichOutput description) implements Event {
         public ItemChangedEvent {
+            Preconditions.checkNotNull(uuid, "uuid must not be null");
             Preconditions.checkNotNull(itemID, "item id must not be null");
             if (description == null) {
                 description = RichOutput.builder().addString(itemID.name().toString()).addString("has changed.")
@@ -56,18 +58,21 @@ public sealed interface Event extends Serializable {
         }
 
         public ItemChangedEvent(@NonNull Item item) {
-            this(item.itemID(), RichOutput.builder().addTaggable(item).addString("has changed.").build());
+            this(UUID.randomUUID(), item.itemID(),
+                    RichOutput.builder().addTaggable(item).addString("has changed.").build());
         }
 
         public static ItemChangedEvent ofItem(Item item) {
             Preconditions.checkNotNull(item, "item should not be null");
-            return new ItemChangedEvent(item.itemID(),
+            return new ItemChangedEvent(UUID.randomUUID(), item.itemID(),
                     RichOutput.builder().addTaggable(item).addString("has changed.").build());
         }
     }
 
-    public record CreatureChangedEvent(CreatureID creatureID, RichOutput description) implements Event {
+    public record CreatureChangedEvent(UUID uuid, CreatureID creatureID, RichOutput description) implements Event {
         public CreatureChangedEvent {
+            Preconditions.checkNotNull(uuid, "uuid must not be null");
+
             Preconditions.checkNotNull(creatureID, "creature id must not be null");
             if (description == null) {
                 description = RichOutput.builder().addString(creatureID.name().toString()).addString("has changed.")
@@ -76,18 +81,21 @@ public sealed interface Event extends Serializable {
         }
 
         public CreatureChangedEvent(@NonNull Creature creature) {
-            this(creature.creatureID(), RichOutput.builder().addTaggable(creature).addString("has changed.").build());
+            this(UUID.randomUUID(), creature.creatureID(),
+                    RichOutput.builder().addTaggable(creature).addString("has changed.").build());
         }
 
         public static CreatureChangedEvent ofCreature(Creature creature) {
             Preconditions.checkNotNull(creature, "creature should not be null");
-            return new CreatureChangedEvent(creature.creatureID(),
+            return new CreatureChangedEvent(UUID.randomUUID(), creature.creatureID(),
                     RichOutput.builder().addTaggable(creature).addString("has changed.").build());
         }
     }
 
-    public record RoomChangedEvent(RoomID roomID, RichOutput description) implements Event {
+    public record RoomChangedEvent(UUID uuid, RoomID roomID, RichOutput description) implements Event {
         public RoomChangedEvent {
+            Preconditions.checkNotNull(uuid, "uuid must not be null");
+
             Preconditions.checkNotNull(roomID, "room id must not be null");
             if (description == null) {
                 description = RichOutput.builder().addString(roomID.name().toString()).addString("has changed.")
@@ -96,17 +104,19 @@ public sealed interface Event extends Serializable {
         }
 
         public RoomChangedEvent(@NonNull Room room) {
-            this(room.roomID(), RichOutput.builder().addTaggable(room).addString("has changed.").build());
+            this(UUID.randomUUID(), room.roomID(),
+                    RichOutput.builder().addTaggable(room).addString("has changed.").build());
         }
 
         public static RoomChangedEvent ofRoom(Room room) {
             Preconditions.checkNotNull(room, "room should not be null");
-            return new RoomChangedEvent(room.roomID(),
+            return new RoomChangedEvent(UUID.randomUUID(), room.roomID(),
                     RichOutput.builder().addTaggable(room).addString("has changed.").build());
         }
     }
 
     public final class RoomSeenEvent implements Event {
+        private final UUID uuid = UUID.randomUUID();
         private final BasicExaminable room;
         private final RoomID roomID;
         private final ImmutableSet<BasicTaggable> items;
@@ -154,6 +164,11 @@ public sealed interface Event extends Serializable {
             return builder.build();
         }
 
+        @Override
+        public UUID uuid() {
+            return this.uuid;
+        }
+
         public BasicExaminable getRoom() {
             return room;
         }
@@ -189,6 +204,7 @@ public sealed interface Event extends Serializable {
     }
 
     public final class CreatureSeenEvent implements Event {
+        private final UUID uuid = UUID.randomUUID();
         private final BasicExaminable creature;
         private final CreatureID creatureID;
         private final Faction faction;
@@ -208,6 +224,10 @@ public sealed interface Event extends Serializable {
                     .orElseGet(() -> RichOutput.builder().addString("A creature named").addTaggable(creature)
                             .addString("of the").addPolymorphic(faction).addString("faction, whose health is")
                             .addPolymorphic(healthBucket.toString()).addString(".").build());
+        }
+
+        public UUID uuid() {
+            return this.uuid;
         }
 
         public BasicExaminable getCreature() {
@@ -253,6 +273,7 @@ public sealed interface Event extends Serializable {
     }
 
     public final class ItemSeenEvent implements Event {
+        private final UUID uuid = UUID.randomUUID();
         private final BasicExaminable item;
         private final ItemID itemID;
 
@@ -265,6 +286,10 @@ public sealed interface Event extends Serializable {
         @Override
         public RichOutput description() {
             return this.item.description().orElse(RichOutput.builder().addString("The item").addTaggable(item).build());
+        }
+
+        public UUID uuid() {
+            return this.uuid;
         }
 
         public BasicExaminable getItem() {
@@ -299,16 +324,17 @@ public sealed interface Event extends Serializable {
 
     }
 
-    public record SpokenEvent(RichOutput message, BasicTaggable speaker, Optional<BasicTaggable> listener)
+    public record SpokenEvent(UUID uuid, RichOutput message, BasicTaggable speaker, Optional<BasicTaggable> listener)
             implements Event {
         public SpokenEvent {
+            Preconditions.checkNotNull(uuid, "uuid must not be null");
             Preconditions.checkNotNull(message, "message should not be null");
             Preconditions.checkNotNull(speaker, "someone should be speaking the message");
             Preconditions.checkNotNull(listener, "listener could be empty but must not be null");
         }
 
         public SpokenEvent(RichOutput message, BasicTaggable speaker) {
-            this(message, speaker, Optional.empty());
+            this(UUID.randomUUID(), message, speaker, Optional.empty());
         }
 
         @Override

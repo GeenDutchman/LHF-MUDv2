@@ -51,21 +51,13 @@ public interface MessageProcessor {
 
     public abstract MessageProcessorID messageProcessorID();
 
-    public abstract MessageProcessingResult process(Message message);
+    public abstract MessageProcessingResult process(MessageContext context, Message message);
 
-    public default MessageProcessingResult process(Command command) {
-        return this.process((Message) command);
-    }
+    public abstract MessageProcessingResult process(MessageContext context, Command command);
 
-    public default MessageProcessingResult process(LHFCommand lhfCommand) {
-        return this.process((Command) lhfCommand);
-    }
+    public abstract MessageProcessingResult process(MessageContext context, LHFCommand lhfCommand);
 
-    public default MessageProcessingResult process(UserCommand userCommand) {
-        return this.process((Command) userCommand);
-    }
+    public abstract MessageProcessingResult process(MessageContext context, UserCommand userCommand);
 
-    public default MessageProcessingResult process(Event event) {
-        return this.process((Message) event);
-    }
+    public abstract MessageProcessingResult process(MessageContext context, Event event);
 }
