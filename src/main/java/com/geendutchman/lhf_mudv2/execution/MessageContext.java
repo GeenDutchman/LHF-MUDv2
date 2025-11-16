@@ -26,6 +26,10 @@ public final class MessageContext implements Serializable {
         this.destinationTrace.put(destination.entityClass(), destination);
     }
 
+    public static MessageContext create(IEntityID sender, IEntityID destination) {
+        return new MessageContext(sender, destination, null);
+    }
+
     public synchronized MessageContext forward(IEntityID destination) {
         this.destinationTrace.put(destination.entityClass(), destination);
         return this;

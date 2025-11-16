@@ -57,7 +57,7 @@ public sealed interface Event extends Message {
             }
         }
 
-        public ItemChangedEvent(@NonNull Item item) {
+        public ItemChangedEvent(Item item) {
             this(UUID.randomUUID(), item.itemID(),
                     RichOutput.builder().addTaggable(item).addString("has changed.").build());
         }

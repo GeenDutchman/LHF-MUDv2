@@ -1,7 +1,6 @@
 package com.geendutchman.lhf_mudv2.entities.entity;
 
 import java.io.Serializable;
-import java.net.URI;
 import java.util.Comparator;
 import java.util.Optional;
 
@@ -19,7 +18,7 @@ public interface Entity extends Examinable, Serializable {
      * 
      * @return
      */
-    public Optional<URI> locale();
+    public Optional<IEntityID> locale();
 
     @Override
     public default ImmutableSortedMap<String, String> attributes() {

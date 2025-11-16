@@ -1,6 +1,5 @@
 package com.geendutchman.lhf_mudv2.entities.item;
 
-import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -10,6 +9,7 @@ import com.geendutchman.lhf_mudv2.dice.Plain;
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.Taggable;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.google.common.base.Preconditions;
 
 final class ConcreteItem implements Item {
@@ -18,15 +18,16 @@ final class ConcreteItem implements Item {
     final private ItemTag itemTag;
     private Difficulty<Plain> visibility;
     private Optional<Examinable.Name> nickname;
-    private Optional<URI> locale = Optional.empty();
+    private Optional<IEntityID> locale = Optional.empty();
 
     protected static ConcreteItem buildItem(Examinable.Name name, Difficulty<Plain> visibility,
-            Optional<Examinable.Name> nickname, ItemTag itemTag, Optional<URI> locale) {
+            Optional<Examinable.Name> nickname, ItemTag itemTag, Optional<IEntityID> locale) {
         Preconditions.checkNotNull(name, "name should not be null");
         Preconditions.checkNotNull(nickname, "nickname can be empty but should not be null");
         Preconditions.checkNotNull(visibility, "visibility difficulty can be zero but must not be null");
         Preconditions.checkNotNull(locale, "locale is null, did you mean empty?");
         ConcreteItem item = new ConcreteItem(name, visibility, nickname, itemTag);
+        item.locale = locale;
         return item;
     }
 
@@ -40,11 +41,11 @@ final class ConcreteItem implements Item {
     }
 
     @Override
-    public Optional<URI> locale() {
+    public Optional<IEntityID> locale() {
         return this.locale;
     }
 
-    public void setLocale(Optional<URI> nextPlace) {
+    public void setLocale(Optional<IEntityID> nextPlace) {
         if (nextPlace == null) {
             this.locale = Optional.empty();
         } else {
@@ -67,7 +68,7 @@ final class ConcreteItem implements Item {
         case Delta.SetNicknameDelta(Optional<Examinable.Name> nickname) -> {
             this.nickname = nickname != null ? nickname : Optional.empty();
         }
-        case Delta.SetLocale(Optional<URI> locale) -> {
+        case Delta.SetLocale(Optional<IEntityID> locale) -> {
             this.locale = locale != null ? locale : Optional.empty();
         }
         case null -> {

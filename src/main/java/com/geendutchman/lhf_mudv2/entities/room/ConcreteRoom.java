@@ -1,6 +1,5 @@
 package com.geendutchman.lhf_mudv2.entities.room;
 
-import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.Optional;
@@ -9,6 +8,7 @@ import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature.CreatureID;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
@@ -19,12 +19,12 @@ class ConcreteRoom implements Room {
     final private RoomID roomID;
     final private Examinable.Name name;
     final private Optional<RichOutput> roomDescription;
-    final private Optional<URI> locale;
+    final private Optional<IEntityID> locale;
     final private ItemInventory inventory;
     final private LinkedHashMap<CreatureID, Creature> creatures;
 
     protected static ConcreteRoom buildRoom(Examinable.Name name, Optional<RichOutput> roomDescription,
-            Optional<URI> locale, ItemInventory inventory) {
+            Optional<IEntityID> locale, ItemInventory inventory) {
         Preconditions.checkNotNull(name, "name should not be null");
         Preconditions.checkNotNull(locale, "the locale should not be null");
         Preconditions.checkNotNull(roomDescription, "room description may be empty but must not be null");
@@ -33,7 +33,7 @@ class ConcreteRoom implements Room {
         return new ConcreteRoom(name, roomDescription, locale, inventory);
     }
 
-    private ConcreteRoom(Examinable.Name name, Optional<RichOutput> roomDescription, Optional<URI> locale,
+    private ConcreteRoom(Examinable.Name name, Optional<RichOutput> roomDescription, Optional<IEntityID> locale,
             ItemInventory inventory) {
         this.name = name;
         this.roomDescription = roomDescription;
@@ -44,7 +44,7 @@ class ConcreteRoom implements Room {
     }
 
     @Override
-    public Optional<URI> locale() {
+    public Optional<IEntityID> locale() {
         return this.locale;
     }
 

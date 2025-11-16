@@ -1,6 +1,5 @@
 package com.geendutchman.lhf_mudv2.entities.creatures;
 
-import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -8,6 +7,7 @@ import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
@@ -19,7 +19,7 @@ final class ConcreteCreature implements Creature {
     final private Examinable.Name name;
     final private ItemInventory inventory;
 
-    private Optional<URI> locale;
+    private Optional<IEntityID> locale;
     private Faction faction;
 
     private final ConcurrentNavigableMap<AttributeScores, Byte> scores;
@@ -59,11 +59,11 @@ final class ConcreteCreature implements Creature {
     }
 
     @Override
-    public Optional<URI> locale() {
+    public Optional<IEntityID> locale() {
         return this.locale;
     }
 
-    public void setLocale(Optional<URI> nextPlace) {
+    public void setLocale(Optional<IEntityID> nextPlace) {
         if (nextPlace == null) {
             this.locale = Optional.empty();
         } else {
@@ -154,7 +154,7 @@ final class ConcreteCreature implements Creature {
         case Delta.SetAttributeModDelta(AttributeScores attr, byte amount) -> {
             this.scoreModBonuses.merge(attr, amount, ConcreteCreature::addBytesCapped);
         }
-        case Delta.SetLocale(Optional<URI> locale) -> {
+        case Delta.SetLocale(Optional<IEntityID> locale) -> {
             this.locale = locale != null ? locale : Optional.empty();
         }
         case null -> {

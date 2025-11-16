@@ -152,11 +152,9 @@ public interface Creature extends Entity, ItemContainer {
             }
         }
 
-        public record SetLocale(Optional<URI> locale) implements Delta {
+        public record SetLocale(Optional<IEntityID> locale) implements Delta {
             public SetLocale {
                 Preconditions.checkNotNull(locale, "locale must not be null, but may be empty");
-                Preconditions.checkArgument(locale.filter(l -> l.getQuery() == null).isPresent(),
-                        "locale must not have a query, but had '%s'", locale.get().getQuery());
             }
         }
 
@@ -176,7 +174,7 @@ public interface Creature extends Entity, ItemContainer {
             return new SetAttributeModDelta(mod, change);
         }
 
-        public static Delta ofLocale(Optional<URI> locale) {
+        public static Delta ofLocale(Optional<IEntityID> locale) {
             return new SetLocale(locale);
         }
 

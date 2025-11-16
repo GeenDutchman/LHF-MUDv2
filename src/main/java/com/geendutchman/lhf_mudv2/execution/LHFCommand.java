@@ -54,25 +54,29 @@ public sealed interface LHFCommand extends Command {
 
     }
 
-    public record ChangeCreatureCommand(UUID uuid, ImmutableList<CreatureEffect> effects) implements LHFCommand {
-        public ChangeCreatureCommand {
-            Preconditions.checkNotNull(uuid, "uuid must not be null");
-            Preconditions.checkNotNull(effects, "effects may be empty but must not be null");
+    public sealed interface ChangeEntityCommand extends LHFCommand {
+        public record ChangeCreatureCommand(UUID uuid, ImmutableList<CreatureEffect> effects)
+                implements ChangeEntityCommand {
+            public ChangeCreatureCommand {
+                Preconditions.checkNotNull(uuid, "uuid must not be null");
+                Preconditions.checkNotNull(effects, "effects may be empty but must not be null");
+            }
         }
-    }
 
-    public record ChangeRoomCommand(UUID uuid, ImmutableList<RoomEffect> effects) implements LHFCommand {
-        public ChangeRoomCommand {
-            Preconditions.checkNotNull(uuid, "uuid must not be null");
-            Preconditions.checkNotNull(effects, "effects may be empty but must not be null");
+        public record ChangeRoomCommand(UUID uuid, ImmutableList<RoomEffect> effects) implements ChangeEntityCommand {
+            public ChangeRoomCommand {
+                Preconditions.checkNotNull(uuid, "uuid must not be null");
+                Preconditions.checkNotNull(effects, "effects may be empty but must not be null");
+            }
         }
-    }
 
-    public record ChangeItemCommand(UUID uuid, ImmutableList<ItemEffect> effects) implements LHFCommand {
-        public ChangeItemCommand {
-            Preconditions.checkNotNull(uuid, "uuid must not be null");
-            Preconditions.checkNotNull(effects, "effects may be empty but must not be null");
+        public record ChangeItemCommand(UUID uuid, ImmutableList<ItemEffect> effects) implements ChangeEntityCommand {
+            public ChangeItemCommand {
+                Preconditions.checkNotNull(uuid, "uuid must not be null");
+                Preconditions.checkNotNull(effects, "effects may be empty but must not be null");
+            }
         }
+
     }
 
 }
