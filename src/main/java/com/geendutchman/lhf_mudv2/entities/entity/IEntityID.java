@@ -50,6 +50,9 @@ public interface IEntityID extends Comparable<IEntityID>, Taggable {
         return this.uuid().compareTo(o.uuid());
     }
 
+    public final static IEntityID NULL_ID = new EntityID(new Taggable.Tag("null"), new Examinable.Name("null"),
+            UUID.randomUUID());
+
     /**
      * Meant to be composed into a subclass of IEntityID
      */

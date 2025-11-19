@@ -90,6 +90,11 @@ public sealed interface Event extends Message {
             return new CreatureChangedEvent(UUID.randomUUID(), creature.creatureID(),
                     RichOutput.builder().addTaggable(creature).addString("has changed.").build());
         }
+
+        public static CreatureChangedEvent ofCreatureWithChangeDescription(Creature creature, RichOutput description) {
+            Preconditions.checkNotNull(creature, "creature should not be null");
+            return new CreatureChangedEvent(UUID.randomUUID(), creature.creatureID(), description);
+        }
     }
 
     public record RoomChangedEvent(UUID uuid, RoomID roomID, RichOutput description) implements Event {

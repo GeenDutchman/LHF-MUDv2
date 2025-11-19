@@ -17,17 +17,23 @@ public final class MessageContext implements Serializable {
     private final LinkedHashMap<Taggable.Tag, IEntityID> destinationTrace = new LinkedHashMap<>();
     private final IEntityID sender;
     private final IEntityQuery<?> forwardingRestrictions;
+    private final IEntityID replyTo;
 
-    private MessageContext(IEntityID sender, IEntityID destination, IEntityQuery<?> forwarding) {
+    private MessageContext(IEntityID sender, IEntityID destination, IEntityQuery<?> forwarding, IEntityID replyTo) {
         Preconditions.checkNotNull(sender, "sender must not be null");
         Preconditions.checkNotNull(destination, "destination must not be null");
         this.sender = sender;
+        this.replyTo = replyTo;
         this.forwardingRestrictions = forwarding;
         this.destinationTrace.put(destination.entityClass(), destination);
     }
 
     public static MessageContext create(IEntityID sender, IEntityID destination) {
-        return new MessageContext(sender, destination, null);
+        return new MessageContext(sender, destination, null, null);
+    }
+
+    public static MessageContext createWithReplyAddress(IEntityID sender, IEntityID destination, IEntityID replyTo) {
+        return new MessageContext(sender, destination, null, replyTo);
     }
 
     public synchronized MessageContext forward(IEntityID destination) {
@@ -59,9 +65,13 @@ public final class MessageContext implements Serializable {
         return Optional.ofNullable(forwardingRestrictions);
     }
 
+    public Optional<IEntityID> replyTo() {
+        return Optional.ofNullable(this.replyTo);
+    }
+
     @Override
     public int hashCode() {
-        return Objects.hash(uuid, sender);
+        return Objects.hash(uuid, sender, forwardingRestrictions, replyTo);
     }
 
     @Override
@@ -71,15 +81,17 @@ public final class MessageContext implements Serializable {
         if (!(obj instanceof MessageContext))
             return false;
         MessageContext other = (MessageContext) obj;
-        return Objects.equals(uuid, other.uuid) && Objects.equals(sender, other.sender);
+        return Objects.equals(uuid, other.uuid) && Objects.equals(sender, other.sender)
+                && Objects.equals(forwardingRestrictions, other.forwardingRestrictions)
+                && Objects.equals(replyTo, other.replyTo);
     }
 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("Message [uuid=").append(uuid).append(", destinationTrace=").append(destinationTrace)
+        builder.append("MessageContext [uuid=").append(uuid).append(", destinationTrace=").append(destinationTrace)
                 .append(", sender=").append(sender).append(", forwardingRestrictions=").append(forwardingRestrictions)
-                .append("]");
+                .append(", replyTo=").append(replyTo).append("]");
         return builder.toString();
     }
 

@@ -24,7 +24,6 @@ import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessorID;
-import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableMap;
 
@@ -32,6 +31,25 @@ public interface MessageBus {
     public ImmutableMap<IEntityID, MessageProcessorID> entityToProcessor();
 
     public ImmutableBiMap<MessageProcessorID, MessageProcessor> processorIDToProcessor();
+
+    public ImmutableBiMap<Taggable.Tag, MessageProcessorID> entityClassDefaults();
+
+    public default MessageProcessor processorForEntity(final IEntityID id) {
+        if (id == null) {
+            return null;
+        }
+        final ImmutableBiMap<MessageProcessorID, MessageProcessor> idToProc = this.processorIDToProcessor();
+        final MessageProcessorID mprocID = this.entityToProcessor().getOrDefault(id, null);
+        if (mprocID != null) {
+            final MessageProcessor proc = idToProc.getOrDefault(mprocID, null);
+            if (proc != null) {
+                return proc;
+            }
+        }
+        final MessageProcessorID dprocID = this.entityClassDefaults().getOrDefault(id.entityClass(), mprocID);
+        final MessageProcessor dproc = idToProc.getOrDefault(dprocID, null);
+        return dproc;
+    }
 
     public abstract void registerProcessor(MessageProcessor processor);
 
@@ -48,7 +66,7 @@ public interface MessageBus {
     public abstract class AbstractMessageBus implements MessageBus {
         final private ConcurrentMap<IEntityID, MessageProcessorID> entityToProcessor = new ConcurrentHashMap<>();
         final private ConcurrentMap<Taggable.Tag, MessageProcessorID> entityClassDefaults = new ConcurrentHashMap<>();
-        final private HashBiMap<MessageProcessorID, MessageProcessor> processorIDToProcessor = HashBiMap.create();
+        final private ConcurrentMap<MessageProcessorID, MessageProcessor> processorIDToProcessor = new ConcurrentHashMap<>();
         protected final Logger logger = Logger.getLogger(this.getClass().getName());
         final private MessageProcessingResult.Failed NO_RESULT = MessageProcessingResult.Failed("no result");
 
@@ -68,6 +86,11 @@ public interface MessageBus {
         @Override
         public final ImmutableBiMap<MessageProcessorID, MessageProcessor> processorIDToProcessor() {
             return ImmutableBiMap.copyOf(this.processorIDToProcessor);
+        }
+
+        @Override
+        public ImmutableBiMap<Tag, MessageProcessorID> entityClassDefaults() {
+            return ImmutableBiMap.copyOf(this.entityClassDefaults);
         }
 
         @Override
@@ -135,6 +158,23 @@ public interface MessageBus {
 
         protected abstract ExecutorService executor(String logname);
 
+        @Override
+        public MessageProcessor processorForEntity(IEntityID id) {
+            if (id == null) {
+                return null;
+            }
+            final MessageProcessorID mprocID = this.entityToProcessor.getOrDefault(id, null);
+            if (mprocID != null) {
+                final MessageProcessor proc = this.processorIDToProcessor.getOrDefault(mprocID, null);
+                if (proc != null) {
+                    return proc;
+                }
+            }
+            final MessageProcessorID dprocID = this.entityClassDefaults.getOrDefault(id.entityClass(), mprocID);
+            final MessageProcessor dproc = this.processorIDToProcessor.getOrDefault(dprocID, null);
+            return dproc;
+        }
+
         private MessageProcessingResult handle(final MessageContext context, final Message message,
                 final String logname) {
             if (message == null) {
@@ -145,8 +185,7 @@ public interface MessageBus {
             }
 
             final Logger eventLogger = Logger.getLogger(logname);
-            final MessageProcessor processor = this.processorIDToProcessor
-                    .get(this.entityToProcessor.get(context.destination()));
+            final MessageProcessor processor = this.processorForEntity(context.destination());
             if (processor == null) {
                 final String noDestFound = String.format("No destination found for message %s, routing %s",
                         message.getClass().getSimpleName(), context);
