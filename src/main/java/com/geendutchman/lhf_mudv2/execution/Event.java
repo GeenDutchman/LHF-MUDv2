@@ -45,6 +45,10 @@ public sealed interface Event extends Message {
             return this;
         }
 
+        public static PlainEvent asDescribed(RichOutput description) {
+            return new PlainEvent(UUID.randomUUID(), description);
+        }
+
     }
 
     public record ItemChangedEvent(UUID uuid, ItemID itemID, RichOutput description) implements Event {
@@ -117,6 +121,11 @@ public sealed interface Event extends Message {
             Preconditions.checkNotNull(room, "room should not be null");
             return new RoomChangedEvent(UUID.randomUUID(), room.roomID(),
                     RichOutput.builder().addTaggable(room).addString("has changed.").build());
+        }
+
+        public static RoomChangedEvent ofRoomWithChangeDescription(Room room, RichOutput description) {
+            Preconditions.checkNotNull(room, "room should not be null");
+            return new RoomChangedEvent(UUID.randomUUID(), room.roomID(), description);
         }
     }
 

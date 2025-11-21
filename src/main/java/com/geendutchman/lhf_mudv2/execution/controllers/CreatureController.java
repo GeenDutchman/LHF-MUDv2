@@ -184,7 +184,7 @@ public class CreatureController implements MessageProcessor {
 
         forCreature.get().items().stream()
                 .filter(context.getForwardingRestrictions().orElse(EntityQuery.builder().build())).forEach(item -> {
-                    bus.publish(context.forward(item.itemID()), event);
+                    bus.publish(context.forwardCopy(item.itemID()), event);
                 });
 
         return MessageProcessingResult.HANDLED;

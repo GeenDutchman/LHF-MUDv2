@@ -76,7 +76,7 @@ public class ItemFactoryController implements MessageProcessor {
                 }
                 yield bus.send(MessageContext.create(id, forCreature),
                         new LHFCommand.ChangeEntityCommand.ChangeCreatureCommand(UUID.randomUUID(),
-                                ImmutableList.of(CreatureEffect.builder().addDeltas(Creature.Delta.ofItem(made))
+                                ImmutableList.of(CreatureEffect.builder().addDeltas(Creature.Delta.ofItemToAdd(made))
                                         .setApplicationDescriptionFromBuilder(
                                                 RichOutput.builder().addTaggable(forCreature)
                                                         .addString("now has a new item").addTaggable(made))

@@ -19,6 +19,7 @@ import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
+import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSortedMap;
 
@@ -140,6 +141,12 @@ public interface Creature extends Entity, ItemContainer {
             }
         }
 
+        public record RemoveItemDelta(Item item) implements Delta {
+            public RemoveItemDelta {
+                Preconditions.checkNotNull(item, "item to remove must not be null");
+            }
+        }
+
         public record SetAttributeScoreDelta(AttributeScores attr, byte amount) implements Delta {
             public SetAttributeScoreDelta {
                 Preconditions.checkNotNull(attr, "attribute must not be null");
@@ -162,8 +169,12 @@ public interface Creature extends Entity, ItemContainer {
             return new SetFactionDelta(faction);
         }
 
-        public static Delta ofItem(Item item) {
+        public static Delta ofItemToAdd(Item item) {
             return new AddItemDelta(item);
+        }
+
+        public static Delta ofItemToRemove(Item item) {
+            return new RemoveItemDelta(item);
         }
 
         public static Delta ofScoreDelta(AttributeScores score, byte change) {

@@ -148,6 +148,9 @@ final class ConcreteCreature implements Creature {
         case Delta.AddItemDelta(Item inventoryItem) -> {
             this.inventory.add(inventoryItem);
         }
+        case Delta.RemoveItemDelta(Item item) -> {
+            this.inventory.remove(item);
+        }
         case Delta.SetAttributeScoreDelta(AttributeScores attr, byte amount) -> {
             this.scores.merge(attr, amount, ConcreteCreature::addBytesCapped);
         }
@@ -157,10 +160,7 @@ final class ConcreteCreature implements Creature {
         case Delta.SetLocale(Optional<IEntityID> locale) -> {
             this.locale = locale != null ? locale : Optional.empty();
         }
-        case null -> {
-        }
-        default -> {
-        }
+
         }
 
     }

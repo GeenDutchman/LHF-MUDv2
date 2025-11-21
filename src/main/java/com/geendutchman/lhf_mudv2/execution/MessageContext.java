@@ -2,11 +2,13 @@ package com.geendutchman.lhf_mudv2.execution;
 
 import java.io.Serializable;
 import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
 import com.geendutchman.lhf_mudv2.display.Taggable;
+import com.geendutchman.lhf_mudv2.display.Taggable.Tag;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery;
 import com.google.common.base.Preconditions;
@@ -39,6 +41,14 @@ public final class MessageContext implements Serializable {
     public synchronized MessageContext forward(IEntityID destination) {
         this.destinationTrace.put(destination.entityClass(), destination);
         return this;
+    }
+
+    public synchronized MessageContext forwardCopy(IEntityID destination) {
+        final MessageContext copy = new MessageContext(this.sender, destination, this.forwardingRestrictions,
+                this.replyTo);
+        copy.destinationTrace.clear();
+        copy.destinationTrace.putAll(this.destinationTrace);
+        return copy.forward(destination);
     }
 
     public UUID uuid() {
