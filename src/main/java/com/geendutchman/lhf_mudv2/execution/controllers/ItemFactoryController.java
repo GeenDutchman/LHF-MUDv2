@@ -63,43 +63,45 @@ public class ItemFactoryController implements MessageProcessor {
     @Override
     public MessageProcessingResult process(final MessageContext context, final LHFCommand lhfCommand) {
         return switch (lhfCommand) {
-        case LHFCommand.ReassignProcessor rp -> MessageProcessingResult
-                .Failed("only processes builder factory commands");
-        case LHFCommand.BuilderFactoryCommand bfc -> {
-            yield switch (bfc) {
-            case LHFCommand.BuilderFactoryCommand.CreateCreaturesForRoomCommand ccfrc -> MessageProcessingResult
-                    .Failed("Only handles create items commands");
-            case LHFCommand.BuilderFactoryCommand.CreateItemsForCreatureCommand(UUID uuid, ItemBuilderFactory.LockedItemBuilder itemBuilder, CreatureID forCreature) -> {
-                Item made = itemBuilder.build(this.factory);
-                if (made == null) {
-                    yield MessageProcessingResult.Failed("created null item");
-                }
-                yield bus.send(MessageContext.create(id, forCreature),
-                        new LHFCommand.ChangeEntityCommand.ChangeCreatureCommand(UUID.randomUUID(),
-                                ImmutableList.of(CreatureEffect.builder().addDeltas(Creature.Delta.ofItemToAdd(made))
-                                        .setApplicationDescriptionFromBuilder(
-                                                RichOutput.builder().addTaggable(forCreature)
-                                                        .addString("now has a new item").addTaggable(made))
-                                        .build())));
-            }
-            case LHFCommand.BuilderFactoryCommand.CreateItemsForRoomCommand(UUID uuid, ItemBuilderFactory.LockedItemBuilder itemBuilder, RoomID forRoom) -> {
-                Item made = itemBuilder.build(this.factory);
-                if (made == null) {
-                    yield MessageProcessingResult.Failed("created null item");
-                }
-                yield bus.send(MessageContext.create(id, forRoom),
-                        new LHFCommand.ChangeEntityCommand.ChangeRoomCommand(UUID.randomUUID(),
-                                ImmutableList.of(RoomEffect.builder().addDeltas(Room.Delta.ofItem(made))
-                                        .setApplicationDescriptionFromBuilder(RichOutput.builder().addTaggable(forRoom)
-                                                .addString("now has a new item").addTaggable(made))
-                                        .build())));
-            }
+            case LHFCommand.ReassignProcessor rp -> MessageProcessingResult
+                    .Failed("only processes builder factory commands");
+            case LHFCommand.BuilderFactoryCommand bfc -> {
+                yield switch (bfc) {
+                    case LHFCommand.BuilderFactoryCommand.CreateCreaturesForRoomCommand ccfrc -> MessageProcessingResult
+                            .Failed("Only handles create items commands");
+                    case LHFCommand.BuilderFactoryCommand.CreateItemsForCreatureCommand(UUID uuid, ItemBuilderFactory.LockedItemBuilder itemBuilder, CreatureID forCreature) -> {
+                        Item made = itemBuilder.build(this.factory);
+                        if (made == null) {
+                            yield MessageProcessingResult.Failed("created null item");
+                        }
+                        yield bus.send(MessageContext.create(id, forCreature),
+                                new LHFCommand.ChangeEntityCommand.ChangeCreatureCommand(UUID.randomUUID(),
+                                        ImmutableList.of(CreatureEffect.builder()
+                                                .addDeltas(Creature.Delta.ofItemToAdd(made))
+                                                .setApplicationDescriptionFromBuilder(
+                                                        RichOutput.builder().addTaggable(forCreature)
+                                                                .addString("now has a new item").addTaggable(made))
+                                                .build())));
+                    }
+                    case LHFCommand.BuilderFactoryCommand.CreateItemsForRoomCommand(UUID uuid, ItemBuilderFactory.LockedItemBuilder itemBuilder, RoomID forRoom) -> {
+                        Item made = itemBuilder.build(this.factory);
+                        if (made == null) {
+                            yield MessageProcessingResult.Failed("created null item");
+                        }
+                        yield bus.send(MessageContext.create(id, forRoom),
+                                new LHFCommand.ChangeEntityCommand.ChangeRoomCommand(UUID.randomUUID(),
+                                        ImmutableList.of(RoomEffect.builder().addDeltas(Room.Delta.ofItemToAdd(made))
+                                                .setApplicationDescriptionFromBuilder(
+                                                        RichOutput.builder().addTaggable(forRoom)
+                                                                .addString("now has a new item").addTaggable(made))
+                                                .build())));
+                    }
 
-            };
-        }
-        case LHFCommand.ChangeEntityCommand cec -> MessageProcessingResult
-                .Failed("only processes builder factory commands");
-        case null -> MessageProcessingResult.Failed("cannot process null command");
+                };
+            }
+            case LHFCommand.ChangeEntityCommand cec -> MessageProcessingResult
+                    .Failed("only processes builder factory commands");
+            case null -> MessageProcessingResult.Failed("cannot process null command");
 
         };
 
@@ -108,9 +110,9 @@ public class ItemFactoryController implements MessageProcessor {
     @Override
     public MessageProcessingResult process(MessageContext context, Command command) {
         return switch (command) {
-        case LHFCommand l -> this.process(context, l);
-        case null -> MessageProcessingResult.Failed("Only handles create items commands");
-        default -> this.process(context, (Message) command);
+            case LHFCommand l -> this.process(context, l);
+            case null -> MessageProcessingResult.Failed("Only handles create items commands");
+            default -> this.process(context, (Message) command);
 
         };
     }

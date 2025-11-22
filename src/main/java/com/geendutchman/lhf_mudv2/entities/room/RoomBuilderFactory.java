@@ -102,7 +102,7 @@ public final class RoomBuilderFactory {
                     continue;
                 }
                 Creature builtCreature = builder.build(factory.creatureFactory);
-                built.applyDelta(Room.Delta.ofCreature(builtCreature));
+                built.applyDelta(Room.Delta.ofCreatureToAdd(builtCreature));
             }
             factory.repository.add(built);
             return built;

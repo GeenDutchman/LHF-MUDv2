@@ -95,18 +95,38 @@ public interface Room extends Entity, ItemContainer, CreatureContainer {
             }
         }
 
+        public record RemoveItemDelta(Item item) implements Delta {
+            public RemoveItemDelta {
+                Preconditions.checkNotNull(item, "item to remove must not be null");
+            }
+        }
+
         public record AddCreatureDelta(Creature creature) implements Delta {
             public AddCreatureDelta {
                 Preconditions.checkNotNull(creature, "creature to add must not be null");
             }
         }
 
-        public static Delta ofItem(Item item) {
+        public record RemoveCreatureDelta(Creature creature) implements Delta {
+            public RemoveCreatureDelta {
+                Preconditions.checkNotNull(creature, "creature to remove must not be null");
+            }
+        }
+
+        public static Delta ofItemToAdd(Item item) {
             return new AddItemDelta(item);
         }
 
-        public static Delta ofCreature(Creature creature) {
+        public static Delta ofItemToRemove(Item item) {
+            return new RemoveItemDelta(item);
+        }
+
+        public static Delta ofCreatureToAdd(Creature creature) {
             return new AddCreatureDelta(creature);
+        }
+
+        public static Delta ofCreatureToRemove(Creature creature) {
+            return new RemoveCreatureDelta(creature);
         }
 
     }

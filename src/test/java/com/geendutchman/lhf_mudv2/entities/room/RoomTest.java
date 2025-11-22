@@ -38,7 +38,8 @@ public class RoomTest {
         RoomSubject.assertThat(built).name().isEqualTo("First room");
 
         RichOutputSubject.assertThat(built.description().get()).asXMLString().doesNotContain("lullaby");
-        Room.Delta delta = Room.Delta.ofItem(ItemBuilderFactory.builder().setName("lullaby").lock().build(itemFactory));
+        Room.Delta delta = Room.Delta
+                .ofItemToAdd(ItemBuilderFactory.builder().setName("lullaby").lock().build(itemFactory));
         built.applyDelta(delta);
         RichOutputSubject.assertThat(built.description().get()).asXMLString().contains("lullaby");
     }

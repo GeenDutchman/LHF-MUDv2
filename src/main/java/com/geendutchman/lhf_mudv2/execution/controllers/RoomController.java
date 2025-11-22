@@ -90,10 +90,10 @@ public class RoomController implements MessageProcessor {
         final Room room = forRoom.get();
 
         return switch (userCommand) {
-        case UserCommand.SeeCommand seeCommand -> this.processSeeCommand(context, room, seeCommand);
-        case UserCommand.SayCommand sayCommand -> this.processSayCommand(context, room, sayCommand);
-        case UserCommand.TakeCommand takeCommand -> this.processTakeCommand(context, room, takeCommand);
-        case UserCommand.DropCommand dropCommand -> this.processDropCommand(context, room, dropCommand);
+            case UserCommand.SeeCommand seeCommand -> this.processSeeCommand(context, room, seeCommand);
+            case UserCommand.SayCommand sayCommand -> this.processSayCommand(context, room, sayCommand);
+            case UserCommand.TakeCommand takeCommand -> this.processTakeCommand(context, room, takeCommand);
+            case UserCommand.DropCommand dropCommand -> this.processDropCommand(context, room, dropCommand);
         };
     }
 
@@ -109,7 +109,27 @@ public class RoomController implements MessageProcessor {
 
     protected MessageProcessingResult processTakeCommand(MessageContext context, Room room,
             UserCommand.TakeCommand takeCommand) {
+        final Optional<Creature> forCreature = room
+                .queryOneCreature(IEntityQuery.entityQueryBuilder().setIdentifier(potentialCreatureID).build());
+        if (forCreature.isEmpty()) {
+            return MessageProcessingResult.Failed("No creature for command");
+        }
 
+        final Creature creature = forCreature.get();
+
+        final ImmutableSet<Item> items = room.queryItems(ItemQuery.builder()
+                .setDisplayNamePattern(Pattern.compile("^" + Pattern.quote(takeCommand.what()))).build()).items();
+
+        if (items.isEmpty()) {
+            bus.publish(MessageContext.create(room.roomID(), creature.creatureID()),
+                    Event.PlainEvent.asDescribed(RichOutput.builder().addString(
+                            String.format("No item found matching \"%s\" in the room", takeCommand.what()))
+                            .addTaggable(room).build()));
+            return MessageProcessingResult.HANDLED;
+        } else if (items.size() == 1) {
+            final Item item = items.asList().getFirst();
+
+        }
     }
 
     protected MessageProcessingResult processDropCommand(MessageContext context, Room room,
@@ -138,7 +158,7 @@ public class RoomController implements MessageProcessor {
         } else if (items.size() == 1) {
             final Item item = items.asList().getFirst();
             creature.applyDelta(Creature.Delta.ofItemToRemove(item));
-            room.applyDelta(Room.Delta.ofItem(item));
+            room.applyDelta(Room.Delta.ofItemToAdd(item));
             return this.bus.publish(MessageContext.create(room.roomID(), room.roomID()),
                     Event.RoomChangedEvent.ofRoomWithChangeDescription(room,
                             RichOutput.builder().addTaggable(creature).addString("dropped").addTaggable(item).build()));
@@ -146,7 +166,7 @@ public class RoomController implements MessageProcessor {
             final Item first = items.asList().getFirst();
             if (first.displayName().toString().equals(dropCommand.what())) {
                 creature.applyDelta(Creature.Delta.ofItemToRemove(first));
-                room.applyDelta(Room.Delta.ofItem(first));
+                room.applyDelta(Room.Delta.ofItemToAdd(first));
                 return this.bus.publish(MessageContext.create(room.roomID(), room.roomID()),
                         Event.RoomChangedEvent.ofRoomWithChangeDescription(room, RichOutput.builder()
                                 .addTaggable(creature).addString("dropped").addTaggable(first).build()));

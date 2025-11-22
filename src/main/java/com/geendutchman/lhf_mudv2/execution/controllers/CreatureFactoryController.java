@@ -60,32 +60,34 @@ public class CreatureFactoryController implements MessageProcessor {
     @Override
     public MessageProcessingResult process(MessageContext context, LHFCommand lhfCommand) {
         return switch (lhfCommand) {
-        case LHFCommand.ReassignProcessor rp -> MessageProcessingResult
-                .Failed("Only handles create creatures commands");
-        case LHFCommand.BuilderFactoryCommand bfc -> {
-            yield switch (bfc) {
-            case LHFCommand.BuilderFactoryCommand.CreateItemsForCreatureCommand cifcc -> MessageProcessingResult
+            case LHFCommand.ReassignProcessor rp -> MessageProcessingResult
                     .Failed("Only handles create creatures commands");
-            case LHFCommand.BuilderFactoryCommand.CreateItemsForRoomCommand cifrc -> MessageProcessingResult
-                    .Failed("Only handles create creatures commands");
-            case LHFCommand.BuilderFactoryCommand.CreateCreaturesForRoomCommand(UUID uuid, CreatureBuilderFactory.Builder creatureBuilder, RoomID forRoom) -> {
-                Creature made = creatureBuilder.build(this.factory);
-                if (made == null) {
-                    yield MessageProcessingResult.Failed("created null creature");
-                }
-                yield bus.send(MessageContext.create(id, forRoom),
-                        new LHFCommand.ChangeEntityCommand.ChangeRoomCommand(UUID.randomUUID(),
-                                ImmutableList.of(RoomEffect.builder().addDeltas(Room.Delta.ofCreature(made))
-                                        .setApplicationDescriptionFromBuilder(RichOutput.builder().addTaggable(forRoom)
-                                                .addString("now has a new creature").addTaggable(made))
-                                        .build())));
-            }
+            case LHFCommand.BuilderFactoryCommand bfc -> {
+                yield switch (bfc) {
+                    case LHFCommand.BuilderFactoryCommand.CreateItemsForCreatureCommand cifcc -> MessageProcessingResult
+                            .Failed("Only handles create creatures commands");
+                    case LHFCommand.BuilderFactoryCommand.CreateItemsForRoomCommand cifrc -> MessageProcessingResult
+                            .Failed("Only handles create creatures commands");
+                    case LHFCommand.BuilderFactoryCommand.CreateCreaturesForRoomCommand(UUID uuid, CreatureBuilderFactory.Builder creatureBuilder, RoomID forRoom) -> {
+                        Creature made = creatureBuilder.build(this.factory);
+                        if (made == null) {
+                            yield MessageProcessingResult.Failed("created null creature");
+                        }
+                        yield bus.send(MessageContext.create(id, forRoom),
+                                new LHFCommand.ChangeEntityCommand.ChangeRoomCommand(UUID.randomUUID(),
+                                        ImmutableList
+                                                .of(RoomEffect.builder().addDeltas(Room.Delta.ofCreatureToAdd(made))
+                                                        .setApplicationDescriptionFromBuilder(RichOutput.builder()
+                                                                .addTaggable(forRoom)
+                                                                .addString("now has a new creature").addTaggable(made))
+                                                        .build())));
+                    }
 
-            };
-        }
-        case LHFCommand.ChangeEntityCommand l2 -> MessageProcessingResult
-                .Failed("Only handles create creatures commands");
-        case null -> MessageProcessingResult.Failed("Only handles create non-null creatures commands");
+                };
+            }
+            case LHFCommand.ChangeEntityCommand l2 -> MessageProcessingResult
+                    .Failed("Only handles create creatures commands");
+            case null -> MessageProcessingResult.Failed("Only handles create non-null creatures commands");
 
         };
 
@@ -94,9 +96,9 @@ public class CreatureFactoryController implements MessageProcessor {
     @Override
     public MessageProcessingResult process(MessageContext context, Command command) {
         return switch (command) {
-        case LHFCommand l -> this.process(context, l);
-        case null -> MessageProcessingResult.Failed("Only handles create creatures commands");
-        default -> this.process(context, (Message) command);
+            case LHFCommand l -> this.process(context, l);
+            case null -> MessageProcessingResult.Failed("Only handles create creatures commands");
+            default -> this.process(context, (Message) command);
 
         };
     }
