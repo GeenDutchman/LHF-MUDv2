@@ -347,8 +347,12 @@ public sealed interface Event extends Message {
             Preconditions.checkNotNull(listener, "listener could be empty but must not be null");
         }
 
-        public SpokenEvent(RichOutput message, BasicTaggable speaker) {
-            this(UUID.randomUUID(), message, speaker, Optional.empty());
+        public static SpokenEvent speaking(BasicTaggable speaker, RichOutput message) {
+            return new SpokenEvent(UUID.randomUUID(), message, speaker, Optional.empty());
+        }
+
+        public static SpokenEvent speakingTo(BasicTaggable speaker, RichOutput message, BasicTaggable hearer) {
+            return new SpokenEvent(UUID.randomUUID(), message, speaker, Optional.ofNullable(hearer));
         }
 
         @Override

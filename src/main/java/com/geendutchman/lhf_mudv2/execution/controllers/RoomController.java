@@ -5,23 +5,27 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.RichOutputElement;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
+import com.geendutchman.lhf_mudv2.entities.creatures.CreatureQuery;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery.EntityQuery;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
-import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
 import com.geendutchman.lhf_mudv2.entities.item.ItemQuery;
 import com.geendutchman.lhf_mudv2.entities.room.Room;
+import com.geendutchman.lhf_mudv2.entities.room.RoomEffect;
 import com.geendutchman.lhf_mudv2.entities.room.RoomRepository;
 import com.geendutchman.lhf_mudv2.execution.Command;
 import com.geendutchman.lhf_mudv2.execution.Event;
+import com.geendutchman.lhf_mudv2.execution.Event.CreatureSeenEvent;
+import com.geendutchman.lhf_mudv2.execution.Event.ItemSeenEvent;
+import com.geendutchman.lhf_mudv2.execution.Event.RoomSeenEvent;
+import com.geendutchman.lhf_mudv2.execution.Event.SpokenEvent;
 import com.geendutchman.lhf_mudv2.execution.LHFCommand;
 import com.geendutchman.lhf_mudv2.execution.Message;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
@@ -29,6 +33,7 @@ import com.geendutchman.lhf_mudv2.execution.MessageContext;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor;
 import com.geendutchman.lhf_mudv2.execution.UserCommand;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 import jakarta.annotation.PostConstruct;
@@ -62,17 +67,86 @@ public class RoomController implements MessageProcessor {
 
     @Override
     public MessageProcessingResult process(MessageContext context, Message message) {
-        // TODO Auto-generated method stub
+        if (message == null) {
+            return MessageProcessingResult.Failed("cannot handle null message");
+        }
+        return switch (message) {
+            case Command c -> this.process(context, c);
+            case Event e -> this.process(context, e);
+            default -> MessageProcessingResult.Failed("unknown message type");
+        };
     }
 
     @Override
     public MessageProcessingResult process(MessageContext context, Command command) {
-        // TODO Auto-generated method stub
+        if (command == null) {
+            return MessageProcessingResult.Failed("cannot handle null command");
+        }
+
+        return switch (command) {
+            case UserCommand u -> this.process(context, u);
+            case LHFCommand l -> this.process(context, l);
+        };
     }
 
     @Override
     public MessageProcessingResult process(MessageContext context, LHFCommand lhfCommand) {
-        // TODO Auto-generated method stub
+        if (lhfCommand == null) {
+            return MessageProcessingResult.Failed("cannot handle null lhf command");
+        }
+
+        final Optional<Room> forRoom = this.roomRepository
+                .queryOneRoom(IEntityQuery.entityQueryBuilder().setIdentifier(context.destination()).build());
+        if (forRoom.isEmpty()) {
+            return MessageProcessingResult.Failed("addressed room does not exist");
+        }
+
+        final Room room = forRoom.get();
+
+        return switch (lhfCommand) {
+            case LHFCommand.ReassignProcessor rp ->
+                MessageProcessingResult.Failed("cannot handle processor reassignment");
+            case LHFCommand.BuilderFactoryCommand bfc -> MessageProcessingResult.Failed("room cannot build anything");
+            case LHFCommand.ChangeEntityCommand cec -> {
+                yield switch (cec) {
+                    case LHFCommand.ChangeEntityCommand.ChangeItemCommand cic -> MessageProcessingResult
+                            .Failed("creature cannot change items");
+                    case LHFCommand.ChangeEntityCommand.ChangeRoomCommand(UUID uuid, ImmutableList<RoomEffect> effects) -> {
+                        if (effects != null) {
+                            for (final RoomEffect effect : effects) {
+                                if (effect == null) {
+                                    continue;
+                                }
+                                for (Room.Delta delta : effect.deltas()) {
+                                    if (delta != null) {
+                                        room.applyDelta(delta);
+                                    }
+                                }
+
+                                RichOutput.Builder out = RichOutput.builder().setSequenceName(effect.name().toString());
+                                out.addOutput(effect.applicationDescription().orElseGet(() -> RichOutput.builder()
+                                        .addString("Something has changed with").addTaggable(room).build()));
+
+                                if (context.replyTo().isPresent()) {
+                                    bus.publish(context.forward(context.replyTo().orElse(context.getSender())),
+                                            Event.RoomChangedEvent.ofRoomWithChangeDescription(room, out.build()));
+                                } else {
+                                    RichOutput description = out.build();
+                                    Event event = Event.RoomChangedEvent.ofRoomWithChangeDescription(room,
+                                            description);
+                                    bus.publish(MessageContext.create(room.roomID(), context.getSender()),
+                                            event);
+                                    this.process(context, event);
+                                }
+                            }
+                        }
+                        yield MessageProcessingResult.HANDLED;
+                    }
+                    case LHFCommand.ChangeEntityCommand.ChangeCreatureCommand ccc ->
+                        MessageProcessingResult.Failed("room cannot change creature");
+                };
+            }
+        };
     }
 
     @Override
@@ -99,16 +173,97 @@ public class RoomController implements MessageProcessor {
 
     protected MessageProcessingResult processSeeCommand(MessageContext context, Room room,
             UserCommand.SeeCommand seeCommand) {
+        final IEntityID potentialCreatureID = context.getDestinationTrace()
+                .getOrDefault(Creature.CreatureID.ENTITY_CLASS_CREATURE, IEntityID.NULL_ID);
+        final Optional<Creature> forCreature = room
+                .queryOneCreature(IEntityQuery.entityQueryBuilder().setIdentifier(potentialCreatureID).build());
+        if (forCreature.isEmpty()) {
+            return MessageProcessingResult.Failed("No creature for command");
+        }
+
+        final Creature creature = forCreature.get();
+
+        if (seeCommand.what().isPresent()) {
+            Optional<Creature> foundC = room
+                    .queryOneCreature(CreatureQuery.builder().setName(seeCommand.what().orElse("Nobody")).build());
+            if (foundC.isPresent()) {
+                return bus.publish(MessageContext.create(room.roomID(), creature.creatureID()),
+                        new CreatureSeenEvent(foundC.get()));
+            }
+            Optional<Item> foundI = room
+                    .queryOneItem(ItemQuery.builder().setDisplayName(seeCommand.what().orElse("Nothing")).build());
+            if (foundI.isPresent()) {
+                return bus.publish(MessageContext.create(room.roomID(), creature.creatureID()),
+                        new ItemSeenEvent(foundI.get()));
+            }
+        }
+        // TODO: item visibility
+        return bus.publish(MessageContext.create(room.roomID(), creature.creatureID()),
+                new RoomSeenEvent(room, null, null));
 
     }
 
     protected MessageProcessingResult processSayCommand(MessageContext context, Room room,
             UserCommand.SayCommand sayCommand) {
+        final IEntityID potentialCreatureID = context.getDestinationTrace()
+                .getOrDefault(Creature.CreatureID.ENTITY_CLASS_CREATURE, IEntityID.NULL_ID);
+        final Optional<Creature> forCreature = room
+                .queryOneCreature(IEntityQuery.entityQueryBuilder().setIdentifier(potentialCreatureID).build());
+        if (forCreature.isEmpty()) {
+            return MessageProcessingResult.Failed("No creature for command");
+        }
 
+        final Creature creature = forCreature.get();
+
+        if (sayCommand.toWhom().isPresent()) {
+            final ImmutableSet<Creature> creatures = room.queryCreatures(CreatureQuery.builder()
+                    .adjustEntityQuery(
+                            eq -> eq.setNamePattern(Pattern.compile("^" + Pattern.quote(sayCommand.toWhom().get()))))
+                    .build()).creatures();
+            if (creatures.isEmpty()) {
+                bus.publish(MessageContext.create(room.roomID(), creature.creatureID()),
+                        Event.PlainEvent.asDescribed(RichOutput.builder().addString(
+                                String.format("No creature found matching \"%s\" in the room",
+                                        sayCommand.toWhom().orElse("")))
+                                .addTaggable(room).build()));
+                return MessageProcessingResult.HANDLED;
+            } else if (creatures.size() == 1) {
+                final Creature first = creatures.asList().getFirst();
+                SpokenEvent voice = SpokenEvent.speakingTo(creature.basicTaggable(),
+                        RichOutput.builder().addString(sayCommand.message()).build(), first.basicTaggable());
+                bus.publish(MessageContext.create(creature.creatureID(), first.creatureID()), voice);
+                bus.publish(MessageContext.create(creature.creatureID(), creature.creatureID()), voice);
+                return MessageProcessingResult.HANDLED;
+            } else {
+                final Creature first = creatures.asList().getFirst();
+                if (first.name().toString().equals(sayCommand.toWhom().get())) {
+                    SpokenEvent voice = SpokenEvent.speakingTo(creature.basicTaggable(),
+                            RichOutput.builder().addString(sayCommand.message()).build(), first.basicTaggable());
+                    bus.publish(MessageContext.create(creature.creatureID(), first.creatureID()), voice);
+                    bus.publish(MessageContext.create(creature.creatureID(), creature.creatureID()), voice);
+                    return MessageProcessingResult.HANDLED;
+                }
+                RichOutput.Builder matches = RichOutput.builder().setSequenceName("Possible Listeners")
+                        .setElementSeparator(Optional.of(RichOutputElement.ofString(", "))).setIsAndLast(true);
+                creatures.forEach(c -> matches.addTaggable(c));
+                bus.publish(MessageContext.create(room.roomID(), creature.creatureID()),
+                        Event.PlainEvent.asDescribed(RichOutput.builder().addTaggable(creature)
+                                .addString(String.format("has many potential matches for \"%s\"",
+                                        sayCommand.toWhom().orElse("")))
+                                .addOutput(matches.build()).build()));
+                return MessageProcessingResult.HANDLED;
+            }
+        }
+
+        SpokenEvent voice = SpokenEvent.speaking(creature.basicTaggable(),
+                RichOutput.builder().addString(sayCommand.message()).build());
+        return bus.publish(MessageContext.create(creature.creatureID(), room.roomID()), voice);
     }
 
     protected MessageProcessingResult processTakeCommand(MessageContext context, Room room,
             UserCommand.TakeCommand takeCommand) {
+        final IEntityID potentialCreatureID = context.getDestinationTrace()
+                .getOrDefault(Creature.CreatureID.ENTITY_CLASS_CREATURE, IEntityID.NULL_ID);
         final Optional<Creature> forCreature = room
                 .queryOneCreature(IEntityQuery.entityQueryBuilder().setIdentifier(potentialCreatureID).build());
         if (forCreature.isEmpty()) {
@@ -128,7 +283,29 @@ public class RoomController implements MessageProcessor {
             return MessageProcessingResult.HANDLED;
         } else if (items.size() == 1) {
             final Item item = items.asList().getFirst();
-
+            room.applyDelta(Room.Delta.ofItemToRemove(item));
+            creature.applyDelta(Creature.Delta.ofItemToAdd(item));
+            return this.bus.publish(MessageContext.create(room.roomID(), room.roomID()),
+                    Event.RoomChangedEvent.ofRoomWithChangeDescription(room,
+                            RichOutput.builder().addTaggable(creature).addString("took").addTaggable(item).build()));
+        } else {
+            final Item item = items.asList().getFirst();
+            if (item.displayName().toString().equals(takeCommand.what())) {
+                room.applyDelta(Room.Delta.ofItemToRemove(item));
+                creature.applyDelta(Creature.Delta.ofItemToAdd(item));
+                return this.bus.publish(MessageContext.create(room.roomID(), room.roomID()),
+                        Event.RoomChangedEvent.ofRoomWithChangeDescription(room,
+                                RichOutput.builder().addTaggable(creature).addString("took").addTaggable(item)
+                                        .build()));
+            }
+            RichOutput.Builder matches = RichOutput.builder().setSequenceName("Item Matches")
+                    .setElementSeparator(Optional.of(RichOutputElement.ofString(", "))).setIsAndLast(true);
+            items.forEach(i -> matches.addTaggable(i));
+            bus.publish(MessageContext.create(room.roomID(), creature.creatureID()),
+                    Event.PlainEvent.asDescribed(RichOutput.builder().addTaggable(creature)
+                            .addString(String.format("has many potential matches for \"%s\"", takeCommand.what()))
+                            .addOutput(matches.build()).build()));
+            return MessageProcessingResult.HANDLED;
         }
     }
 
