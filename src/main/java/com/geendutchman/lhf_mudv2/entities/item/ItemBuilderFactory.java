@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import com.geendutchman.lhf_mudv2.dice.Difficulty;
 import com.geendutchman.lhf_mudv2.dice.Plain;
 import com.geendutchman.lhf_mudv2.display.Examinable;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.google.auto.value.AutoBuilder;
 
 @Component
@@ -46,7 +47,7 @@ public final class ItemBuilderFactory {
 
         public BuildItem setItemTag(Item.ItemTag tag);
 
-        public BuildItem setLocale(Optional<URI> locale);
+        public BuildItem setLocale(Optional<IEntityID> locale);
 
         public LockedItemBuilder lock();
 
