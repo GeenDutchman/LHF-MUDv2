@@ -268,12 +268,14 @@ public interface EntityResolver {
         public SortedSet<Entity> resolve(final URI uri) {
             final String path = uri.getPath();
 
-            for (Entry<PathPattern, BiFunction<PathRemainingMatchInfo, URI, SortedSet<Entity>>> route : this.routes
-                    .reversed().entrySet()) {
-                PathPattern routePath = route.getKey();
-                PathRemainingMatchInfo matchInfo = routePath.matchStartOfPath(PathContainer.parsePath(path));
-                if (matchInfo != null) {
-                    return route.getValue().apply(matchInfo, uri);
+            if (path != null) {
+                for (Entry<PathPattern, BiFunction<PathRemainingMatchInfo, URI, SortedSet<Entity>>> route : this.routes
+                        .reversed().entrySet()) {
+                    PathPattern routePath = route.getKey();
+                    PathRemainingMatchInfo matchInfo = routePath.matchStartOfPath(PathContainer.parsePath(path));
+                    if (matchInfo != null) {
+                        return route.getValue().apply(matchInfo, uri);
+                    }
                 }
             }
             return ImmutableSortedSet.of();

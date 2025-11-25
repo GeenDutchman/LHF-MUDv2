@@ -26,10 +26,10 @@ public sealed interface DifficultyMods<E extends Enum<E>> extends UnaryOperator<
 
         @Override
         public Difficulty<E> apply(Difficulty<E> t) {
-            return new Difficulty<E>(
-                    Stream.concat(Stream.of(Map.entry(this.flavor, this.bonus)), t.dcs().entrySet().stream())
-                            .collect(ImmutableSortedMap.toImmutableSortedMap(Comparator.naturalOrder(),
-                                    entry -> entry.getKey(), entry -> entry.getValue(), Integer::sum)),
+            return new Difficulty<E>(Stream
+                    .concat(Stream.of(Map.entry(this.flavor, this.bonus)), t.dcs().entrySet().stream())
+                    .collect(ImmutableSortedMap.toImmutableSortedMap(Comparator.naturalOrder(), entry -> entry.getKey(),
+                            entry -> entry.getValue(), (a, b) -> (a == null ? 0 : a) + (b == null ? 0 : b))),
                     t.totalOnly());
         }
 

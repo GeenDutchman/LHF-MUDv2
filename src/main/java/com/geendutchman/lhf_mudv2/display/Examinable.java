@@ -16,7 +16,7 @@ import com.google.common.collect.ImmutableSortedMap;
 public interface Examinable extends Taggable {
 
     // A name for an Examinable
-    public record Name(String value) implements Serializable, Comparable<Name>, CharSequence {
+    public static record Name(String value) implements Serializable, Comparable<Name>, CharSequence {
         /**
          * Examinable names should adhere to this regex: ^\\w{3,}( \\w+)*$
          */

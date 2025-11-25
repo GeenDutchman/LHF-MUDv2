@@ -21,7 +21,7 @@ public interface Taggable {
      * 
      * @return tag
      */
-    public record Tag(String value) implements Serializable, Comparable<Tag>, CharSequence {
+    public static record Tag(String value) implements Serializable, Comparable<Tag>, CharSequence {
         /**
          * All tags need to adhere to: ^\\w{3}(?:[_-]?\\w)*$
          */

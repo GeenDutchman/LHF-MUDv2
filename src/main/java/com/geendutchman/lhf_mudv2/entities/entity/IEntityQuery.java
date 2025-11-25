@@ -135,6 +135,7 @@ public interface IEntityQuery<E extends Entity> extends Predicate<Entity>, Seria
             return builder;
         }
 
+        @Override
         public Map<String, String> toKeyValue() {
             Map<String, String> kv = new LinkedHashMap<>();
             if (this.identifier().isPresent()) {

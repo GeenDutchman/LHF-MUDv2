@@ -3,7 +3,6 @@ package com.geendutchman.lhf_mudv2.entities.repository;
 import java.net.URI;
 import java.util.Map;
 
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponents;
@@ -33,6 +32,9 @@ public interface QueryCodec {
 
         @Override
         public EntityQuery fromURI(URI uri) {
+            if (uri == null) {
+                return EntityQuery.builder().build();
+            }
             return this.fromURI(UriComponentsBuilder.fromUri(uri).build());
         }
 
@@ -54,6 +56,9 @@ public interface QueryCodec {
 
         @Override
         public ItemQuery fromURI(URI uri) {
+            if (uri == null) {
+                return ItemQuery.builder().build();
+            }
             return this.fromURI(UriComponentsBuilder.fromUri(uri).build());
         }
 
@@ -75,6 +80,9 @@ public interface QueryCodec {
 
         @Override
         public CreatureQuery fromURI(URI uri) {
+            if (uri == null) {
+                return CreatureQuery.builder().build();
+            }
             return this.fromURI(UriComponentsBuilder.fromUri(uri).build());
         }
     }
@@ -95,6 +103,9 @@ public interface QueryCodec {
 
         @Override
         public RoomQuery fromURI(URI uri) {
+            if (uri == null) {
+                return RoomQuery.builder().build();
+            }
             return this.fromURI(UriComponentsBuilder.fromUri(uri).build());
         }
     }
@@ -108,7 +119,7 @@ public interface QueryCodec {
                     "creature", CREATURE_QUERY_CODEC);
         }
 
-        public Factory(@NonNull Map<String, QueryCodec> codecs) {
+        public Factory(Map<String, QueryCodec> codecs) {
             this.codecs = Map.copyOf(codecs);
         }
 
@@ -155,7 +166,12 @@ public interface QueryCodec {
     public default UriComponentsBuilder toURI(IEntityQuery<?> query, UriComponentsBuilder builder) {
         Map<String, String> kv = query.toKeyValue();
         for (Map.Entry<String, String> entry : kv.entrySet()) {
-            builder.queryParam(entry.getKey(), entry.getValue());
+            final String key = entry.getKey();
+            final String value = entry.getValue();
+            if (key == null) {
+                continue;
+            }
+            builder.queryParam(key, value);
         }
         return builder;
     }
@@ -167,6 +183,9 @@ public interface QueryCodec {
     public abstract IEntityQuery<? extends Entity> fromURI(UriComponents uri);
 
     public default IEntityQuery<? extends Entity> fromURI(URI uri) {
+        if (uri == null) {
+            return IEntityQuery.entityQueryBuilder().build();
+        }
         return this.fromURI(UriComponentsBuilder.fromUri(uri).build());
     }
 

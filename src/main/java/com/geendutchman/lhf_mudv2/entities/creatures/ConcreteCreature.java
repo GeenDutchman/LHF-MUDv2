@@ -112,6 +112,10 @@ final class ConcreteCreature implements Creature {
         return retrieved;
     }
 
+    private static byte addBytesCapped(Byte one, Byte two) {
+        return addBytesCapped(one != null ? one.byteValue() : 0, two != null ? two.byteValue() : 0);
+    }
+
     private static byte addBytesCapped(byte one, byte two) {
         int sum = one + two; // as int to avoid overflow
 

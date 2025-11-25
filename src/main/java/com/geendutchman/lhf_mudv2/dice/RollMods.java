@@ -120,7 +120,8 @@ public sealed interface RollMods<E extends Enum<E>> extends UnaryOperator<RollSe
                     Streams.concat(ImmutableMap.of(flavor, bonus).entrySet().stream(), t.rolls().entrySet().stream())
                             .filter(entry -> entry != null && entry.getValue() != null)
                             .collect(ImmutableSortedMap.toImmutableSortedMap(Comparator.<E>naturalOrder(),
-                                    entry -> entry.getKey(), entry -> entry.getValue(), Integer::sum)),
+                                    entry -> entry.getKey(), entry -> entry.getValue(),
+                                    (a, b) -> (a == null ? 0 : a) + (b == null ? 0 : b))),
                     RollMods.appendNote(t.notes(), flavor,
                             String.format("(%s %d)", bonus >= 0 ? "added" : "subtracted", bonus)),
                     Optional.of(t));

@@ -6,8 +6,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.lang.NonNull;
-
 import com.geendutchman.lhf_mudv2.display.Examinable.BasicExaminable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.RichOutputElement;
@@ -84,11 +82,6 @@ public sealed interface Event extends Message {
             }
         }
 
-        public CreatureChangedEvent(@NonNull Creature creature) {
-            this(UUID.randomUUID(), creature.creatureID(),
-                    RichOutput.builder().addTaggable(creature).addString("has changed.").build());
-        }
-
         public static CreatureChangedEvent ofCreature(Creature creature) {
             Preconditions.checkNotNull(creature, "creature should not be null");
             return new CreatureChangedEvent(UUID.randomUUID(), creature.creatureID(),
@@ -110,11 +103,6 @@ public sealed interface Event extends Message {
                 description = RichOutput.builder().addString(roomID.name().toString()).addString("has changed.")
                         .build();
             }
-        }
-
-        public RoomChangedEvent(@NonNull Room room) {
-            this(UUID.randomUUID(), room.roomID(),
-                    RichOutput.builder().addTaggable(room).addString("has changed.").build());
         }
 
         public static RoomChangedEvent ofRoom(Room room) {

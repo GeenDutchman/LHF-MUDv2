@@ -8,7 +8,6 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 import com.geendutchman.lhf_mudv2.dice.Difficulty;
@@ -21,7 +20,7 @@ import com.google.auto.value.AutoBuilder;
 public final class ItemBuilderFactory {
 
     public static sealed interface BuilderStart extends Serializable permits BuildItem {
-        public ItemBuilderFactory.BuildItem setName(@NonNull Examinable.Name name);
+        public ItemBuilderFactory.BuildItem setName(Examinable.Name name);
 
         public default ItemBuilderFactory.BuildItem setName(String name) {
             Examinable.Name eName = new Examinable.Name(name);
