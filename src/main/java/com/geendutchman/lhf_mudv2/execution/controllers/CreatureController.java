@@ -1,7 +1,6 @@
 package com.geendutchman.lhf_mudv2.execution.controllers;
 
 import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -22,6 +21,7 @@ import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor;
 import com.geendutchman.lhf_mudv2.execution.UserCommand;
+import com.github.f4b6a3.tsid.Tsid;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
@@ -34,7 +34,8 @@ public class CreatureController implements MessageProcessor {
     @Autowired
     protected final CreatureRepository creatureRepository;
 
-    private final MessageProcessorID processorID = new MessageProcessorID(UUID.randomUUID());
+    private final MessageProcessorID processorID = new MessageProcessorID(
+            MessageProcessor.messageProcessorTsidFactory.create());
 
     CreatureController(@Autowired MessageBus bus, @Autowired CreatureRepository repo) {
         Preconditions.checkNotNull(bus, "message bus should not be null");
@@ -49,7 +50,7 @@ public class CreatureController implements MessageProcessor {
     }
 
     @Override
-    public MessageProcessorID messageProcessorID() {
+    public final MessageProcessorID messageProcessorID() {
         return this.processorID;
     }
 
@@ -103,7 +104,7 @@ public class CreatureController implements MessageProcessor {
                     .Failed("creature cannot change items");
             case LHFCommand.ChangeEntityCommand.ChangeRoomCommand crc -> MessageProcessingResult
                     .Failed("creature cannot change room");
-            case LHFCommand.ChangeEntityCommand.ChangeCreatureCommand(UUID uuid, ImmutableList<CreatureEffect> effects) -> {
+            case LHFCommand.ChangeEntityCommand.ChangeCreatureCommand(Tsid tsid, ImmutableList<CreatureEffect> effects) -> {
                 if (effects != null) {
                     for (final CreatureEffect effect : effects) {
                         if (effect == null) {
@@ -157,14 +158,14 @@ public class CreatureController implements MessageProcessor {
         final Creature creature = forCreature.get();
 
         return switch (userCommand) {
-        case UserCommand.SeeCommand(UUID uuid, Optional<String> what) -> bus
-                .send(context.forward(creature.locale().orElse(IEntityID.NULL_ID)), userCommand);
-        case UserCommand.SayCommand(UUID uuid, String message, Optional<String> toWhom) -> bus
-                .send(context.forward(creature.locale().orElse(IEntityID.NULL_ID)), userCommand);
-        case UserCommand.TakeCommand(UUID uuid, String what) -> bus
-                .send(context.forward(creature.locale().orElse(IEntityID.NULL_ID)), userCommand);
-        case UserCommand.DropCommand(UUID uuid, String what) -> bus
-                .send(context.forward(creature.locale().orElse(IEntityID.NULL_ID)), userCommand);
+        case UserCommand.SeeCommand seeCommand -> bus.send(context.forward(creature.locale().orElse(IEntityID.NULL_ID)),
+                seeCommand);
+        case UserCommand.SayCommand sayCommand -> bus.send(context.forward(creature.locale().orElse(IEntityID.NULL_ID)),
+                sayCommand);
+        case UserCommand.TakeCommand takeCommand -> bus
+                .send(context.forward(creature.locale().orElse(IEntityID.NULL_ID)), takeCommand);
+        case UserCommand.DropCommand dropCommand -> bus
+                .send(context.forward(creature.locale().orElse(IEntityID.NULL_ID)), dropCommand);
 
         };
 

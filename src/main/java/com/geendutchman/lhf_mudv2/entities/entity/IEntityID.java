@@ -1,12 +1,13 @@
 package com.geendutchman.lhf_mudv2.entities.entity;
 
 import java.net.URI;
-import java.util.UUID;
 
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.Taggable;
+import com.github.f4b6a3.tsid.Tsid;
+import com.github.f4b6a3.tsid.TsidFactory;
 import com.google.common.base.Preconditions;
 
 public interface IEntityID extends Comparable<IEntityID>, Taggable {
@@ -14,11 +15,11 @@ public interface IEntityID extends Comparable<IEntityID>, Taggable {
 
     public Examinable.Name name();
 
-    public UUID uuid();
+    public Tsid tsid();
 
     public default URI uri() {
         return UriComponentsBuilder.newInstance().pathSegment("{class}").pathSegment("{name}")
-                .pathSegment(this.uuid().toString()).build(this.entityClass(), this.name());
+                .pathSegment(this.tsid().toString()).build(this.entityClass(), this.name());
     }
 
     @Override
@@ -47,21 +48,21 @@ public interface IEntityID extends Comparable<IEntityID>, Taggable {
         if (nameCompare != 0) {
             return nameCompare;
         }
-        return this.uuid().compareTo(o.uuid());
+        return this.tsid().compareTo(o.tsid());
     }
 
     public final static IEntityID NULL_ID = new EntityID(new Taggable.Tag("null"), new Examinable.Name("null"),
-            UUID.randomUUID());
+            TsidFactory.newInstance1024(0).create());
 
     /**
      * Meant to be composed into a subclass of IEntityID
      */
-    public record EntityID(Taggable.Tag entityClass, Examinable.Name name, UUID uuid) implements IEntityID {
+    public record EntityID(Taggable.Tag entityClass, Examinable.Name name, Tsid tsid) implements IEntityID {
 
         public EntityID {
             Preconditions.checkNotNull(entityClass, "entity class must not be null");
             Preconditions.checkNotNull(name, "name must not be null");
-            Preconditions.checkNotNull(uuid, "uuid must not be null");
+            Preconditions.checkNotNull(tsid, "tsid must not be null");
         }
 
         @Override

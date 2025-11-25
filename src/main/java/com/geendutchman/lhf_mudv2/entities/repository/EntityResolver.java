@@ -5,7 +5,6 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.SortedSet;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiFunction;
 
@@ -18,10 +17,10 @@ import org.springframework.web.util.pattern.PathPatternParser;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
+import com.geendutchman.lhf_mudv2.entities.creatures.Creature.CreatureID;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureContainer;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureQuery;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureRepository;
-import com.geendutchman.lhf_mudv2.entities.creatures.Creature.CreatureID;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID.EntityID;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery.EntityQuery;
@@ -35,6 +34,7 @@ import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
 import com.geendutchman.lhf_mudv2.entities.room.RoomContainer;
 import com.geendutchman.lhf_mudv2.entities.room.RoomQuery;
 import com.geendutchman.lhf_mudv2.entities.room.RoomRepository;
+import com.github.f4b6a3.tsid.Tsid;
 import com.google.common.collect.ImmutableSortedSet;
 
 public interface EntityResolver {
@@ -71,14 +71,14 @@ public interface EntityResolver {
             if (itemContainer == null || uri == null || info == null) {
                 return Optional.empty();
             }
-            UUID itemUUID;
+            Tsid itemTsid;
             try {
-                itemUUID = UUID.fromString(info.getUriVariables().getOrDefault("item-id", null));
+                itemTsid = Tsid.from(info.getUriVariables().getOrDefault("item-id", null));
             } catch (IllegalArgumentException | NullPointerException e) {
                 return Optional.empty();
             }
             ItemID itemID = new ItemID(new EntityID(ItemID.ENTITY_CLASS_ITEM,
-                    new Examinable.Name(info.getUriVariables().getOrDefault("item-name", "")), itemUUID));
+                    new Examinable.Name(info.getUriVariables().getOrDefault("item-name", "")), itemTsid));
             Optional<Item> retrieved = itemContainer.byItemID(itemID);
             return retrieved;
         }
@@ -96,14 +96,14 @@ public interface EntityResolver {
             if (creatureContainer == null || uri == null || info == null) {
                 return Optional.empty();
             }
-            UUID creatureUUID;
+            Tsid creatureTsid;
             try {
-                creatureUUID = UUID.fromString(info.getUriVariables().getOrDefault("creature-id", null));
+                creatureTsid = Tsid.from(info.getUriVariables().getOrDefault("creature-id", null));
             } catch (IllegalArgumentException | NullPointerException e) {
                 return Optional.empty();
             }
             CreatureID creatureID = new CreatureID(new EntityID(CreatureID.ENTITY_CLASS_CREATURE,
-                    new Examinable.Name(info.getUriVariables().getOrDefault("creature-name", "")), creatureUUID));
+                    new Examinable.Name(info.getUriVariables().getOrDefault("creature-name", "")), creatureTsid));
             Optional<Creature> retrieved = creatureContainer.byCreatureID(creatureID);
             return retrieved;
         }
@@ -168,9 +168,9 @@ public interface EntityResolver {
         }
 
         private Optional<Room> getRoom(PathRemainingMatchInfo info, URI uri, RoomContainer roomContainer) {
-            UUID id;
+            Tsid id;
             try {
-                id = UUID.fromString(info.getUriVariables().getOrDefault("room-id", null));
+                id = Tsid.from(info.getUriVariables().getOrDefault("room-id", null));
             } catch (IllegalArgumentException | NullPointerException e) {
                 return Optional.empty();
             }

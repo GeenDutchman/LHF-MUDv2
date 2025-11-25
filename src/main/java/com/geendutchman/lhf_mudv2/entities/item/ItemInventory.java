@@ -69,7 +69,7 @@ public final class ItemInventory implements ItemContainer {
             } catch (IllegalStateException e) {
                 mycontents = new TreeSet<>(Comparator.<ItemBuilderFactory.LockedItemBuilder, String>comparing(
                         locked -> String.format("%s:%s:%s", locked.getName(),
-                                locked.getNickname().map(nn -> nn.toString()).orElse(""), locked.builderUuid())));
+                                locked.getNickname().map(nn -> nn.toString()).orElse(""), locked.builderTsid())));
             }
             for (final ItemBuilderFactory.LockedItemBuilder item : items) {
                 if (item != null) {

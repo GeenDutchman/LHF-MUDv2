@@ -1,7 +1,6 @@
 package com.geendutchman.lhf_mudv2.execution.controllers;
 
 import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -18,6 +17,7 @@ import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor;
 import com.geendutchman.lhf_mudv2.execution.UserCommand;
+import com.github.f4b6a3.tsid.Tsid;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
@@ -31,7 +31,8 @@ public class ItemController implements MessageProcessor {
     @Autowired
     protected final ItemRepository itemRepository;
 
-    private final MessageProcessorID processorID = new MessageProcessorID(UUID.randomUUID());
+    private final MessageProcessorID processorID = new MessageProcessorID(
+            MessageProcessor.messageProcessorTsidFactory.create());
 
     ItemController(@Autowired MessageBus bus, @Autowired ItemRepository repo) {
         Preconditions.checkNotNull(bus, "message bus should not be null");
@@ -46,7 +47,7 @@ public class ItemController implements MessageProcessor {
     }
 
     @Override
-    public MessageProcessorID messageProcessorID() {
+    public final MessageProcessorID messageProcessorID() {
         return this.processorID;
     }
 
@@ -94,7 +95,7 @@ public class ItemController implements MessageProcessor {
                     .Failed("this item is not a creature to be changed");
             case LHFCommand.ChangeEntityCommand.ChangeRoomCommand crc -> MessageProcessingResult
                     .Failed("this item is not a room to be changed");
-            case LHFCommand.ChangeEntityCommand.ChangeItemCommand(UUID uuid, ImmutableList<ItemEffect> effects) -> {
+            case LHFCommand.ChangeEntityCommand.ChangeItemCommand(Tsid tsid, ImmutableList<ItemEffect> effects) -> {
                 final Item item = forItem.get();
                 RichOutput.Builder output = RichOutput.builder();
                 for (final ItemEffect effect : effects) {

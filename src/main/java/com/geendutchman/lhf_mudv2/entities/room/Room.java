@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.net.URI;
 import java.util.Comparator;
 import java.util.Optional;
-import java.util.UUID;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
@@ -15,6 +14,8 @@ import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
+import com.github.f4b6a3.tsid.Tsid;
+import com.github.f4b6a3.tsid.TsidFactory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSortedMap;
 
@@ -28,9 +29,10 @@ public interface Room extends Entity, ItemContainer, CreatureContainer {
         }
 
         public static final Taggable.Tag ENTITY_CLASS_ROOM = new Tag("rooms");
+        protected static final TsidFactory tsidFactory = TsidFactory.newInstance1024("rooms".hashCode() % 1024);
 
         public static RoomID make(Examinable.Name name) {
-            return new RoomID(new EntityID(ENTITY_CLASS_ROOM, name, UUID.randomUUID()));
+            return new RoomID(new EntityID(ENTITY_CLASS_ROOM, name, tsidFactory.create()));
         }
 
         public Taggable.Tag entityClass() {
@@ -46,8 +48,8 @@ public interface Room extends Entity, ItemContainer, CreatureContainer {
         }
 
         @Override
-        public UUID uuid() {
-            return this.delegate.uuid();
+        public Tsid tsid() {
+            return this.delegate.tsid();
         }
 
         @Override
@@ -58,7 +60,7 @@ public interface Room extends Entity, ItemContainer, CreatureContainer {
     }
 
     /**
-     * A uuid to specify the room
+     * An identifer to specify the room
      */
     @Override
     public default IEntityID identifier() {

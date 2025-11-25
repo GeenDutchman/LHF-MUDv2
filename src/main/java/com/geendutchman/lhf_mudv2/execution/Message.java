@@ -1,8 +1,9 @@
 package com.geendutchman.lhf_mudv2.execution;
 
 import java.io.Serializable;
-import java.util.UUID;
+
+import com.github.f4b6a3.tsid.Tsid;
 
 public interface Message extends Serializable {
-    public abstract UUID uuid();
+    public abstract Tsid tsid();
 }

@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.net.URI;
 import java.util.Comparator;
 import java.util.Optional;
-import java.util.UUID;
 
 import com.geendutchman.lhf_mudv2.dice.DiceSet;
 import com.geendutchman.lhf_mudv2.dice.DieType;
@@ -19,6 +18,8 @@ import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
+import com.github.f4b6a3.tsid.Tsid;
+import com.github.f4b6a3.tsid.TsidFactory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSortedMap;
 
@@ -31,9 +32,10 @@ public interface Creature extends Entity, ItemContainer {
         }
 
         public static final Taggable.Tag ENTITY_CLASS_CREATURE = new Tag("creatures");
+        protected static final TsidFactory tsidFactory = TsidFactory.newInstance1024("creatures".hashCode() % 1024);
 
         public static CreatureID make(Examinable.Name name) {
-            return new CreatureID(new EntityID(ENTITY_CLASS_CREATURE, name, UUID.randomUUID()));
+            return new CreatureID(new EntityID(ENTITY_CLASS_CREATURE, name, tsidFactory.create()));
         }
 
         public Taggable.Tag entityClass() {
@@ -49,8 +51,8 @@ public interface Creature extends Entity, ItemContainer {
         }
 
         @Override
-        public UUID uuid() {
-            return this.delegate.uuid();
+        public Tsid tsid() {
+            return this.delegate.tsid();
         }
 
         @Override

@@ -1,9 +1,7 @@
 package com.geendutchman.lhf_mudv2.entities.item;
 
 import java.io.Serializable;
-import java.net.URI;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -14,6 +12,8 @@ import com.geendutchman.lhf_mudv2.dice.Difficulty;
 import com.geendutchman.lhf_mudv2.dice.Plain;
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
+import com.github.f4b6a3.tsid.Tsid;
+import com.github.f4b6a3.tsid.TsidFactory;
 import com.google.auto.value.AutoBuilder;
 
 @Component
@@ -61,28 +61,29 @@ public final class ItemBuilderFactory {
 
         public Optional<Examinable.Name> getNickname();
 
-        public UUID builderUuid();
+        public Tsid builderTsid();
 
         @Override
         public default int compareTo(LockedItemBuilder o) {
             return String
                     .format("%s:%s:%s", this.getName(), this.getNickname().map(aname -> aname.toString()).orElse(""),
-                            this.builderUuid())
+                            this.builderTsid())
                     .compareTo(String.format("%s:%s:%s", o.getName(),
-                            o.getNickname().map(oname -> oname.toString()).orElse(""), o.builderUuid()));
+                            o.getNickname().map(oname -> oname.toString()).orElse(""), o.builderTsid()));
         }
 
     }
 
     @AutoBuilder(callMethod = "buildItem", ofClass = ConcreteItem.class)
     public non-sealed abstract static class Builder implements BuildItem, LockedItemBuilder {
-        final private UUID builderUuid = UUID.randomUUID();
+        final static private TsidFactory idFactory = TsidFactory.newInstance1024("itemBuilder".hashCode() % 1024);
+        final private Tsid builderTsid = idFactory.create();
 
         protected Builder() {
         }
 
-        public final UUID builderUuid() {
-            return this.builderUuid;
+        public final Tsid builderTsid() {
+            return this.builderTsid;
         }
 
         @Override

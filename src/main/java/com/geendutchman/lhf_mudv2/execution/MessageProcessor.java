@@ -1,17 +1,25 @@
 package com.geendutchman.lhf_mudv2.execution;
 
 import java.net.URI;
-import java.util.UUID;
 
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.github.f4b6a3.tsid.Tsid;
+import com.github.f4b6a3.tsid.TsidFactory;
 import com.google.common.base.Preconditions;
 
 public interface MessageProcessor {
 
-    public record MessageProcessorID(UUID uuid) implements Comparable<MessageProcessorID> {
+    public final static TsidFactory messageProcessorTsidFactory = TsidFactory
+            .newInstance1024("message_processor".hashCode() % 1024);
+
+    public record MessageProcessorID(Tsid tsid) implements Comparable<MessageProcessorID> {
         public MessageProcessorID {
-            Preconditions.checkNotNull(uuid, "uuid must not be null");
+            Preconditions.checkNotNull(tsid, "tsid must not be null");
+        }
+
+        public static MessageProcessorID nextID() {
+            return new MessageProcessorID(messageProcessorTsidFactory.create());
         }
 
         @Override
@@ -22,12 +30,12 @@ public interface MessageProcessor {
             if (this == o) {
                 return 0;
             }
-            return this.uuid.compareTo(o.uuid);
+            return this.tsid.compareTo(o.tsid);
         }
 
         public URI uri() {
-            return UriComponentsBuilder.newInstance().pathSegment("{class}", "{uuid}").build("message_processor",
-                    uuid.toString());
+            return UriComponentsBuilder.newInstance().pathSegment("{class}", "{tsid}").build("message_processor",
+                    tsid.toString());
         }
     }
 

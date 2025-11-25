@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.net.URI;
 import java.util.Comparator;
 import java.util.Optional;
-import java.util.UUID;
 
 import com.geendutchman.lhf_mudv2.dice.Difficulty;
 import com.geendutchman.lhf_mudv2.dice.DifficultyMods;
@@ -13,6 +12,8 @@ import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
+import com.github.f4b6a3.tsid.Tsid;
+import com.github.f4b6a3.tsid.TsidFactory;
 import com.google.common.base.Preconditions;
 
 public interface Item extends Entity {
@@ -25,9 +26,10 @@ public interface Item extends Entity {
         }
 
         public static final Taggable.Tag ENTITY_CLASS_ITEM = new Tag("items");
+        protected static final TsidFactory tsidFactory = TsidFactory.newInstance1024("items".hashCode() % 1024);
 
         public static ItemID make(Examinable.Name name) {
-            return new ItemID(new EntityID(ENTITY_CLASS_ITEM, name, UUID.randomUUID()));
+            return new ItemID(new EntityID(ENTITY_CLASS_ITEM, name, tsidFactory.create()));
         }
 
         public Taggable.Tag entityClass() {
@@ -43,8 +45,8 @@ public interface Item extends Entity {
         }
 
         @Override
-        public UUID uuid() {
-            return this.delegate.uuid();
+        public Tsid tsid() {
+            return this.delegate.tsid();
         }
 
         @Override
@@ -55,7 +57,7 @@ public interface Item extends Entity {
     }
 
     /**
-     * A uuid to specify the item
+     * An identifier to specify the item
      */
     @Override
     public default IEntityID identifier() {

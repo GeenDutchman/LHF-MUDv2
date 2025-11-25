@@ -36,6 +36,6 @@ public final class RoomSubject extends Subject {
     }
 
     public StringSubject roomID() {
-        return check("roomID().uuid()").that(this.room.identifier().uuid().toString());
+        return check("roomID().tsid()").that(this.room.identifier().tsid().toString());
     }
 }

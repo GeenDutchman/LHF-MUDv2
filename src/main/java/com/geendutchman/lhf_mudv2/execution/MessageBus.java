@@ -141,7 +141,7 @@ public interface MessageBus {
             }
 
             final String logname = String.format("%s.event.%s.%s", this.logger.getName(),
-                    event.getClass().getSimpleName(), event.uuid());
+                    event.getClass().getSimpleName(), event.tsid());
             return this.handle(context, event, logname);
         }
 
@@ -152,7 +152,7 @@ public interface MessageBus {
             }
 
             final String logname = String.format("%s.command.%s.%s", this.logger.getName(),
-                    command.getClass().getSimpleName(), command.uuid());
+                    command.getClass().getSimpleName(), command.tsid());
             return this.handle(context, command, logname);
         }
 

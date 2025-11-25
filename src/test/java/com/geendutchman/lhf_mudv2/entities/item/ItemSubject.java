@@ -39,7 +39,7 @@ public final class ItemSubject extends Subject {
     }
 
     public StringSubject itemID() {
-        return check("itemID().uuid()").that(this.item.identifier().uuid().toString());
+        return check("itemID().tsid()").that(this.item.identifier().tsid().toString());
     }
 
     public DifficultySubject<Plain> visibility() {

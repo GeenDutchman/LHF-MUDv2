@@ -4,16 +4,18 @@ import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 
 import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery;
+import com.github.f4b6a3.tsid.Tsid;
+import com.github.f4b6a3.tsid.TsidFactory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableBiMap;
 
 public final class MessageContext implements Serializable {
-    private final UUID uuid = UUID.randomUUID();
+    private static final TsidFactory idFactory = TsidFactory.newInstance1024("messageContext".hashCode() % 1024);
+    private final Tsid tsid = idFactory.create();
     private final LinkedHashMap<Taggable.Tag, IEntityID> destinationTrace = new LinkedHashMap<>();
     private final IEntityID sender;
     private final IEntityQuery<?> forwardingRestrictions;
@@ -49,12 +51,12 @@ public final class MessageContext implements Serializable {
         return copy.forward(destination);
     }
 
-    public UUID uuid() {
-        return uuid;
+    public Tsid tsid() {
+        return tsid;
     }
 
-    public UUID getUuid() {
-        return uuid;
+    public Tsid getTsid() {
+        return tsid;
     }
 
     public synchronized ImmutableBiMap<Taggable.Tag, IEntityID> getDestinationTrace() {
@@ -79,7 +81,7 @@ public final class MessageContext implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(uuid, sender, forwardingRestrictions, replyTo);
+        return Objects.hash(tsid, sender, forwardingRestrictions, replyTo);
     }
 
     @Override
@@ -89,7 +91,7 @@ public final class MessageContext implements Serializable {
         if (!(obj instanceof MessageContext))
             return false;
         MessageContext other = (MessageContext) obj;
-        return Objects.equals(uuid, other.uuid) && Objects.equals(sender, other.sender)
+        return Objects.equals(tsid, other.tsid) && Objects.equals(sender, other.sender)
                 && Objects.equals(forwardingRestrictions, other.forwardingRestrictions)
                 && Objects.equals(replyTo, other.replyTo);
     }
@@ -97,7 +99,7 @@ public final class MessageContext implements Serializable {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("MessageContext [uuid=").append(uuid).append(", destinationTrace=").append(destinationTrace)
+        builder.append("MessageContext [tsid=").append(tsid).append(", destinationTrace=").append(destinationTrace)
                 .append(", sender=").append(sender).append(", forwardingRestrictions=").append(forwardingRestrictions)
                 .append(", replyTo=").append(replyTo).append("]");
         return builder.toString();

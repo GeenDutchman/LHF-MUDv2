@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -18,6 +17,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID.EntityID;
+import com.github.f4b6a3.tsid.Tsid;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.BoundType;
@@ -112,7 +112,7 @@ public interface IEntityQuery<E extends Entity> extends Predicate<Entity>, Seria
                         }
                         try {
                             this.setIdentifier(new EntityID(new Taggable.Tag(segments.get(0)),
-                                    new Examinable.Name(segments.get(1)), UUID.fromString(segments.get(2))));
+                                    new Examinable.Name(segments.get(1)), Tsid.from(segments.get(2))));
                         } catch (IllegalArgumentException | NullPointerException e) {
                             continue;
                         }

@@ -1,11 +1,9 @@
 package com.geendutchman.lhf_mudv2.entities.room;
 
 import java.io.Serializable;
-import java.net.URI;
 import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.SequencedSet;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -16,8 +14,11 @@ import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureBuilderFactory;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
+import com.github.f4b6a3.tsid.Tsid;
+import com.github.f4b6a3.tsid.TsidFactory;
 import com.google.auto.value.AutoBuilder;
 
 @Component
@@ -36,7 +37,7 @@ public final class RoomBuilderFactory {
     public static sealed interface BuildRoom extends BuilderStart permits Builder {
         public Examinable.Name getName();
 
-        public BuildRoom setLocale(Optional<URI> locale);
+        public BuildRoom setLocale(Optional<IEntityID> locale);
 
         public BuildRoom setRoomDescription(Optional<RichOutput> roomDescription);
 
@@ -49,7 +50,8 @@ public final class RoomBuilderFactory {
 
     @AutoBuilder(callMethod = "buildRoom", ofClass = ConcreteRoom.class)
     public abstract non-sealed static class Builder implements BuildRoom {
-        final private UUID builderUuid = UUID.randomUUID();
+        private final static TsidFactory idfactory = TsidFactory.newInstance1024("roomBuilder".hashCode() % 1024);
+        final private Tsid builderTsid = idfactory.create();
         private ItemInventory.Builder inventoryBuilder = ItemInventory.builder();
         private SequencedSet<CreatureBuilderFactory.Builder> creatures;
 
@@ -58,8 +60,8 @@ public final class RoomBuilderFactory {
             this.creatures = new LinkedHashSet<>();
         }
 
-        public final UUID builderUuid() {
-            return this.builderUuid;
+        public final Tsid builderTsid() {
+            return this.builderTsid;
         }
 
         public ItemInventory.Builder inventoryBuilder() {
