@@ -100,9 +100,9 @@ public final class MessageContext implements Serializable {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("MessageContext [tsid=").append(tsid).append(", destinationTrace=").append(destinationTrace)
-                .append(", sender=").append(sender).append(", forwardingRestrictions=").append(forwardingRestrictions)
-                .append(", replyTo=").append(replyTo).append("]");
+        builder.append("MessageContext [tsid=").append(tsid).append(", sender=").append(sender)
+                .append(", destinationTrace=").append(destinationTrace).append(", forwardingRestrictions=")
+                .append(forwardingRestrictions).append(", replyTo=").append(replyTo).append("]");
         return builder.toString();
     }
 

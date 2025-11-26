@@ -1,12 +1,17 @@
 package com.geendutchman.lhf_mudv2.execution;
 
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.FieldSource;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -14,6 +19,7 @@ import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
+import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessorID;
 import com.github.f4b6a3.tsid.TsidFactory;
 import com.google.common.truth.Truth;
@@ -23,6 +29,9 @@ import com.google.common.truth.Truth;
 public class MessageBusTest {
     @Autowired
     List<MessageBus> busses;
+
+    @Autowired
+    private Duration timing;
 
     private final static TsidFactory tsidFactory = TsidFactory.newInstance1024(Math.abs("test".hashCode() % 1024));
 
@@ -63,5 +72,42 @@ public class MessageBusTest {
         bus.send(context, command);
 
         Mockito.verify(first).process(context, command);
+    }
+
+    @ParameterizedTest
+    @FieldSource("busses")
+    void testPublishRapidFire(MessageBus bus) {
+        Truth.assertThat(bus).isNotNull();
+        MessageProcessor first = Mockito.mock();
+        MessageProcessorID firstID = MessageProcessorID.nextID();
+        final Logger firstLogger = Logger
+                .getLogger(String.format("%s.%s", MessageProcessor.class.getClass().getName(), firstID));
+        Mockito.when(first.messageProcessorID()).thenReturn(firstID);
+        Mockito.when(first.process(Mockito.any(MessageContext.class), Mockito.any(Event.class)))
+                .thenAnswer(new Answer<MessageProcessingResult>() {
+
+                    @Override
+                    public MessageProcessingResult answer(final InvocationOnMock invocation) throws Throwable {
+                        final String invocationArgs = Arrays.toString(invocation.getArguments());
+                        firstLogger.info(
+                                () -> String.format("%s invoked %s", bus.getClass().getSimpleName(), invocationArgs));
+                        return MessageProcessingResult.HANDLED;
+                    }
+
+                });
+        IEntityID entity = new IEntityID.EntityID(new Taggable.Tag(bus.getClass().getSimpleName()),
+                new Examinable.Name("commands"), tsidFactory.create());
+        bus.registerProcessor(first);
+        bus.registerEntity(entity, firstID);
+
+        MessageContext context = MessageContext.create(entity, entity);
+        final int count = 30;
+        for (int i = 0; i < count; i++) {
+            Event event = Event.PlainEvent.asDescribed(RichOutput.builder()
+                    .addString(String.format("I have %d coconuts for %s", i, bus.getClass().getSimpleName())).build());
+            bus.publish(context, event);
+        }
+        Mockito.verify(first, Mockito.timeout(timing.toMillis()).times(count)).process(Mockito.any(),
+                Mockito.any(Event.class));
     }
 }

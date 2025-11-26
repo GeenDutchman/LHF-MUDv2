@@ -193,7 +193,8 @@ public interface MessageBus {
                 return MessageProcessingResult.Failed(noDestFound);
             }
 
-            try (final ExecutorService executor = this.executor(logname)) {
+            try {
+                final ExecutorService executor = this.executor(logname);
                 if (message instanceof Event asEvent) {
                     executor.submit(() -> {
                         MessageProcessingResult myResult = NO_RESULT;
@@ -235,11 +236,25 @@ public interface MessageBus {
                     PrintWriter writer = new PrintWriter(buffer);
                     e.printStackTrace(writer);
                     writer.flush();
-                    final String result = String.format("Thread interrupted: %s\n%s", e, buffer.toString());
+                    final String result = String.format("Message: %s\n" + //
+                            "Context: %s\n" + //
+                            "Thread interrupted: %s\n%s", message, context, e, buffer.toString());
                     writer.close();
                     return result;
                 });
                 Thread.currentThread().interrupt();
+            } catch (RuntimeException e) {
+                this.logger.warning(() -> {
+                    StringWriter buffer = new StringWriter();
+                    PrintWriter writer = new PrintWriter(buffer);
+                    e.printStackTrace(writer);
+                    writer.flush();
+                    final String result = String.format("Message: %s\nContext: %s\nRuntime Exception: %s\n%s", message,
+                            context, e, buffer.toString());
+                    writer.close();
+                    return result;
+                });
+                throw e;
             }
             eventLogger.severe("Should not have been able to reach here");
             this.logger.severe("Should not have been able to reach here");
