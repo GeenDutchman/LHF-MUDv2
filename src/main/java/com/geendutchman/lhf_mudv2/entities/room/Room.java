@@ -29,7 +29,8 @@ public interface Room extends Entity, ItemContainer, CreatureContainer {
         }
 
         public static final Taggable.Tag ENTITY_CLASS_ROOM = new Tag("rooms");
-        protected static final TsidFactory tsidFactory = TsidFactory.newInstance1024("rooms".hashCode() % 1024);
+        protected static final TsidFactory tsidFactory = TsidFactory
+                .newInstance1024(Math.abs("rooms".hashCode() % 1024));
 
         public static RoomID make(Examinable.Name name) {
             return new RoomID(new EntityID(ENTITY_CLASS_ROOM, name, tsidFactory.create()));

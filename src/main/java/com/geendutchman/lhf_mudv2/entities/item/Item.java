@@ -26,7 +26,8 @@ public interface Item extends Entity {
         }
 
         public static final Taggable.Tag ENTITY_CLASS_ITEM = new Tag("items");
-        protected static final TsidFactory tsidFactory = TsidFactory.newInstance1024("items".hashCode() % 1024);
+        protected static final TsidFactory tsidFactory = TsidFactory
+                .newInstance1024(Math.abs("items".hashCode() % 1024));
 
         public static ItemID make(Examinable.Name name) {
             return new ItemID(new EntityID(ENTITY_CLASS_ITEM, name, tsidFactory.create()));

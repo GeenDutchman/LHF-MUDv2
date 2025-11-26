@@ -32,8 +32,9 @@ import jakarta.annotation.PostConstruct;
 
 @Component
 public class ItemFactoryController implements MessageProcessor {
-    private final static TsidFactory idFactory = TsidFactory.newInstance1024("creatureFactory".hashCode() % 1024);
-    private final Tsid tsid = idFactory.create();
+    private final static TsidFactory idFactory = TsidFactory
+            .newInstance1024(Math.abs("creatureFactory".hashCode() % 1024));
+    private final Tsid tsid;
 
     @Autowired
     private final ItemBuilderFactory factory;
@@ -41,15 +42,17 @@ public class ItemFactoryController implements MessageProcessor {
     @Autowired
     private final MessageBus bus;
 
-    private final IEntityID.EntityID id = new IEntityID.EntityID(new Taggable.Tag("builderFactory"),
-            new Examinable.Name("items"), tsid);
-    private final MessageProcessorID processorID = new MessageProcessorID(tsid);
+    private final IEntityID.EntityID id;
+    private final MessageProcessorID processorID;
 
     ItemFactoryController(@Autowired ItemBuilderFactory fact, @Autowired MessageBus bus) {
         Preconditions.checkNotNull(fact, "item builder factory should not be null");
         Preconditions.checkNotNull(bus, "message bus should not be null");
         this.factory = fact;
         this.bus = bus;
+        this.tsid = ItemFactoryController.idFactory.create();
+        this.id = new IEntityID.EntityID(new Taggable.Tag("builderFactory"), new Examinable.Name("items"), tsid);
+        this.processorID = new MessageProcessorID(tsid);
     }
 
     @PostConstruct

@@ -15,7 +15,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
 public sealed interface LHFCommand extends Command {
-    public static final TsidFactory idFactory = TsidFactory.newInstance1024("lhfcommands".hashCode() % 1024);
+    public static final TsidFactory idFactory = TsidFactory.newInstance1024(Math.abs("lhfcommands".hashCode() % 1024));
 
     public record ReassignProcessor(Tsid tsid, IEntityID entity, MessageProcessorID processor) implements LHFCommand {
         public ReassignProcessor {

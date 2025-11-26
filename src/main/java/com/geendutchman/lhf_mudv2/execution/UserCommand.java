@@ -7,7 +7,7 @@ import com.github.f4b6a3.tsid.TsidFactory;
 import com.google.common.base.Preconditions;
 
 public sealed interface UserCommand extends Command {
-    public static final TsidFactory idFactory = TsidFactory.newInstance1024("usercommands".hashCode() % 1024);
+    public static final TsidFactory idFactory = TsidFactory.newInstance1024(Math.abs("usercommands".hashCode() % 1024));
 
     record SeeCommand(Tsid tsid, Optional<String> what) implements UserCommand {
         public SeeCommand {

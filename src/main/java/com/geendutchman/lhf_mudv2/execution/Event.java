@@ -33,7 +33,7 @@ public sealed interface Event extends Message, Comparable<Event> {
         return this.tsid().compareTo(o.tsid());
     }
 
-    static final TsidFactory idFactory = TsidFactory.newInstance1024("events".hashCode() % 1024);
+    static final TsidFactory idFactory = TsidFactory.newInstance1024(Math.abs("events".hashCode() % 1024));
 
     public default PlainEvent plain() {
         return new PlainEvent(this.tsid(), this.description());

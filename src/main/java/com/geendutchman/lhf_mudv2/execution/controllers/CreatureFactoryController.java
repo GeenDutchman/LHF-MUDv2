@@ -29,8 +29,9 @@ import jakarta.annotation.PostConstruct;
 
 @Component
 public class CreatureFactoryController implements MessageProcessor {
-    private final static TsidFactory idFactory = TsidFactory.newInstance1024("creatureFactory".hashCode() % 1024);
-    private final Tsid tsid = idFactory.create();
+    private final static TsidFactory idFactory = TsidFactory
+            .newInstance1024(Math.abs("creatureFactory".hashCode() % 1024));
+    private final Tsid tsid;
 
     @Autowired
     private final CreatureBuilderFactory factory;
@@ -38,15 +39,17 @@ public class CreatureFactoryController implements MessageProcessor {
     @Autowired
     private final MessageBus bus;
 
-    private final IEntityID.EntityID id = new IEntityID.EntityID(new Taggable.Tag("builderFactory"),
-            new Examinable.Name("creatures"), tsid);
-    private final MessageProcessorID processorID = new MessageProcessorID(tsid);
+    private final IEntityID.EntityID id;
+    private final MessageProcessorID processorID;
 
     CreatureFactoryController(@Autowired CreatureBuilderFactory fact, @Autowired MessageBus bus) {
         Preconditions.checkNotNull(fact, "creature builder factory should not be null");
         Preconditions.checkNotNull(bus, "message bus should not be null");
         this.factory = fact;
         this.bus = bus;
+        this.tsid = CreatureFactoryController.idFactory.create();
+        this.id = new IEntityID.EntityID(new Taggable.Tag("builderFactory"), new Examinable.Name("creatures"), tsid);
+        this.processorID = new MessageProcessorID(tsid);
     }
 
     @PostConstruct

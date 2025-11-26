@@ -11,7 +11,7 @@ import com.google.common.base.Preconditions;
 public interface MessageProcessor {
 
     public final static TsidFactory messageProcessorTsidFactory = TsidFactory
-            .newInstance1024("message_processor".hashCode() % 1024);
+            .newInstance1024(Math.abs("message_processor".hashCode() % 1024));
 
     public record MessageProcessorID(Tsid tsid) implements Comparable<MessageProcessorID> {
         public MessageProcessorID {

@@ -50,7 +50,8 @@ public final class RoomBuilderFactory {
 
     @AutoBuilder(callMethod = "buildRoom", ofClass = ConcreteRoom.class)
     public abstract non-sealed static class Builder implements BuildRoom {
-        private final static TsidFactory idfactory = TsidFactory.newInstance1024("roomBuilder".hashCode() % 1024);
+        private final static TsidFactory idfactory = TsidFactory
+                .newInstance1024(Math.abs("roomBuilder".hashCode() % 1024));
         final private Tsid builderTsid = idfactory.create();
         private ItemInventory.Builder inventoryBuilder = ItemInventory.builder();
         private SequencedSet<CreatureBuilderFactory.Builder> creatures;

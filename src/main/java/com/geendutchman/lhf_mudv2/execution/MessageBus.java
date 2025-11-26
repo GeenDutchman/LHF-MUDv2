@@ -205,11 +205,23 @@ public interface MessageBus {
                         }
                     });
                     return MessageProcessingResult.HANDLED;
+                } else if (message instanceof Command asCommand) {
+                    return executor.submit(() -> {
+                        MessageProcessingResult value = NO_RESULT;
+                        try {
+                            eventLogger.fine("Starting processing command");
+                            value = processor.process(context, asCommand);
+                            return value;
+                        } finally {
+                            final String logMessage = String.format("Processing finished: %s", value);
+                            eventLogger.fine(logMessage);
+                        }
+                    }).get(timing.toNanos(), TimeUnit.NANOSECONDS);
                 }
                 return executor.submit(() -> {
                     MessageProcessingResult value = NO_RESULT;
                     try {
-                        eventLogger.fine("Starting processing");
+                        eventLogger.fine("Starting processing message");
                         value = processor.process(context, message);
                         return value;
                     } finally {

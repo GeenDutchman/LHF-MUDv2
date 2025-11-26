@@ -76,7 +76,8 @@ public final class ItemBuilderFactory {
 
     @AutoBuilder(callMethod = "buildItem", ofClass = ConcreteItem.class)
     public non-sealed abstract static class Builder implements BuildItem, LockedItemBuilder {
-        final static private TsidFactory idFactory = TsidFactory.newInstance1024("itemBuilder".hashCode() % 1024);
+        final static private TsidFactory idFactory = TsidFactory
+                .newInstance1024(Math.abs("itemBuilder".hashCode() % 1024));
         final private Tsid builderTsid = idFactory.create();
 
         protected Builder() {

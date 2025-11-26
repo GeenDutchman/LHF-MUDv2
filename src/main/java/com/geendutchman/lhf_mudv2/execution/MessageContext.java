@@ -14,7 +14,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableBiMap;
 
 public final class MessageContext implements Serializable {
-    private static final TsidFactory idFactory = TsidFactory.newInstance1024("messageContext".hashCode() % 1024);
+    private static final TsidFactory idFactory = TsidFactory
+            .newInstance1024(Math.abs("messageContext".hashCode() % 1024));
     private final Tsid tsid = idFactory.create();
     private final LinkedHashMap<Taggable.Tag, IEntityID> destinationTrace = new LinkedHashMap<>();
     private final IEntityID sender;

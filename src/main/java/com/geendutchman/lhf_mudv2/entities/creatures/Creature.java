@@ -32,7 +32,8 @@ public interface Creature extends Entity, ItemContainer {
         }
 
         public static final Taggable.Tag ENTITY_CLASS_CREATURE = new Tag("creatures");
-        protected static final TsidFactory tsidFactory = TsidFactory.newInstance1024("creatures".hashCode() % 1024);
+        protected static final TsidFactory tsidFactory = TsidFactory
+                .newInstance1024(Math.abs("creatures".hashCode() % 1024));
 
         public static CreatureID make(Examinable.Name name) {
             return new CreatureID(new EntityID(ENTITY_CLASS_CREATURE, name, tsidFactory.create()));
