@@ -9,12 +9,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.RichOutputElement;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
+import com.geendutchman.lhf_mudv2.entities.creatures.CreatureContainer;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureQuery;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery.EntityQuery;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
+import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
 import com.geendutchman.lhf_mudv2.entities.item.ItemQuery;
 import com.geendutchman.lhf_mudv2.entities.room.Room;
 import com.geendutchman.lhf_mudv2.entities.room.RoomEffect;
@@ -23,6 +25,7 @@ import com.geendutchman.lhf_mudv2.execution.Command;
 import com.geendutchman.lhf_mudv2.execution.Event;
 import com.geendutchman.lhf_mudv2.execution.Event.CreatureSeenEvent;
 import com.geendutchman.lhf_mudv2.execution.Event.ItemSeenEvent;
+import com.geendutchman.lhf_mudv2.execution.Event.PlainEvent;
 import com.geendutchman.lhf_mudv2.execution.Event.RoomSeenEvent;
 import com.geendutchman.lhf_mudv2.execution.Event.SpokenEvent;
 import com.geendutchman.lhf_mudv2.execution.LHFCommand;
@@ -166,6 +169,65 @@ public class RoomController implements MessageProcessor {
         case UserCommand.SayCommand sayCommand -> this.processSayCommand(context, room, sayCommand);
         case UserCommand.TakeCommand takeCommand -> this.processTakeCommand(context, room, takeCommand);
         case UserCommand.DropCommand dropCommand -> this.processDropCommand(context, room, dropCommand);
+        case UserCommand.ExitCommand exitCommand -> {
+            if (context.getSender().compareTo(room.identifier()) == 0) {
+                try {
+                    if (room.locale().isPresent()) {
+                        yield bus.send(context.forward(room.locale().orElse(IEntityID.NULL_ID)), exitCommand);
+                    }
+                    // TODO: send some "I exited" event
+                } finally {
+                    this.roomRepository.remove(room);
+                }
+                yield MessageProcessingResult.HANDLED;
+            } else if (context.getSender().entityClass().equals(Creature.CreatureID.ENTITY_CLASS_CREATURE)) {
+                CreatureContainer creatureContainer = room.queryCreatures(
+                        CreatureQuery.builder().setIdentifier(Optional.of(context.getSender())).build());
+                RichOutput.Builder out = RichOutput.builder().setIsAndLast(true).setSequenceName("Removed Creatures");
+                boolean hasCreatures = false;
+                for (final Creature creature : creatureContainer.creatures()) {
+                    if (creature == null) {
+                        continue;
+                    }
+                    hasCreatures = true;
+                    room.applyDelta(Room.Delta.ofCreatureToRemove(creature));
+                    out.addTaggable(creature);
+                }
+                if (hasCreatures) {
+                    bus.publish(MessageContext.create(room.identifier(), room.identifier()),
+                            PlainEvent.asDescribed(RichOutput.builder().addString("The following Creatures have exited")
+                                    .addTaggable(room).addOutput(out.build()).build()));
+                }
+                if (room.locale().isPresent()) {
+                    yield bus.send(context.forward(room.locale().orElse(IEntityID.NULL_ID)), exitCommand);
+                }
+                yield MessageProcessingResult.HANDLED;
+            } else if (context.getSender().entityClass().equals(Item.ItemID.ENTITY_CLASS_ITEM)) {
+                ItemContainer itemContainer = room
+                        .queryItems(ItemQuery.builder().setIdentifier(Optional.of(context.getSender())).build());
+                RichOutput.Builder out = RichOutput.builder().setIsAndLast(true).setSequenceName("Removed Items");
+                boolean hasItems = false;
+                for (final Item item : itemContainer.items()) {
+                    if (item == null) {
+                        continue;
+                    }
+                    hasItems = true;
+                    room.applyDelta(Room.Delta.ofItemToRemove(item));
+                    out.addTaggable(item);
+                }
+                if (hasItems) {
+                    bus.publish(MessageContext.create(room.identifier(), room.identifier()),
+                            PlainEvent.asDescribed(RichOutput.builder().addString("The following Items have exited")
+                                    .addTaggable(room).addOutput(out.build()).build()));
+                }
+                if (room.locale().isPresent()) {
+                    yield bus.send(context.forward(room.locale().orElse(IEntityID.NULL_ID)), exitCommand);
+                }
+                yield MessageProcessingResult.HANDLED;
+            }
+            yield MessageProcessingResult.Failed("this room cannot handle requests to exit");
+
+        }
         };
     }
 

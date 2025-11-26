@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.geendutchman.lhf_mudv2.display.RichOutput;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.ItemEffect;
 import com.geendutchman.lhf_mudv2.entities.item.ItemQuery;
@@ -140,6 +141,17 @@ public class ItemController implements MessageProcessor {
         case UserCommand.TakeCommand takeCommand -> MessageProcessingResult.Failed("this item has nothing to be taken");
         case UserCommand.DropCommand dropCommand -> MessageProcessingResult
                 .Failed("this item cannot have things dropped in it");
+        case UserCommand.ExitCommand exitCommand -> {
+            final Item item = forItem.get();
+            if (context.getSender().compareTo(item.identifier()) == 0) {
+                this.itemRepository.remove(forItem.get());
+                if (item.locale().isPresent()) {
+                    yield bus.send(context.forward(item.locale().orElse(IEntityID.NULL_ID)), exitCommand);
+                }
+                yield MessageProcessingResult.HANDLED;
+            }
+            yield MessageProcessingResult.Failed("this item cannot handle requests to exit");
+        }
         };
     }
 

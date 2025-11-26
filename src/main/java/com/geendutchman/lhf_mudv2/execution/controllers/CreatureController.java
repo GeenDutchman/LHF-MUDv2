@@ -13,6 +13,9 @@ import com.geendutchman.lhf_mudv2.entities.creatures.CreatureRepository;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery.EntityQuery;
+import com.geendutchman.lhf_mudv2.entities.item.Item;
+import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
+import com.geendutchman.lhf_mudv2.entities.item.ItemQuery;
 import com.geendutchman.lhf_mudv2.execution.Command;
 import com.geendutchman.lhf_mudv2.execution.Event;
 import com.geendutchman.lhf_mudv2.execution.LHFCommand;
@@ -21,6 +24,7 @@ import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor;
 import com.geendutchman.lhf_mudv2.execution.UserCommand;
+import com.geendutchman.lhf_mudv2.execution.Event.PlainEvent;
 import com.github.f4b6a3.tsid.Tsid;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -166,7 +170,43 @@ public class CreatureController implements MessageProcessor {
                 .send(context.forward(creature.locale().orElse(IEntityID.NULL_ID)), takeCommand);
         case UserCommand.DropCommand dropCommand -> bus
                 .send(context.forward(creature.locale().orElse(IEntityID.NULL_ID)), dropCommand);
+        case UserCommand.ExitCommand exitCommand -> {
+            if (context.getSender().compareTo(creature.identifier()) == 0) {
+                try {
+                    if (creature.locale().isPresent()) {
+                        yield bus.send(context.forward(creature.locale().orElse(IEntityID.NULL_ID)), exitCommand);
+                    }
+                    // TODO: send some "I exited" event
+                } finally {
+                    this.creatureRepository.remove(creature);
+                }
+                yield MessageProcessingResult.HANDLED;
+            } else if (context.getSender().entityClass().equals(Item.ItemID.ENTITY_CLASS_ITEM)) {
+                ItemContainer itemContainer = creature
+                        .queryItems(ItemQuery.builder().setIdentifier(Optional.of(context.getSender())).build());
+                RichOutput.Builder out = RichOutput.builder().setIsAndLast(true).setSequenceName("Removed Items");
+                boolean hasItems = false;
+                for (final Item item : itemContainer.items()) {
+                    if (item == null) {
+                        continue;
+                    }
+                    hasItems = true;
+                    creature.applyDelta(Creature.Delta.ofItemToRemove(item));
+                    out.addTaggable(item);
+                }
+                if (hasItems) {
+                    bus.publish(MessageContext.create(creature.identifier(), creature.identifier()),
+                            PlainEvent.asDescribed(RichOutput.builder().addString("The following have exited")
+                                    .addTaggable(creature).addOutput(out.build()).build()));
+                }
+                if (creature.locale().isPresent()) {
+                    yield bus.send(context.forward(creature.locale().orElse(IEntityID.NULL_ID)), exitCommand);
+                }
+                yield MessageProcessingResult.HANDLED;
+            }
+            yield MessageProcessingResult.Failed("this creature cannot handle requests to exit");
 
+        }
         };
 
     }

@@ -9,6 +9,12 @@ import com.google.common.base.Preconditions;
 public sealed interface UserCommand extends Command {
     public static final TsidFactory idFactory = TsidFactory.newInstance1024(Math.abs("usercommands".hashCode() % 1024));
 
+    record ExitCommand(Tsid tsid) implements UserCommand {
+        public ExitCommand {
+            Preconditions.checkNotNull(tsid, "tsid must not be null");
+        }
+    }
+
     record SeeCommand(Tsid tsid, Optional<String> what) implements UserCommand {
         public SeeCommand {
             Preconditions.checkNotNull(tsid, "tsid must not be null");
