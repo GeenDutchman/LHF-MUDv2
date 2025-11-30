@@ -5,6 +5,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.RichOutputElement;
@@ -41,6 +42,7 @@ import com.google.common.collect.ImmutableSet;
 
 import jakarta.annotation.PostConstruct;
 
+@Component
 public class RoomController implements MessageProcessor {
 
     @Autowired
@@ -150,6 +152,15 @@ public class RoomController implements MessageProcessor {
         };
     }
 
+    protected MessageProcessingResult forwardUserCommand(MessageContext context, Room room, UserCommand userCommand) {
+        final IEntityID toForward = room.locale().orElse(IEntityID.NULL_ID);
+        final MessageProcessor processor = bus.processorForEntity(toForward);
+        if (processor == null) {
+            return MessageProcessingResult.Failed("no handler to forward request");
+        }
+        return processor.process(context.forward(toForward), userCommand);
+    }
+
     @Override
     public MessageProcessingResult process(MessageContext context, UserCommand userCommand) {
         if (userCommand == null) {
@@ -173,7 +184,7 @@ public class RoomController implements MessageProcessor {
             if (context.getSender().compareTo(room.identifier()) == 0) {
                 try {
                     if (room.locale().isPresent()) {
-                        yield bus.send(context.forward(room.locale().orElse(IEntityID.NULL_ID)), exitCommand);
+                        yield this.forwardUserCommand(context, room, exitCommand);
                     }
                     // TODO: send some "I exited" event
                 } finally {
@@ -199,7 +210,7 @@ public class RoomController implements MessageProcessor {
                                     .addTaggable(room).addOutput(out.build()).build()));
                 }
                 if (room.locale().isPresent()) {
-                    yield bus.send(context.forward(room.locale().orElse(IEntityID.NULL_ID)), exitCommand);
+                    yield this.forwardUserCommand(context, room, exitCommand);
                 }
                 yield MessageProcessingResult.HANDLED;
             } else if (context.getSender().entityClass().equals(Item.ItemID.ENTITY_CLASS_ITEM)) {
@@ -221,13 +232,17 @@ public class RoomController implements MessageProcessor {
                                     .addTaggable(room).addOutput(out.build()).build()));
                 }
                 if (room.locale().isPresent()) {
-                    yield bus.send(context.forward(room.locale().orElse(IEntityID.NULL_ID)), exitCommand);
+                    yield this.forwardUserCommand(context, room, exitCommand);
                 }
                 yield MessageProcessingResult.HANDLED;
             }
             yield MessageProcessingResult.Failed("this room cannot handle requests to exit");
 
         }
+        case UserCommand.StatusCommand statusCommand -> bus.publish(MessageContext.create(room.roomID(), room.roomID()),
+                new Event.RoomSeenEvent(room, null, null));
+        case UserCommand.InventoryCommand inventoryCommand -> MessageProcessingResult
+                .Failed("room cannot handle inventory command");
         };
     }
 

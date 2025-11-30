@@ -102,6 +102,36 @@ public sealed interface Event extends Message, Comparable<Event> {
         }
     }
 
+    public record InventoryEvent(Tsid tsid, CreatureID creatureID, ImmutableSet<BasicTaggable> items) implements Event {
+        public InventoryEvent {
+            Preconditions.checkNotNull(tsid, "tsid must not be null");
+            Preconditions.checkNotNull(creatureID, "creature id must not be null");
+            Preconditions.checkNotNull(items, "items may be empty, but must not be null");
+        }
+
+        public static InventoryEvent ofCreature(Creature creature) {
+            return InventoryEvent.ofCreatureFiltered(creature, null);
+        }
+
+        public static InventoryEvent ofCreatureFiltered(Creature container, IEntityQuery<Item> filterItems) {
+            ImmutableSet<BasicTaggable> collected = container.items().stream()
+                    .filter(filterItems != null ? filterItems : i -> i != null).map(i -> i.basicTaggable())
+                    .collect(ImmutableSet.toImmutableSet());
+            return new InventoryEvent(idFactory.create(), container.creatureID(), collected);
+        }
+
+        @Override
+        public RichOutput description() {
+            RichOutput.Builder builder = RichOutput.builder().addTaggable(creatureID)
+                    .addString("has the following as their inventory.");
+            RichOutput.Builder itemBuilder = RichOutput.builder().setIsAndLast(true).setSequenceName("Items")
+                    .setElementSeparator(Optional.of(RichOutputElement.ofString(", ")));
+            this.items.forEach(i -> itemBuilder.addTaggable(i));
+            builder.addOutput(itemBuilder.build());
+            return builder.build();
+        }
+    }
+
     public record RoomChangedEvent(Tsid tsid, RoomID roomID, RichOutput description) implements Event {
         public RoomChangedEvent {
             Preconditions.checkNotNull(tsid, "tsid must not be null");

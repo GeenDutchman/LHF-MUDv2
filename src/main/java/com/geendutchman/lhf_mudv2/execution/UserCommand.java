@@ -15,6 +15,18 @@ public sealed interface UserCommand extends Command {
         }
     }
 
+    public record StatusCommand(Tsid tsid) implements UserCommand {
+        public StatusCommand {
+            Preconditions.checkNotNull(tsid, "tsid must not be null");
+        }
+    }
+
+    public record InventoryCommand(Tsid tsid) implements UserCommand {
+        public InventoryCommand {
+            Preconditions.checkNotNull(tsid, "tsid must not be null");
+        }
+    }
+
     record SeeCommand(Tsid tsid, Optional<String> what) implements UserCommand {
         public SeeCommand {
             Preconditions.checkNotNull(tsid, "tsid must not be null");

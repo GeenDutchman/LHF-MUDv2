@@ -3,6 +3,7 @@ package com.geendutchman.lhf_mudv2.execution.controllers;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
@@ -24,6 +25,7 @@ import com.google.common.collect.ImmutableList;
 
 import jakarta.annotation.PostConstruct;
 
+@Component
 public class ItemController implements MessageProcessor {
 
     @Autowired
@@ -124,6 +126,15 @@ public class ItemController implements MessageProcessor {
         };
     }
 
+    protected MessageProcessingResult forwardUserCommand(MessageContext context, Item item, UserCommand userCommand) {
+        final IEntityID toForward = item.locale().orElse(IEntityID.NULL_ID);
+        final MessageProcessor processor = bus.processorForEntity(toForward);
+        if (processor == null) {
+            return MessageProcessingResult.Failed("no handler to forward request");
+        }
+        return processor.process(context.forward(toForward), userCommand);
+    }
+
     @Override
     public MessageProcessingResult process(MessageContext context, UserCommand userCommand) {
         if (userCommand == null) {
@@ -146,12 +157,19 @@ public class ItemController implements MessageProcessor {
             if (context.getSender().compareTo(item.identifier()) == 0) {
                 this.itemRepository.remove(forItem.get());
                 if (item.locale().isPresent()) {
-                    yield bus.send(context.forward(item.locale().orElse(IEntityID.NULL_ID)), exitCommand);
+                    yield this.forwardUserCommand(context, item, exitCommand);
                 }
                 yield MessageProcessingResult.HANDLED;
             }
             yield MessageProcessingResult.Failed("this item cannot handle requests to exit");
         }
+        case UserCommand.StatusCommand statusCommand -> {
+            final Item item = forItem.get();
+            bus.publish(MessageContext.create(item.identifier(), item.itemID()), new Event.ItemSeenEvent(item));
+            yield MessageProcessingResult.HANDLED;
+        }
+        case UserCommand.InventoryCommand inventoryCommand -> MessageProcessingResult
+                .Failed("this item does not have an inventory");
         };
     }
 
