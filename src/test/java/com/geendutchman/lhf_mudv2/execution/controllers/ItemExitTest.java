@@ -1,10 +1,12 @@
 package com.geendutchman.lhf_mudv2.execution.controllers;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import com.geendutchman.lhf_mudv2.entities.item.Item;
+import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.item.ItemContainerSubject;
 import com.geendutchman.lhf_mudv2.entities.item.ItemRepository;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
@@ -21,13 +23,22 @@ public class ItemExitTest {
     @Autowired
     protected final ItemRepository itemRepository;
 
-    protected final Item item;
+    @Autowired
+    protected final ItemBuilderFactory itemBuilderFactory;
+
+    protected Item item;
 
     @Autowired
-    public ItemExitTest(ItemController itemController, ItemRepository itemRepository, Item item) {
+    public ItemExitTest(ItemController itemController, ItemRepository itemRepository,
+            ItemBuilderFactory itemBuilderFactory) {
         this.itemController = itemController;
         this.itemRepository = itemRepository;
-        this.item = item;
+        this.itemBuilderFactory = itemBuilderFactory;
+    }
+
+    @BeforeEach
+    protected void setUp() {
+        this.item = ItemBuilderFactory.builder().setName("Meti").build(this.itemBuilderFactory);
     }
 
     @Test

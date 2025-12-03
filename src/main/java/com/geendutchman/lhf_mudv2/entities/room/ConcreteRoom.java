@@ -55,22 +55,22 @@ class ConcreteRoom implements Room {
         }
 
         switch (delta) {
-            case Delta.AddItemDelta(Item item) -> {
-                this.inventory.add(item);
-                item.applyDelta(Item.Delta.ofLocale(Optional.of(this.identifier())));
-            }
-            case Delta.AddCreatureDelta(Creature creature) -> {
-                this.creatures.put(creature.creatureID(), creature);
-                creature.applyDelta(Creature.Delta.ofLocale(Optional.of(this.identifier())));
-            }
-            case Delta.RemoveCreatureDelta(Creature creature) -> {
-                this.creatures.remove(creature.creatureID(), creature);
-
-            }
-            case null -> {
-            }
-            default -> {
-            }
+        case Delta.AddItemDelta(Item item) -> {
+            this.inventory.add(item);
+            item.applyDelta(Item.Delta.ofLocale(Optional.of(this.identifier())));
+        }
+        case Delta.RemoveItemDelta(Item item) -> {
+            this.inventory.remove(item);
+            item.applyDelta(Item.Delta.ofLocale(Optional.empty()));
+        }
+        case Delta.AddCreatureDelta(Creature creature) -> {
+            this.creatures.put(creature.creatureID(), creature);
+            creature.applyDelta(Creature.Delta.ofLocale(Optional.of(this.identifier())));
+        }
+        case Delta.RemoveCreatureDelta(Creature creature) -> {
+            this.creatures.remove(creature.creatureID(), creature);
+            creature.applyDelta(Creature.Delta.ofLocale(Optional.empty()));
+        }
 
         }
 

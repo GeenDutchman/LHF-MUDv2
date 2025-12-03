@@ -271,13 +271,15 @@ public final class CreatureBuilderFactory {
         protected abstract Map<CreatureStats, Integer> vitals();
 
         public Builder setHealth(int maxhealth) {
-            Map<CreatureStats, Integer> vitals = this.vitals();
-            if (vitals == null) {
-                vitals = new EnumMap<>(CreatureStats.class);
+            Map<CreatureStats, Integer> vitalStats = null;
+            try {
+                vitalStats = this.vitals();
+            } catch (Exception e) {
+                vitalStats = new EnumMap<>(CreatureStats.class);
             }
-            vitals.put(CreatureStats.MAX_HEALTH, maxhealth);
-            vitals.put(CreatureStats.HEALTH, maxhealth);
-            return this.setVitals(vitals);
+            vitalStats.put(CreatureStats.MAX_HEALTH, maxhealth);
+            vitalStats.put(CreatureStats.HEALTH, maxhealth);
+            return this.setVitals(vitalStats);
         }
 
         public ItemInventory.Builder inventoryBuilder() {

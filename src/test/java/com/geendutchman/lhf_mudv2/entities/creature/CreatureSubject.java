@@ -2,6 +2,7 @@ package com.geendutchman.lhf_mudv2.entities.creature;
 
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
 import com.geendutchman.lhf_mudv2.entities.creatures.ResourcePoolSize;
+import com.geendutchman.lhf_mudv2.entities.item.ItemContainerSubject;
 import com.google.common.truth.ComparableSubject;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.IntegerSubject;
@@ -47,6 +48,10 @@ public final class CreatureSubject extends Subject {
 
     public ComparableSubject<ResourcePoolSize> healthBucket() {
         return check("healthBucket()").that(this.creature.healthBucket());
+    }
+
+    public ItemContainerSubject items() {
+        return this.check("items()").about(ItemContainerSubject.itemContainers()).that(creature);
     }
 
 }

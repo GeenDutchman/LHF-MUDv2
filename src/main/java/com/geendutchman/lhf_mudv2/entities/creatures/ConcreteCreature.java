@@ -151,9 +151,11 @@ final class ConcreteCreature implements Creature {
         }
         case Delta.AddItemDelta(Item inventoryItem) -> {
             this.inventory.add(inventoryItem);
+            inventoryItem.applyDelta(Item.Delta.ofLocale(Optional.of(this.creatureID())));
         }
         case Delta.RemoveItemDelta(Item item) -> {
             this.inventory.remove(item);
+            item.applyDelta(Item.Delta.ofLocale(Optional.empty()));
         }
         case Delta.SetAttributeScoreDelta(AttributeScores attr, byte amount) -> {
             this.scores.merge(attr, amount, ConcreteCreature::addBytesCapped);
