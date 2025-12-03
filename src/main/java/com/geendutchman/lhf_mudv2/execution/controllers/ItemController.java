@@ -83,8 +83,8 @@ public class ItemController implements MessageProcessor {
         if (lhfCommand == null) {
             return MessageProcessingResult.Failed("cannot handle null lhf command");
         }
-        final Optional<Item> forItem = this.itemRepository.queryOneItem(
-                ItemQuery.builder().adjustEntityQuery(eqb -> eqb.setIdentifier(context.destination())).build());
+        final Optional<Item> forItem = this.itemRepository
+                .queryOneItem(ItemQuery.builder().setIdentifier(Optional.of(context.destination())).build());
         if (forItem.isEmpty()) {
             return MessageProcessingResult.Failed("addressed item does not exist");
         }

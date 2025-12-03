@@ -164,8 +164,8 @@ public interface IEntityQuery<E extends Entity> extends Predicate<Entity>, Seria
                 return false;
             }
             if (this.identifier().isPresent()) {
-                if (this.identifier().get().compareTo(t.identifier()) == 0) {
-                    return true;
+                if (this.identifier().get().compareTo(t.identifier()) != 0) {
+                    return false;
                 }
             }
             if (this.name().isPresent()) {
