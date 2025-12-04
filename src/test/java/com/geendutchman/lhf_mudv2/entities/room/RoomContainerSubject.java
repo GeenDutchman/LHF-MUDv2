@@ -47,4 +47,8 @@ public class RoomContainerSubject extends MapSubject {
         this.roomMap().containsEntry(room.roomID(), room);
     }
 
+    public void doesNotHaveRoom(Room room) {
+        this.roomMap().doesNotContainEntry(room.roomID(), room);
+    }
+
 }
