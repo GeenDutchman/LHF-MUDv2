@@ -9,7 +9,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.RichOutputSubject;
 import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
-import com.geendutchman.lhf_mudv2.entities.item.ItemContainerSubject;
 import com.geendutchman.lhf_mudv2.entities.item.ItemQuery;
 import com.google.common.truth.Truth;
 
