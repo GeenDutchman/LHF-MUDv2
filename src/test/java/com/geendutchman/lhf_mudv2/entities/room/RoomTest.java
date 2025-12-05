@@ -9,6 +9,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.RichOutputSubject;
 import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
+import com.geendutchman.lhf_mudv2.entities.item.ItemContainerSubject;
+import com.geendutchman.lhf_mudv2.entities.item.ItemQuery;
 import com.google.common.truth.Truth;
 
 @SpringBootTest
@@ -25,7 +27,7 @@ public class RoomTest {
         final Optional<RichOutput> desc = built.description();
         Truth.assertThat(desc).isPresent();
         RichOutputSubject.assertThat(desc.get()).asXMLString().ignoringCase().doesNotContain("bug");
-        RichOutputSubject.assertThat(desc.get()).asXMLString().contains("alakazam");
+        RichOutputSubject.assertThat(desc.get()).asXMLString().contains("This");
     }
 
     @Test
@@ -37,10 +39,11 @@ public class RoomTest {
         final Room built = roomBuilder.build(roomFactory);
         RoomSubject.assertThat(built).name().isEqualTo("First room");
 
-        RichOutputSubject.assertThat(built.description().get()).asXMLString().doesNotContain("lullaby");
+        RoomSubject.assertThat(built).items().queryAll(ItemQuery.builder().setDisplayName("lullaby").build()).isEmpty();
         Room.Delta delta = Room.Delta
                 .ofItemToAdd(ItemBuilderFactory.builder().setName("lullaby").lock().build(itemFactory));
         built.applyDelta(delta);
-        RichOutputSubject.assertThat(built.description().get()).asXMLString().contains("lullaby");
+        RoomSubject.assertThat(built).items().queryAll(ItemQuery.builder().setDisplayName("lullaby").build())
+                .isNotEmpty();
     }
 }

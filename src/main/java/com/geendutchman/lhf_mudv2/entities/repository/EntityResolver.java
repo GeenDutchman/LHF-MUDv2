@@ -223,41 +223,41 @@ public interface EntityResolver {
             routes.put(pathParser.parse("/items"), (info, uri) -> {
                 return this.resolveItems(info, uri, items);
             });
-            routes.put(pathParser.parse("/items/{item-name}/{item-id:[a-fA-F0-9-]+}"), (info, url) -> {
+            routes.put(pathParser.parse("/items/{item-name}/{item-id:[a-zA-Z0-9-]+}"), (info, url) -> {
                 return this.resolveItem(info, url, items);
             });
             routes.put(pathParser.parse("/creatures"), (info, uri) -> {
                 return this.resolveCreatures(info, uri, creatures);
             });
-            routes.put(pathParser.parse("/creatures/{creature-name}/{creature-id:[a-fA-F0-9-]+}"), (info, url) -> {
+            routes.put(pathParser.parse("/creatures/{creature-name}/{creature-id:[a-zA-Z0-9-]+}"), (info, url) -> {
                 return this.resolveCreature(info, url, creatures);
             });
-            routes.put(pathParser.parse("/creatures/{creature-name}/{creature-id:[a-fA-F0-9-]+}/items"),
+            routes.put(pathParser.parse("/creatures/{creature-name}/{creature-id:[a-zA-Z0-9-]+}/items"),
                     (info, uri) -> {
                         return this.resolveCreatureItems(info, uri, creatures);
                     });
             routes.put(pathParser.parse(
-                    "/creatures/{creature-name}/{creature-id:[a-fA-F0-9-]+}/items/{item-name}/{item-id:[a-fA-F0-9-]+}"),
+                    "/creatures/{creature-name}/{creature-id:[a-zA-Z0-9-]+}/items/{item-name}/{item-id:[a-zA-Z0-9-]+}"),
                     (info, url) -> {
                         return this.resolveItemInCreature(info, url, creatures);
                     });
             routes.put(pathParser.parse("/rooms"), (info, uri) -> {
                 return this.resolveRooms(info, uri, rooms);
             });
-            routes.put(pathParser.parse("/rooms/{room-name}/{room-id:[a-fA-F0-9-]+}"), (info, uri) -> {
+            routes.put(pathParser.parse("/rooms/{room-name}/{room-id:[a-zA-Z0-9-]+}"), (info, uri) -> {
                 return this.resolveRoom(info, uri, rooms);
             });
-            routes.put(pathParser.parse("/rooms/{room-name}/{room-id:[a-fA-F0-9-]+}/items"), (info, url) -> {
+            routes.put(pathParser.parse("/rooms/{room-name}/{room-id:[a-zA-Z0-9-]+}/items"), (info, url) -> {
                 return this.resolveRoomItems(info, url, rooms);
             });
             routes.put(
                     pathParser.parse(
-                            "/rooms/{room-name}/{room-id:[a-fA-F0-9-]+}/items/{item-name}/{item-id:[a-fA-F0-9-]+}"),
+                            "/rooms/{room-name}/{room-id:[a-zA-Z0-9-]+}/items/{item-name}/{item-id:[a-zA-Z0-9-]+}"),
                     (info, url) -> {
                         return this.resolveItemInRoom(info, url, rooms);
                     });
             routes.put(pathParser.parse(
-                    "/rooms/{room-name}/{room-id:[a-fA-F0-9-]+}/creatures/{creature-name}/{creature-id:[a-fA-F0-9-]+}"),
+                    "/rooms/{room-name}/{room-id:[a-zA-Z0-9-]+}/creatures/{creature-name}/{creature-id:[a-zA-Z0-9-]+}"),
                     (info, url) -> {
                         return this.resolveCreatureInRoom(info, url, rooms);
                     });
@@ -272,7 +272,8 @@ public interface EntityResolver {
                 for (Entry<PathPattern, BiFunction<PathRemainingMatchInfo, URI, SortedSet<Entity>>> route : this.routes
                         .reversed().entrySet()) {
                     PathPattern routePath = route.getKey();
-                    PathRemainingMatchInfo matchInfo = routePath.matchStartOfPath(PathContainer.parsePath(path));
+                    PathContainer parsed = PathContainer.parsePath(path);
+                    PathRemainingMatchInfo matchInfo = routePath.matchStartOfPath(parsed);
                     if (matchInfo != null) {
                         return route.getValue().apply(matchInfo, uri);
                     }

@@ -49,9 +49,10 @@ public class MessageBusTest {
 
         Event event = Event.PlainEvent.asDescribed(RichOutput.builder().addString("I have coconuts").build());
         MessageContext context = MessageContext.create(entity, entity);
-        bus.publish(context, event);
+        MessageProcessingResult result = bus.publish(context, event);
+        Truth.assertThat(result).isEqualTo(MessageProcessingResult.HANDLED);
 
-        Mockito.verify(first).process(context, event);
+        Mockito.verify(first, Mockito.timeout(timing.toMillis())).process(context, event);
     }
 
     @ParameterizedTest
@@ -71,7 +72,7 @@ public class MessageBusTest {
         MessageContext context = MessageContext.create(entity, entity);
         bus.send(context, command);
 
-        Mockito.verify(first).process(context, command);
+        Mockito.verify(first, Mockito.timeout(timing.toMillis())).process(context, command);
     }
 
     @ParameterizedTest
