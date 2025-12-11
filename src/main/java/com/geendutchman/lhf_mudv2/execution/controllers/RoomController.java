@@ -63,7 +63,11 @@ public class RoomController implements MessageProcessor {
 
     @PostConstruct
     public void register() {
-        this.bus.registerProcessorDefault(this, Room.RoomID.ENTITY_CLASS_ROOM);
+        if (this.getClass() == RoomController.class) {
+            this.bus.registerProcessorDefault(this, Room.RoomID.ENTITY_CLASS_ROOM);
+        } else {
+            this.bus.registerProcessor(this);
+        }
     }
 
     @Override

@@ -1,6 +1,8 @@
 package com.geendutchman.lhf_mudv2.execution.controllers;
 
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -19,13 +21,13 @@ import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
 import com.geendutchman.lhf_mudv2.entities.item.ItemQuery;
 import com.geendutchman.lhf_mudv2.execution.Command;
 import com.geendutchman.lhf_mudv2.execution.Event;
+import com.geendutchman.lhf_mudv2.execution.Event.PlainEvent;
 import com.geendutchman.lhf_mudv2.execution.LHFCommand;
 import com.geendutchman.lhf_mudv2.execution.Message;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor;
 import com.geendutchman.lhf_mudv2.execution.UserCommand;
-import com.geendutchman.lhf_mudv2.execution.Event.PlainEvent;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
@@ -51,7 +53,11 @@ public class CreatureController implements MessageProcessor {
 
     @PostConstruct
     public void register() {
-        this.bus.registerProcessorDefault(this, Creature.CreatureID.ENTITY_CLASS_CREATURE);
+        if (this.getClass() == CreatureController.class) {
+            this.bus.registerProcessorDefault(this, Creature.CreatureID.ENTITY_CLASS_CREATURE);
+        } else {
+            this.bus.registerProcessor(this);
+        }
     }
 
     @Override
@@ -166,7 +172,7 @@ public class CreatureController implements MessageProcessor {
     }
 
     @Override
-    public MessageProcessingResult process(MessageContext context, UserCommand userCommand) {
+    public final MessageProcessingResult process(MessageContext context, UserCommand userCommand) {
         if (userCommand == null) {
             return MessageProcessingResult.Failed("cannot handle null user command");
         }
@@ -238,7 +244,7 @@ public class CreatureController implements MessageProcessor {
     };
 
     @Override
-    public MessageProcessingResult process(MessageContext context, Event event) {
+    public final MessageProcessingResult process(MessageContext context, Event event) {
         if (event == null) {
             return MessageProcessingResult.Failed("cannot handle null event");
         }
@@ -249,12 +255,33 @@ public class CreatureController implements MessageProcessor {
             return MessageProcessingResult.Failed("addressed creature does not exist");
         }
 
+        this.processEvent(context, event, forCreature.get());
+
         forCreature.get().items().stream()
                 .filter(context.getForwardingRestrictions().orElse(EntityQuery.builder().build())).forEach(item -> {
                     bus.publish(context.forwardCopy(item.itemID()), event);
                 });
 
         return MessageProcessingResult.HANDLED;
+    }
+
+    protected void processEvent(MessageContext context, Event event, Creature creature) {
+        if (context == null || event == null || creature == null) {
+            return;
+        }
+
+        final Logger logger = Logger
+                .getLogger(creature.getClass().getName() + creature.creatureID().toString().replace("/", "."));
+        final Level level = logger.getLevel();
+
+        if (level.intValue() <= Level.FINER.intValue()) {
+            final RichOutput desc = event.description();
+            logger.log(level, String.format("%s %s", desc.printIt(), context));
+        } else if (level.intValue() <= Level.FINE.intValue()) {
+            final RichOutput desc = event.description();
+            logger.log(level, desc.printIt());
+        }
+
     }
 
 }

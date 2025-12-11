@@ -46,7 +46,11 @@ public class ItemController implements MessageProcessor {
 
     @PostConstruct
     public void register() {
-        this.bus.registerProcessorDefault(this, Item.ItemID.ENTITY_CLASS_ITEM);
+        if (this.getClass() == ItemController.class) {
+            this.bus.registerProcessorDefault(this, Item.ItemID.ENTITY_CLASS_ITEM);
+        } else {
+            this.bus.registerProcessor(this);
+        }
     }
 
     @Override
