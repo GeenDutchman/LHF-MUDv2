@@ -257,7 +257,7 @@ public class RoomController implements MessageProcessor {
         final Optional<Creature> forCreature = room
                 .queryOneCreature(IEntityQuery.entityQueryBuilder().setIdentifier(potentialCreatureID).build());
         if (forCreature.isEmpty()) {
-            return MessageProcessingResult.Failed("No creature for command");
+            return MessageProcessingResult.Failed(String.format("No creature '%s' for command", potentialCreatureID));
         }
 
         final Creature creature = forCreature.get();
@@ -289,7 +289,7 @@ public class RoomController implements MessageProcessor {
         final Optional<Creature> forCreature = room
                 .queryOneCreature(IEntityQuery.entityQueryBuilder().setIdentifier(potentialCreatureID).build());
         if (forCreature.isEmpty()) {
-            return MessageProcessingResult.Failed("No creature for command");
+            return MessageProcessingResult.Failed(String.format("No creature '%s' for command", potentialCreatureID));
         }
 
         final Creature creature = forCreature.get();
@@ -348,7 +348,7 @@ public class RoomController implements MessageProcessor {
         final Optional<Creature> forCreature = room
                 .queryOneCreature(IEntityQuery.entityQueryBuilder().setIdentifier(potentialCreatureID).build());
         if (forCreature.isEmpty()) {
-            return MessageProcessingResult.Failed("No creature for command");
+            return MessageProcessingResult.Failed(String.format("No creature '%s' for command", potentialCreatureID));
         }
 
         final Creature creature = forCreature.get();
@@ -398,7 +398,7 @@ public class RoomController implements MessageProcessor {
         final Optional<Creature> forCreature = room
                 .queryOneCreature(IEntityQuery.entityQueryBuilder().setIdentifier(potentialCreatureID).build());
         if (forCreature.isEmpty()) {
-            return MessageProcessingResult.Failed("No creature for command");
+            return MessageProcessingResult.Failed(String.format("No creature '%s' for command", potentialCreatureID));
         }
 
         final Creature creature = forCreature.get();

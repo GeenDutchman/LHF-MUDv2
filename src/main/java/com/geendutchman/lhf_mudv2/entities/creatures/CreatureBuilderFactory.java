@@ -74,6 +74,11 @@ public final class CreatureBuilderFactory {
             return new NameGenerationStrategy(Kind.CHECK, Optional.of(name));
         }
 
+        public static NameGenerationStrategy ofPinnedFirstname(CharSequence name) {
+            final Examinable.Name exName = Examinable.Name.fromCharSequence(name);
+            return new NameGenerationStrategy(Kind.PIN_FIRSTNAME, Optional.of(exName));
+        }
+
         private Examinable.Name randomFirst(DiceSet<Plain> dice) {
             if (dice == null) {
                 dice = Plain.dHundred((byte) 1);

@@ -27,6 +27,10 @@ public interface Examinable extends Taggable {
             Preconditions.checkArgument(value.matches(NAME_PATTERN), "name '%s' must match '%s'", value, NAME_PATTERN);
         }
 
+        public static Name fromCharSequence(CharSequence sequence) {
+            return new Name(sequence.toString());
+        }
+
         @Override
         public int compareTo(Name o) {
             return this.value.compareTo(o.value);
