@@ -308,16 +308,16 @@ public class RoomController implements MessageProcessor {
                 return MessageProcessingResult.HANDLED;
             } else if (creatures.size() == 1) {
                 final Creature first = creatures.asList().getFirst();
-                SpokenEvent voice = SpokenEvent.speakingTo(creature.basicTaggable(),
-                        RichOutput.builder().addString(sayCommand.message()).build(), first.basicTaggable());
+                SpokenEvent voice = SpokenEvent.speakingTo(creature.creatureID(),
+                        RichOutput.builder().addString(sayCommand.message()).build(), first.identifier());
                 bus.publish(MessageContext.create(creature.creatureID(), first.creatureID()), voice);
                 bus.publish(MessageContext.create(creature.creatureID(), creature.creatureID()), voice);
                 return MessageProcessingResult.HANDLED;
             } else {
                 final Creature first = creatures.asList().getFirst();
                 if (first.name().toString().equals(sayCommand.toWhom().get())) {
-                    SpokenEvent voice = SpokenEvent.speakingTo(creature.basicTaggable(),
-                            RichOutput.builder().addString(sayCommand.message()).build(), first.basicTaggable());
+                    SpokenEvent voice = SpokenEvent.speakingTo(creature.creatureID(),
+                            RichOutput.builder().addString(sayCommand.message()).build(), first.identifier());
                     bus.publish(MessageContext.create(creature.creatureID(), first.creatureID()), voice);
                     bus.publish(MessageContext.create(creature.creatureID(), creature.creatureID()), voice);
                     return MessageProcessingResult.HANDLED;
@@ -336,7 +336,7 @@ public class RoomController implements MessageProcessor {
             }
         }
 
-        SpokenEvent voice = SpokenEvent.speaking(creature.basicTaggable(),
+        SpokenEvent voice = SpokenEvent.speaking(creature.creatureID(),
                 RichOutput.builder().addString(sayCommand.message()).build());
         return bus.publish(MessageContext.create(creature.creatureID(), room.roomID()), voice);
     }

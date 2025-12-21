@@ -265,7 +265,7 @@ public class CreatureController implements MessageProcessor {
         return MessageProcessingResult.HANDLED;
     }
 
-    protected void processEvent(MessageContext context, Event event, Creature creature) {
+    final void processEvent(MessageContext context, Event event, Creature creature) {
         if (context == null || event == null || creature == null) {
             return;
         }
@@ -282,6 +282,55 @@ public class CreatureController implements MessageProcessor {
             logger.log(level, desc.printIt());
         }
 
+        switch (event) {
+        case Event.PlainEvent plainEvent -> onPlainEvent(context, plainEvent, creature);
+        case Event.ItemChangedEvent itemChanged -> onItemChangedEvent(context, itemChanged, creature);
+        case Event.CreatureChangedEvent creatureChanged -> onCreatureChangedEvent(context, creatureChanged, creature);
+        case Event.InventoryEvent inventory -> onInventoryEvent(context, inventory, creature);
+        case Event.RoomChangedEvent roomChanged -> onRoomChangedEvent(context, roomChanged, creature);
+        case Event.RoomSeenEvent roomSeen -> onRoomSeenEvent(context, roomSeen, creature);
+        case Event.CreatureSeenEvent creatureSeen -> onCreatureSeenEvent(context, creatureSeen, creature);
+        case Event.ItemSeenEvent itemSeen -> onItemSeenEvent(context, itemSeen, creature);
+        case Event.SpokenEvent speaking -> onSpokenEvent(context, speaking, creature);
+        }
+    }
+
+    protected void onPlainEvent(MessageContext context, Event.PlainEvent event, Creature creature) {
+        // default does nothing
+    }
+
+    protected void onItemChangedEvent(MessageContext context, Event.ItemChangedEvent event, Creature creature) {
+        // default does nothing
+    }
+
+    protected void onCreatureChangedEvent(MessageContext context, Event.CreatureChangedEvent event, Creature creature) {
+        // default does nothing
+    }
+
+    protected void onInventoryEvent(MessageContext context, Event.InventoryEvent event, Creature creature) {
+        // default does nothing
+    }
+
+    protected void onRoomChangedEvent(MessageContext context, Event.RoomChangedEvent event, Creature creature) {
+        // TODO: do something when a creature enters the room
+    }
+
+    protected void onRoomSeenEvent(MessageContext context, Event.RoomSeenEvent event, Creature creature) {
+        // default does nothing
+    }
+
+    protected void onCreatureSeenEvent(MessageContext context, Event.CreatureSeenEvent event, Creature creature) {
+        // default does nothing
+    }
+
+    protected void onItemSeenEvent(MessageContext context, Event.ItemSeenEvent event, Creature creature) {
+        // default does nothing
+    }
+
+    protected void onSpokenEvent(MessageContext context, Event.SpokenEvent event, Creature creature) {
+        UserCommand.SayCommand response = new UserCommand.SayCommand(UserCommand.SayCommand.idFactory.create(),
+                "I am not sure what to say to you but TODO.", Optional.of(event.speaker().name().toString()));
+        this.bus.send(MessageContext.create(creature.creatureID(), event.speaker()), response);
     }
 
 }

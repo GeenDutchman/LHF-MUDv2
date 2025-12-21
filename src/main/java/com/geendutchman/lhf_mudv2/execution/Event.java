@@ -13,6 +13,7 @@ import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature.CreatureID;
 import com.geendutchman.lhf_mudv2.entities.creatures.Faction;
 import com.geendutchman.lhf_mudv2.entities.creatures.ResourcePoolSize;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
@@ -364,7 +365,7 @@ public sealed interface Event extends Message, Comparable<Event> {
 
     }
 
-    public record SpokenEvent(Tsid tsid, RichOutput message, BasicTaggable speaker, Optional<BasicTaggable> listener)
+    public record SpokenEvent(Tsid tsid, RichOutput message, IEntityID speaker, Optional<IEntityID> listener)
             implements Event {
         public SpokenEvent {
             Preconditions.checkNotNull(tsid, "tsid must not be null");
@@ -373,11 +374,11 @@ public sealed interface Event extends Message, Comparable<Event> {
             Preconditions.checkNotNull(listener, "listener could be empty but must not be null");
         }
 
-        public static SpokenEvent speaking(BasicTaggable speaker, RichOutput message) {
+        public static SpokenEvent speaking(IEntityID speaker, RichOutput message) {
             return new SpokenEvent(idFactory.create(), message, speaker, Optional.empty());
         }
 
-        public static SpokenEvent speakingTo(BasicTaggable speaker, RichOutput message, BasicTaggable hearer) {
+        public static SpokenEvent speakingTo(IEntityID speaker, RichOutput message, IEntityID hearer) {
             return new SpokenEvent(idFactory.create(), message, speaker, Optional.ofNullable(hearer));
         }
 
