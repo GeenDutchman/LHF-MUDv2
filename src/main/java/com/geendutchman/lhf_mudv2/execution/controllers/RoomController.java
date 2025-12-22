@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.display.RichOutputElement;
+import com.geendutchman.lhf_mudv2.entities.creatures.AttributeScores;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureContainer;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureQuery;
@@ -190,7 +191,18 @@ public class RoomController implements MessageProcessor {
                     if (room.locale().isPresent()) {
                         yield this.forwardUserCommand(context, room, exitCommand);
                     }
-                    // TODO: send some "I exited" event
+                    this.process(context, Event.PlainEvent.asDescribed(RichOutput.builder().addString("Cataclysm,")
+                            .addTaggable(room).addString("is exiting, taking you with it!").build()));
+                    for (Creature c : room.creatures()) {
+                        if (c != null) {
+                            bus.send(MessageContext.create(c.creatureID(), c.creatureID()), exitCommand);
+                        }
+                    }
+                    for (Item i : room.items()) {
+                        if (i != null) {
+                            bus.send(MessageContext.create(i.itemID(), i.itemID()), exitCommand);
+                        }
+                    }
                 } finally {
                     this.roomRepository.remove(room);
                 }
@@ -270,13 +282,13 @@ public class RoomController implements MessageProcessor {
                         new CreatureSeenEvent(foundC.get()));
             }
             Optional<Item> foundI = room
-                    .queryOneItem(ItemQuery.builder().setDisplayName(seeCommand.what().orElse("Nothing")).build());
+                    .queryOneItem(ItemQuery.builder().setIsVisible(creature.plainCheck(AttributeScores.SAVVY))
+                            .setDisplayName(seeCommand.what().orElse("Nothing")).build());
             if (foundI.isPresent()) {
                 return bus.publish(MessageContext.create(room.roomID(), creature.creatureID()),
                         new ItemSeenEvent(foundI.get()));
             }
         }
-        // TODO: item visibility
         return bus.publish(MessageContext.create(room.roomID(), creature.creatureID()),
                 new RoomSeenEvent(room, null, null));
 

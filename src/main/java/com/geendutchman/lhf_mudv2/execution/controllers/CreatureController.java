@@ -199,7 +199,10 @@ public class CreatureController implements MessageProcessor {
                     if (creature.locale().isPresent()) {
                         yield this.forwardUserCommand(context, creature, exitCommand);
                     }
-                    // TODO: send some "I exited" event
+                    this.onPlainEvent(context,
+                            Event.PlainEvent.asDescribed(
+                                    RichOutput.builder().addString("Goodbye,").addTaggable(creature).build()),
+                            creature);
                 } finally {
                     this.creatureRepository.remove(creature);
                 }

@@ -7,16 +7,20 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
+import com.geendutchman.lhf_mudv2.dice.Plain;
+import com.geendutchman.lhf_mudv2.dice.RollSet;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSortedMap;
 
 @AutoValue
 public abstract class ItemQuery implements IEntityQuery<Item> {
 
-    public abstract Optional<Boolean> isVisible();
+    public abstract Optional<RollSet<Plain>> isVisible();
 
     public abstract Optional<String> nickname();
 
@@ -29,7 +33,7 @@ public abstract class ItemQuery implements IEntityQuery<Item> {
     public abstract EntityQuery entityQuery();
 
     public final static Builder builder() {
-        final Builder builder = new AutoValue_ItemQuery.Builder().setIsVisible(true);
+        final Builder builder = new AutoValue_ItemQuery.Builder();
         return builder;
     }
 
@@ -41,7 +45,7 @@ public abstract class ItemQuery implements IEntityQuery<Item> {
             kv.putAll(eq.toKeyValue());
         }
         if (this.isVisible().isPresent()) {
-            kv.put("isvisible", this.isVisible().orElse(true).toString());
+            kv.put("isvisible", this.isVisible().map(v -> v.result()).orElse(0).toString());
         }
         if (this.nickname().isPresent()) {
             kv.put("nickname", this.nickname().orElse(""));
@@ -103,9 +107,16 @@ public abstract class ItemQuery implements IEntityQuery<Item> {
             return this.setDisplayNamePattern(Pattern.compile(pattern));
         }
 
-        public abstract Builder setIsVisible(boolean isVisible);
+        protected Builder setIsVisible(Integer value) {
+            final byte count = 1;
+            final RollSet<Plain> set = new RollSet<>(Plain.dTwenty(count),
+                    ImmutableSortedMap.of(Plain.UNFLAVORED, value), ImmutableMap.of(), Optional.empty());
+            return this.setIsVisible(set);
+        }
 
-        public abstract Builder setIsVisible(Optional<Boolean> isVisible);
+        public abstract Builder setIsVisible(RollSet<Plain> isVisible);
+
+        public abstract Builder setIsVisible(Optional<RollSet<Plain>> isVisible);
 
         public Builder fromKeyValue(Map<String, String> kv) {
             if (kv == null) {
@@ -125,7 +136,7 @@ public abstract class ItemQuery implements IEntityQuery<Item> {
                     this.setNicknamePattern(Pattern.compile(value));
                     break;
                 case "isvisible":
-                    this.setIsVisible(Boolean.parseBoolean(value));
+                    this.setIsVisible(Integer.parseInt(value));
                     break;
                 case "displayname":
                     this.setDisplayName(value);
@@ -187,7 +198,11 @@ public abstract class ItemQuery implements IEntityQuery<Item> {
             }
         }
 
-        // TODO: check visibility
+        if (this.isVisible().isPresent()) {
+            if (!t.visibility().test(this.isVisible().get())) {
+                return false;
+            }
+        }
         return true;
     }
 
