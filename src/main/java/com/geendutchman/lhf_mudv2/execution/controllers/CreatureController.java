@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature.CreatureID;
@@ -41,14 +42,21 @@ public class CreatureController implements MessageProcessor {
     @Autowired
     protected final CreatureRepository creatureRepository;
 
-    private final MessageProcessorID processorID = new MessageProcessorID(
-            MessageProcessor.messageProcessorTsidFactory.create());
+    private final MessageProcessorID processorID;
+
+    protected final Logger logger;
 
     CreatureController(@Autowired MessageBus bus, @Autowired CreatureRepository repo) {
         Preconditions.checkNotNull(bus, "message bus should not be null");
         Preconditions.checkNotNull(repo, "Creature repository should not be null");
+        Examinable.Name name = this.name();
+        if (name == null) {
+            name = new Examinable.Name("Creature Controller");
+        }
+        this.processorID = new MessageProcessorID(name, MessageProcessor.messageProcessorTsidFactory.create());
         this.bus = bus;
         this.creatureRepository = repo;
+        this.logger = Logger.getLogger(String.format("%s.%s", this.getClass().getName(), name));
     }
 
     @PostConstruct
@@ -58,6 +66,10 @@ public class CreatureController implements MessageProcessor {
         } else {
             this.bus.registerProcessor(this);
         }
+    }
+
+    protected Examinable.Name name() {
+        return new Examinable.Name("Creature Controller");
     }
 
     @Override
@@ -193,6 +205,7 @@ public class CreatureController implements MessageProcessor {
         case UserCommand.SayCommand sayCommand -> this.forwardUserCommand(context, creature, sayCommand);
         case UserCommand.TakeCommand takeCommand -> this.forwardUserCommand(context, creature, takeCommand);
         case UserCommand.DropCommand dropCommand -> this.forwardUserCommand(context, creature, dropCommand);
+        case UserCommand.GoCommand goCommand -> this.forwardUserCommand(context, creature, goCommand);
         case UserCommand.ExitCommand exitCommand -> {
             if (context.getSender().compareTo(creature.identifier()) == 0) {
                 try {

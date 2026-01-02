@@ -14,12 +14,16 @@ import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureBuilderFactory;
+import com.geendutchman.lhf_mudv2.entities.creatures.CreatureQuery;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
+import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
 import com.github.f4b6a3.tsid.Tsid;
 import com.github.f4b6a3.tsid.TsidFactory;
 import com.google.auto.value.AutoBuilder;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSortedMap;
 
 @Component
 public final class RoomBuilderFactory {
@@ -129,5 +133,46 @@ public final class RoomBuilderFactory {
     public static RoomBuilderFactory.BuilderStart builder() {
         final RoomBuilderFactory.Builder builder = new AutoBuilder_RoomBuilderFactory_Builder();
         return builder;
+    }
+
+    public synchronized void dualConnect(RoomID here, RoomID there, Directions hereToThere) {
+        Preconditions.checkArgument(hereToThere != null, "direction here to there must not be null");
+
+        final Optional<Room> optHereRoom = this.repository.byRoomID(here);
+        final Optional<Room> optThereRoom = this.repository.byRoomID(there);
+
+        Preconditions.checkArgument(optHereRoom.isPresent(), "location for connection start must exist: %s", here);
+        Preconditions.checkArgument(optThereRoom.isPresent(), "location for connection end must exist: %s", there);
+
+        final Room hereRoom = optHereRoom.get();
+        final Room thereRoom = optThereRoom.get();
+
+        final ImmutableSortedMap<Directions, Doorway> hereOut = hereRoom.doorways();
+        final ImmutableSortedMap<Directions, Doorway> thereOut = thereRoom.doorways();
+
+        if (hereOut.getOrDefault(hereToThere, null) == null) {
+            hereRoom.applyDelta(
+                    new Room.Delta.AddDoorway(hereToThere, new Doorway(there, CreatureQuery.builder().build())));
+        }
+        final Directions thereToHere = hereToThere.opposite();
+        if (thereOut.getOrDefault(thereToHere, null) == null) {
+            thereRoom.applyDelta(
+                    new Room.Delta.AddDoorway(thereToHere, new Doorway(here, CreatureQuery.builder().build())));
+        }
+    }
+
+    public synchronized void singleConnect(RoomID here, RoomID there, Directions hereToThere, CreatureQuery filter) {
+        Preconditions.checkArgument(hereToThere != null, "direction here to there must not be null");
+        final Optional<Room> optHereRoom = this.repository.byRoomID(here);
+        final Optional<Room> optThereRoom = this.repository.byRoomID(there);
+
+        Preconditions.checkArgument(optHereRoom.isPresent(), "location for connection start must exist: %s", here);
+        Preconditions.checkArgument(optThereRoom.isPresent(), "location for connection end must exist: %s", there);
+
+        Preconditions.checkArgument(filter != null, "filter may be empty of criteria but must not be null");
+
+        final Room hereRoom = optHereRoom.get();
+        final Doorway doorway = new Doorway(there, filter);
+        hereRoom.applyDelta(new Room.Delta.AddDoorway(hereToThere, doorway));
     }
 }

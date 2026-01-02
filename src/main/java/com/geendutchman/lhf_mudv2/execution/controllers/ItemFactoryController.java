@@ -52,7 +52,7 @@ public class ItemFactoryController implements MessageProcessor {
         this.bus = bus;
         this.tsid = ItemFactoryController.idFactory.create();
         this.id = new IEntityID.EntityID(new Taggable.Tag("builderFactory"), new Examinable.Name("items"), tsid);
-        this.processorID = new MessageProcessorID(tsid);
+        this.processorID = new MessageProcessorID(new Examinable.Name("Item Controller Factory"), tsid);
     }
 
     @PostConstruct

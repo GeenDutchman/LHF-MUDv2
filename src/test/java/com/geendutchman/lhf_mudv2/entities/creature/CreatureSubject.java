@@ -6,6 +6,7 @@ import com.geendutchman.lhf_mudv2.entities.item.ItemContainerSubject;
 import com.google.common.truth.ComparableSubject;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.IntegerSubject;
+import com.google.common.truth.OptionalSubject;
 import com.google.common.truth.StringSubject;
 import com.google.common.truth.Subject;
 import com.google.common.truth.Truth;
@@ -52,6 +53,10 @@ public final class CreatureSubject extends Subject {
 
     public ItemContainerSubject items() {
         return this.check("items()").about(ItemContainerSubject.itemContainers()).that(creature);
+    }
+
+    public OptionalSubject locale() {
+        return this.check("locale()").that(this.creature.locale());
     }
 
 }

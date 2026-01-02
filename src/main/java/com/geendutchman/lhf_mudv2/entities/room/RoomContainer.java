@@ -1,6 +1,8 @@
 package com.geendutchman.lhf_mudv2.entities.room;
 
+import java.util.LinkedHashSet;
 import java.util.Optional;
+import java.util.Set;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
@@ -10,9 +12,9 @@ import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.graph.SuccessorsFunction;
 
-public interface RoomContainer extends Examinable {
-    // TODO: change this to graphs
+public interface RoomContainer extends Examinable, SuccessorsFunction<Room> {
     // (e.g. graph of RoomID nodes paired with a hashmap // of RoomID -> Room)
     public abstract ImmutableSet<Room> rooms();
 
@@ -94,6 +96,26 @@ public interface RoomContainer extends Examinable {
             }
 
         };
+    }
+
+    @Override
+    public default Iterable<? extends Room> successors(Room node) {
+        if (node == null) {
+            return Set.of();
+        }
+        final LinkedHashSet<Room> next = new LinkedHashSet<>();
+        final ImmutableSortedMap<Directions, Doorway> outs = node.doorways();
+        if (outs == null) {
+            return next;
+        }
+        for (final Doorway door : outs.values()) {
+            if (door == null || door.target() == null) {
+                continue;
+            }
+            Optional<Room> room = this.byRoomID(door.target());
+            room.ifPresent(r -> next.add(r));
+        }
+        return next;
     }
 
 }

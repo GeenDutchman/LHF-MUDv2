@@ -40,7 +40,7 @@ public class MessageBusTest {
     void testPublish(MessageBus bus) {
         Truth.assertThat(bus).isNotNull();
         MessageProcessor first = Mockito.mock();
-        MessageProcessorID firstID = MessageProcessorID.nextID();
+        MessageProcessorID firstID = MessageProcessorID.nextID(new Examinable.Name("testPublish"));
         Mockito.when(first.messageProcessorID()).thenReturn(firstID);
         IEntityID entity = new IEntityID.EntityID(new Taggable.Tag(bus.getClass().getSimpleName()),
                 new Examinable.Name("events"), tsidFactory.create());
@@ -60,7 +60,7 @@ public class MessageBusTest {
     void testSend(MessageBus bus) {
         Truth.assertThat(bus).isNotNull();
         MessageProcessor first = Mockito.mock();
-        MessageProcessorID firstID = MessageProcessorID.nextID();
+        MessageProcessorID firstID = MessageProcessorID.nextID(new Examinable.Name("test send"));
         Mockito.when(first.messageProcessorID()).thenReturn(firstID);
         IEntityID entity = new IEntityID.EntityID(new Taggable.Tag(bus.getClass().getSimpleName()),
                 new Examinable.Name("commands"), tsidFactory.create());
@@ -80,7 +80,7 @@ public class MessageBusTest {
     void testPublishRapidFire(MessageBus bus) {
         Truth.assertThat(bus).isNotNull();
         MessageProcessor first = Mockito.mock();
-        MessageProcessorID firstID = MessageProcessorID.nextID();
+        MessageProcessorID firstID = MessageProcessorID.nextID(new Examinable.Name("test publish rapidfire"));
         final Logger firstLogger = Logger
                 .getLogger(String.format("%s.%s", MessageProcessor.class.getClass().getName(), firstID));
         Mockito.when(first.messageProcessorID()).thenReturn(firstID);

@@ -49,7 +49,7 @@ public class CreatureFactoryController implements MessageProcessor {
         this.bus = bus;
         this.tsid = CreatureFactoryController.idFactory.create();
         this.id = new IEntityID.EntityID(new Taggable.Tag("builderFactory"), new Examinable.Name("creatures"), tsid);
-        this.processorID = new MessageProcessorID(tsid);
+        this.processorID = new MessageProcessorID(new Examinable.Name("Creature Factory Controller"), tsid);
     }
 
     @PostConstruct

@@ -77,6 +77,13 @@ public interface Room extends Entity, ItemContainer, CreatureContainer {
         return ROOM_TAG;
     }
 
+    /**
+     * Shows how this Room is connected to other Rooms
+     * 
+     * @return
+     */
+    public abstract ImmutableSortedMap<Directions, Doorway> doorways();
+
     @Override
     public default ImmutableSortedMap<String, String> attributes() {
         return ImmutableSortedMap.<String, String>naturalOrder().putAll(Entity.super.attributes()).build();
@@ -113,6 +120,19 @@ public interface Room extends Entity, ItemContainer, CreatureContainer {
         public record RemoveCreatureDelta(Creature creature) implements Delta {
             public RemoveCreatureDelta {
                 Preconditions.checkNotNull(creature, "creature to remove must not be null");
+            }
+        }
+
+        public record AddDoorway(Directions to, Doorway doorway) implements Delta {
+            public AddDoorway {
+                Preconditions.checkNotNull(to, "direction to doorway must not be null");
+                Preconditions.checkNotNull(doorway, "doorway must not be null");
+            }
+        }
+
+        public record RemoveDoorway(Directions to) implements Delta {
+            public RemoveDoorway {
+                Preconditions.checkNotNull(to, "direction from which to remove the doorway must not be null");
             }
         }
 

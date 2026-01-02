@@ -60,4 +60,12 @@ public sealed interface UserCommand extends Command {
             Preconditions.checkArgument(!what.isBlank(), "what to drop must not be blank");
         }
     }
+
+    record GoCommand(Tsid tsid, String direction) implements UserCommand {
+        public GoCommand {
+            Preconditions.checkNotNull(tsid, "tsid must not be null");
+            Preconditions.checkNotNull(direction, "direction must not be null");
+            Preconditions.checkArgument(!direction.isBlank(), "direction must not be blank");
+        }
+    }
 }

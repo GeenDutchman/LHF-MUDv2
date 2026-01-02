@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
@@ -34,7 +35,7 @@ public class ItemController implements MessageProcessor {
     @Autowired
     protected final ItemRepository itemRepository;
 
-    private final MessageProcessorID processorID = new MessageProcessorID(
+    private final MessageProcessorID processorID = new MessageProcessorID(new Examinable.Name("Item Controller"),
             MessageProcessor.messageProcessorTsidFactory.create());
 
     ItemController(@Autowired MessageBus bus, @Autowired ItemRepository repo) {
@@ -156,6 +157,8 @@ public class ItemController implements MessageProcessor {
         case UserCommand.TakeCommand takeCommand -> MessageProcessingResult.Failed("this item has nothing to be taken");
         case UserCommand.DropCommand dropCommand -> MessageProcessingResult
                 .Failed("this item cannot have things dropped in it");
+        case UserCommand.GoCommand goCommand -> MessageProcessingResult
+                .Failed(String.format("this item cannot go anywhere, must less '%s'", goCommand.direction()));
         case UserCommand.ExitCommand exitCommand -> {
             final Item item = forItem.get();
             if (context.getSender().compareTo(item.identifier()) == 0) {

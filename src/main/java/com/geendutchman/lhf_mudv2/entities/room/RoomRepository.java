@@ -15,6 +15,7 @@ import com.google.common.collect.ImmutableSortedMap;
 
 @Repository
 public final class RoomRepository implements RoomContainer {
+
     private final ConcurrentSkipListMap<RoomID, ConcreteRoom> chambers = new ConcurrentSkipListMap<>();
 
     @Override
@@ -22,7 +23,7 @@ public final class RoomRepository implements RoomContainer {
         return ImmutableMap.copyOf(chambers);
     }
 
-    public RoomRepository add(ConcreteRoom... rooms) {
+    public synchronized RoomRepository add(ConcreteRoom... rooms) {
         if (rooms != null) {
             for (final ConcreteRoom room : rooms) {
                 if (room != null) {
@@ -33,7 +34,7 @@ public final class RoomRepository implements RoomContainer {
         return this;
     }
 
-    public RoomRepository add(Collection<ConcreteRoom> rooms) {
+    public synchronized RoomRepository add(Collection<ConcreteRoom> rooms) {
         if (rooms != null) {
             for (final ConcreteRoom room : rooms) {
                 if (room != null) {
@@ -44,14 +45,14 @@ public final class RoomRepository implements RoomContainer {
         return this;
     }
 
-    public RoomRepository addAll(Map<RoomID, ConcreteRoom> rooms) {
+    public synchronized RoomRepository addAll(Map<RoomID, ConcreteRoom> rooms) {
         if (rooms != null) {
             this.chambers.putAll(rooms);
         }
         return this;
     }
 
-    public Optional<Room> remove(RoomID id) {
+    public synchronized Optional<Room> remove(RoomID id) {
         return Optional.ofNullable(this.chambers.remove(id));
     }
 

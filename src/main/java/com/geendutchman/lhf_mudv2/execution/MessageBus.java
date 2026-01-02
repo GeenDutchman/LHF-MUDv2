@@ -192,6 +192,7 @@ public interface MessageBus {
                 eventLogger.warning(noDestFound);
                 return MessageProcessingResult.Failed(noDestFound);
             }
+            eventLogger.finest(() -> String.format("Using processor: %s", processor.messageProcessorID()));
 
             try {
                 final ExecutorService executor = this.executor(logname);
@@ -202,7 +203,7 @@ public interface MessageBus {
                             eventLogger.fine("Started processing event");
                             myResult = processor.process(context, asEvent);
                         } finally {
-                            eventLogger.finer(String.format("Processing finished: %s", myResult));
+                            eventLogger.finer(String.format("Processing event finished: %s", myResult));
                         }
                     });
                     return MessageProcessingResult.HANDLED;
@@ -214,7 +215,7 @@ public interface MessageBus {
                             value = processor.process(context, asCommand);
                             return value;
                         } finally {
-                            final String logMessage = String.format("Processing finished: %s", value);
+                            final String logMessage = String.format("Processing command finished: %s", value);
                             eventLogger.fine(logMessage);
                         }
                     }).get(timing.toNanos(), TimeUnit.NANOSECONDS);
@@ -226,12 +227,12 @@ public interface MessageBus {
                         value = processor.process(context, message);
                         return value;
                     } finally {
-                        final String logMessage = String.format("Processing finished: %s", value);
+                        final String logMessage = String.format("Processing message finished: %s", value);
                         eventLogger.fine(logMessage);
                     }
                 }).get(timing.toNanos(), TimeUnit.NANOSECONDS);
             } catch (NullPointerException | InterruptedException | ExecutionException | TimeoutException e) {
-                this.logger.warning(() -> {
+                eventLogger.warning(() -> {
                     StringWriter buffer = new StringWriter();
                     PrintWriter writer = new PrintWriter(buffer);
                     e.printStackTrace(writer);
@@ -244,7 +245,7 @@ public interface MessageBus {
                 });
                 Thread.currentThread().interrupt();
             } catch (RuntimeException e) {
-                this.logger.warning(() -> {
+                eventLogger.warning(() -> {
                     StringWriter buffer = new StringWriter();
                     PrintWriter writer = new PrintWriter(buffer);
                     e.printStackTrace(writer);

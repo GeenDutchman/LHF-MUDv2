@@ -1,5 +1,6 @@
 package com.geendutchman.lhf_mudv2.entities.room;
 
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.Optional;
@@ -14,6 +15,7 @@ import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 
 class ConcreteRoom implements Room {
     final private RoomID roomID;
@@ -22,6 +24,7 @@ class ConcreteRoom implements Room {
     final private Optional<IEntityID> locale;
     final private ItemInventory inventory;
     final private LinkedHashMap<CreatureID, Creature> creatures;
+    final private EnumMap<Directions, Doorway> doorways;
 
     protected static ConcreteRoom buildRoom(Examinable.Name name, Optional<RichOutput> roomDescription,
             Optional<IEntityID> locale, ItemInventory inventory) {
@@ -41,6 +44,7 @@ class ConcreteRoom implements Room {
         this.inventory = inventory;
         this.roomID = RoomID.make(name);
         this.creatures = new LinkedHashMap<>();
+        this.doorways = new EnumMap<>(Directions.class);
     }
 
     @Override
@@ -49,7 +53,12 @@ class ConcreteRoom implements Room {
     }
 
     @Override
-    public void applyDelta(Delta delta) {
+    public ImmutableSortedMap<Directions, Doorway> doorways() {
+        return ImmutableSortedMap.copyOf(this.doorways);
+    }
+
+    @Override
+    public synchronized void applyDelta(Delta delta) {
         if (delta == null) {
             return;
         }
@@ -70,6 +79,12 @@ class ConcreteRoom implements Room {
         case Delta.RemoveCreatureDelta(Creature creature) -> {
             this.creatures.remove(creature.creatureID(), creature);
             creature.applyDelta(Creature.Delta.ofLocale(Optional.empty()));
+        }
+        case Delta.AddDoorway adder -> {
+            this.doorways.put(adder.to(), adder.doorway());
+        }
+        case Delta.RemoveDoorway disconnector -> {
+            this.doorways.remove(disconnector.to());
         }
 
         }

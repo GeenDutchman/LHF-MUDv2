@@ -17,12 +17,14 @@ import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
+import com.geendutchman.lhf_mudv2.entities.room.Directions;
 import com.geendutchman.lhf_mudv2.entities.room.Room;
 import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
 import com.github.f4b6a3.tsid.Tsid;
 import com.github.f4b6a3.tsid.TsidFactory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.Multimaps;
@@ -162,6 +164,7 @@ public sealed interface Event extends Message, Comparable<Event> {
         private final RoomID roomID;
         private final ImmutableSet<BasicTaggable> items;
         private final ImmutableSet<BasicTaggable> creatures;
+        private final ImmutableSortedSet<Directions> directions;
 
         public RoomSeenEvent(Room room, IEntityQuery<Item> filterItems, IEntityQuery<Creature> filterCreatures) {
             Preconditions.checkNotNull(room, "room should not be null");
@@ -172,12 +175,19 @@ public sealed interface Event extends Message, Comparable<Event> {
             this.creatures = room.creatures().stream()
                     .filter(filterCreatures != null ? filterCreatures : c -> c != null).map(c -> c.basicTaggable())
                     .collect(ImmutableSet.toImmutableSet());
+            this.directions = room.doorways().keySet();
         }
 
         @Override
         public RichOutput description() {
             RichOutput.Builder builder = RichOutput.builder();
             this.room.description().ifPresent(rd -> builder.addOutput(rd));
+            if (this.directions != null && this.directions.size() > 0) {
+                RichOutput.Builder dirBuilder = RichOutput.builder().setSequenceName("Directions")
+                        .setTag("Directions-list").setElementSeparator(Optional.of(RichOutputElement.ofString(", ")));
+                this.directions.forEach(d -> dirBuilder.addTaggable(d));
+                builder.addOutput(dirBuilder.build());
+            }
             if (this.items != null && this.items.size() > 0) {
                 RichOutput.Builder itemsBuilder = RichOutput.builder().setSequenceName("Items").setTag("Items-list")
                         .setElementSeparator(Optional.of(RichOutputElement.ofString(", ")));
@@ -218,6 +228,10 @@ public sealed interface Event extends Message, Comparable<Event> {
             return roomID;
         }
 
+        public ImmutableSortedSet<Directions> directions() {
+            return directions;
+        }
+
         public ImmutableSet<BasicTaggable> getItems() {
             return items;
         }
@@ -228,7 +242,7 @@ public sealed interface Event extends Message, Comparable<Event> {
 
         @Override
         public int hashCode() {
-            return Objects.hash(room, items, creatures);
+            return Objects.hash(room, items, creatures, directions);
         }
 
         @Override
@@ -239,7 +253,7 @@ public sealed interface Event extends Message, Comparable<Event> {
                 return false;
             RoomSeenEvent other = (RoomSeenEvent) obj;
             return Objects.equals(room, other.room) && Objects.equals(items, other.items)
-                    && Objects.equals(creatures, other.creatures);
+                    && Objects.equals(creatures, other.creatures) && Objects.equals(directions, other.directions);
         }
 
     }
