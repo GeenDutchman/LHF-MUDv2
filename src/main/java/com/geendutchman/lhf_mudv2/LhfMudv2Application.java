@@ -3,8 +3,9 @@ package com.geendutchman.lhf_mudv2;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
-import java.util.logging.Logger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -15,26 +16,18 @@ import org.springframework.context.annotation.Bean;
 public class LhfMudv2Application {
 
     public static void main(String[] args) {
-        System.setProperty("reactor.logging.fallback", "JDK");
         SpringApplication.run(LhfMudv2Application.class, args);
     }
 
     @Bean
     public CommandLineRunner commandLineRunner(ApplicationContext ctx) {
         return args -> {
-            final Logger logger = Logger.getLogger(this.getClass().getName() + ".beansLoader");
-            logger.finer("What beans do we have today?");
+            Logger logger = LoggerFactory.getLogger(getClass().getName() + ".beansLoader");
+            logger.debug("What beans do we have today?");
 
             final String[] beanNames = ctx.getBeanDefinitionNames();
             Arrays.sort(beanNames);
-            for (String beanName : beanNames) {
-                if (beanName.contains("spring")) {
-                    logger.finest(beanName);
-                } else {
-                    logger.finer(beanName);
-                }
-            }
-            logger.finer("Done listing beans");
+            logger.atDebug().addKeyValue("beans", Arrays.toString(beanNames)).log("available beans");
         };
     }
 

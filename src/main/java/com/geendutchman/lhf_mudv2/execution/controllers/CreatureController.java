@@ -1,9 +1,10 @@
 package com.geendutchman.lhf_mudv2.execution.controllers;
 
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -56,7 +57,7 @@ public class CreatureController implements MessageProcessor {
         this.processorID = new MessageProcessorID(name, MessageProcessor.messageProcessorTsidFactory.create());
         this.bus = bus;
         this.creatureRepository = repo;
-        this.logger = Logger.getLogger(String.format("%s.%s", this.getClass().getName(), name));
+        this.logger = LoggerFactory.getLogger(String.format("%s.%s", this.getClass().getName(), name));
     }
 
     @PostConstruct
@@ -180,7 +181,10 @@ public class CreatureController implements MessageProcessor {
         if (processor == null) {
             return MessageProcessingResult.Failed("no handler to forward request");
         }
-        return processor.process(context.forward(toForward), userCommand);
+        try (MDC.MDCCloseable asCloseable = MDC.putCloseable("processorId",
+                processor.messageProcessorID().toString())) {
+            return processor.process(context.forward(toForward), userCommand);
+        }
     }
 
     @Override
@@ -286,28 +290,20 @@ public class CreatureController implements MessageProcessor {
             return;
         }
 
-        final Logger logger = Logger
-                .getLogger(creature.getClass().getName() + creature.creatureID().toString().replace("/", "."));
-        final Level level = logger.getLevel();
+        try (MDC.MDCCloseable resource = MDC.putCloseable("creatureID", creature.creatureID().toString())) {
 
-        if (level.intValue() <= Level.FINER.intValue()) {
-            final RichOutput desc = event.description();
-            logger.log(level, String.format("%s %s", desc.printIt(), context));
-        } else if (level.intValue() <= Level.FINE.intValue()) {
-            final RichOutput desc = event.description();
-            logger.log(level, desc.printIt());
-        }
-
-        switch (event) {
-        case Event.PlainEvent plainEvent -> onPlainEvent(context, plainEvent, creature);
-        case Event.ItemChangedEvent itemChanged -> onItemChangedEvent(context, itemChanged, creature);
-        case Event.CreatureChangedEvent creatureChanged -> onCreatureChangedEvent(context, creatureChanged, creature);
-        case Event.InventoryEvent inventory -> onInventoryEvent(context, inventory, creature);
-        case Event.RoomChangedEvent roomChanged -> onRoomChangedEvent(context, roomChanged, creature);
-        case Event.RoomSeenEvent roomSeen -> onRoomSeenEvent(context, roomSeen, creature);
-        case Event.CreatureSeenEvent creatureSeen -> onCreatureSeenEvent(context, creatureSeen, creature);
-        case Event.ItemSeenEvent itemSeen -> onItemSeenEvent(context, itemSeen, creature);
-        case Event.SpokenEvent speaking -> onSpokenEvent(context, speaking, creature);
+            switch (event) {
+            case Event.PlainEvent plainEvent -> onPlainEvent(context, plainEvent, creature);
+            case Event.ItemChangedEvent itemChanged -> onItemChangedEvent(context, itemChanged, creature);
+            case Event.CreatureChangedEvent creatureChanged -> onCreatureChangedEvent(context, creatureChanged,
+                    creature);
+            case Event.InventoryEvent inventory -> onInventoryEvent(context, inventory, creature);
+            case Event.RoomChangedEvent roomChanged -> onRoomChangedEvent(context, roomChanged, creature);
+            case Event.RoomSeenEvent roomSeen -> onRoomSeenEvent(context, roomSeen, creature);
+            case Event.CreatureSeenEvent creatureSeen -> onCreatureSeenEvent(context, creatureSeen, creature);
+            case Event.ItemSeenEvent itemSeen -> onItemSeenEvent(context, itemSeen, creature);
+            case Event.SpokenEvent speaking -> onSpokenEvent(context, speaking, creature);
+            }
         }
     }
 

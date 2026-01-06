@@ -2,6 +2,7 @@ package com.geendutchman.lhf_mudv2.execution.controllers;
 
 import java.util.Optional;
 
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -137,7 +138,10 @@ public class ItemController implements MessageProcessor {
         if (processor == null) {
             return MessageProcessingResult.Failed("no handler to forward request");
         }
-        return processor.process(context.forward(toForward), userCommand);
+        try (MDC.MDCCloseable asCloseable = MDC.putCloseable("processorId",
+                processor.messageProcessorID().toString())) {
+            return processor.process(context.forward(toForward), userCommand);
+        }
     }
 
     @Override

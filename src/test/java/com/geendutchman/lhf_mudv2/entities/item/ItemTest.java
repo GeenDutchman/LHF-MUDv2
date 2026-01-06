@@ -3,6 +3,7 @@ package com.geendutchman.lhf_mudv2.entities.item;
 import java.net.URI;
 
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -39,8 +40,8 @@ public class ItemTest {
     @Test
     void testRelativePath() {
         final URI relative = URI.create("items/123345");
-        System.out.println(relative);
-        System.out.println(URI.create("items/*"));
+        LoggerFactory.getLogger(getClass()).atInfo().addKeyValue("relative", relative)
+                .addKeyValue("fresh", URI.create("items/*")).log("made URIs");
     }
 
 }

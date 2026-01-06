@@ -1,8 +1,7 @@
 package com.geendutchman.lhf_mudv2.execution;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.time.Duration;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -12,8 +11,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Logger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
@@ -67,7 +69,7 @@ public interface MessageBus {
         final private ConcurrentMap<IEntityID, MessageProcessorID> entityToProcessor = new ConcurrentHashMap<>();
         final private ConcurrentMap<Taggable.Tag, MessageProcessorID> entityClassDefaults = new ConcurrentHashMap<>();
         final private ConcurrentMap<MessageProcessorID, MessageProcessor> processorIDToProcessor = new ConcurrentHashMap<>();
-        protected final Logger logger = Logger.getLogger(this.getClass().getName());
+        protected final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
         final private MessageProcessingResult.Failed NO_RESULT = MessageProcessingResult.Failed("no result");
 
         @Autowired
@@ -75,7 +77,7 @@ public interface MessageBus {
 
         protected AbstractMessageBus(@Autowired Duration timing) {
             this.timing = timing;
-            logger.config("Initialized");
+            logger.atLevel(Level.TRACE).log("initialized");
         }
 
         @Override
@@ -131,7 +133,8 @@ public interface MessageBus {
                         String.format("No message processor available with id: %s", processorID));
             }
             this.entityToProcessor.put(id, processorID);
-            logger.config(() -> String.format("Processor %s will now handle messages for %s", processorID, id));
+            logger.atTrace().addKeyValue("processorID", processorID).addKeyValue("entityID", id)
+                    .log(() -> String.format("Processor for individual entity registered"));
         }
 
         @Override
@@ -140,9 +143,7 @@ public interface MessageBus {
                 return MessageProcessingResult.Failed("cannot publish null event");
             }
 
-            final String logname = String.format("%s.event.%s.%s", this.logger.getName(),
-                    event.getClass().getSimpleName(), event.tsid());
-            return this.handle(context, event, logname);
+            return this.handle(context, event);
         }
 
         @Override
@@ -151,9 +152,7 @@ public interface MessageBus {
                 return MessageProcessingResult.Failed("cannot send null command");
             }
 
-            final String logname = String.format("%s.command.%s.%s", this.logger.getName(),
-                    command.getClass().getSimpleName(), command.tsid());
-            return this.handle(context, command, logname);
+            return this.handle(context, command);
         }
 
         protected abstract ExecutorService executor(String logname);
@@ -175,8 +174,7 @@ public interface MessageBus {
             return dproc;
         }
 
-        private MessageProcessingResult handle(final MessageContext context, final Message message,
-                final String logname) {
+        private MessageProcessingResult handle(final MessageContext context, final Message message) {
             if (message == null) {
                 return MessageProcessingResult.Failed("cannot handle null message");
             }
@@ -184,81 +182,81 @@ public interface MessageBus {
                 return MessageProcessingResult.Failed("cannot direct message with null context");
             }
 
-            final Logger eventLogger = Logger.getLogger(logname);
+            final Map<String, String> preMDC = MDC.getCopyOfContextMap();
+
+            MDC.pushByKey("messageType", message.getClass().getName());
+            MDC.pushByKey("messageTsid", message.tsid().toString());
+            if (this.logger.isDebugEnabled()) {
+                MDC.pushByKey("messageContext", context.toString());
+            }
+
+            final Logger eventLogger = this.logger;
             final MessageProcessor processor = this.processorForEntity(context.destination());
             if (processor == null) {
-                final String noDestFound = String.format("No destination found for message %s, routing %s",
-                        message.getClass().getSimpleName(), context);
-                eventLogger.warning(noDestFound);
-                return MessageProcessingResult.Failed(noDestFound);
+                MessageProcessingResult.Failed toReturn = MessageProcessingResult.Failed("no processor found");
+                this.logger.atWarn().addKeyValue("context.destination", context.destination()).log(toReturn.reason());
+                MDC.setContextMap(preMDC);
+                return toReturn;
             }
-            eventLogger.finest(() -> String.format("Using processor: %s", processor.messageProcessorID()));
+
+            MDC.pushByKey("processorId", processor.messageProcessorID().toString());
+            final Map<String, String> asMap = MDC.getCopyOfContextMap();
 
             try {
-                final ExecutorService executor = this.executor(logname);
+
+                final ExecutorService executor = this.executor(String.format("%s.%s.%s", this.getClass().getName(),
+                        message.getClass().getName(), message.tsid()));
                 if (message instanceof Event asEvent) {
                     executor.submit(() -> {
+                        MDC.setContextMap(asMap);
                         MessageProcessingResult myResult = NO_RESULT;
                         try {
-                            eventLogger.fine("Started processing event");
+                            eventLogger.trace("Started processing event");
                             myResult = processor.process(context, asEvent);
                         } finally {
-                            eventLogger.finer(String.format("Processing event finished: %s", myResult));
+                            eventLogger.trace(String.format("Processing event finished: %s", myResult));
                         }
                     });
+                    MDC.setContextMap(preMDC);
                     return MessageProcessingResult.HANDLED;
                 } else if (message instanceof Command asCommand) {
-                    return executor.submit(() -> {
+                    final MessageProcessingResult recieved = executor.submit(() -> {
+                        MDC.setContextMap(asMap);
                         MessageProcessingResult value = NO_RESULT;
                         try {
-                            eventLogger.fine("Starting processing command");
+                            eventLogger.trace("Starting processing command");
                             value = processor.process(context, asCommand);
                             return value;
                         } finally {
                             final String logMessage = String.format("Processing command finished: %s", value);
-                            eventLogger.fine(logMessage);
+                            eventLogger.trace(logMessage);
                         }
                     }).get(timing.toNanos(), TimeUnit.NANOSECONDS);
+                    MDC.setContextMap(preMDC);
+                    return recieved;
                 }
-                return executor.submit(() -> {
+                final MessageProcessingResult recievedValue = executor.submit(() -> {
+                    MDC.setContextMap(asMap);
                     MessageProcessingResult value = NO_RESULT;
                     try {
-                        eventLogger.fine("Starting processing message");
+                        eventLogger.trace("Starting processing message");
                         value = processor.process(context, message);
                         return value;
                     } finally {
                         final String logMessage = String.format("Processing message finished: %s", value);
-                        eventLogger.fine(logMessage);
+                        eventLogger.trace(logMessage);
                     }
                 }).get(timing.toNanos(), TimeUnit.NANOSECONDS);
+                MDC.setContextMap(preMDC);
+                return recievedValue;
             } catch (NullPointerException | InterruptedException | ExecutionException | TimeoutException e) {
-                eventLogger.warning(() -> {
-                    StringWriter buffer = new StringWriter();
-                    PrintWriter writer = new PrintWriter(buffer);
-                    e.printStackTrace(writer);
-                    writer.flush();
-                    final String result = String.format("Message: %s\n" + //
-                            "Context: %s\n" + //
-                            "Thread interrupted: %s\n%s", message, context, e, buffer.toString());
-                    writer.close();
-                    return result;
-                });
+                eventLogger.warn("encountered exception", e);
                 Thread.currentThread().interrupt();
             } catch (RuntimeException e) {
-                eventLogger.warning(() -> {
-                    StringWriter buffer = new StringWriter();
-                    PrintWriter writer = new PrintWriter(buffer);
-                    e.printStackTrace(writer);
-                    writer.flush();
-                    final String result = String.format("Message: %s\nContext: %s\nRuntime Exception: %s\n%s", message,
-                            context, e, buffer.toString());
-                    writer.close();
-                    return result;
-                });
+                eventLogger.warn("encountered runtime exception", e);
                 throw e;
             }
-            eventLogger.severe("Should not have been able to reach here");
-            this.logger.severe("Should not have been able to reach here");
+            eventLogger.error("Should not have been able to reach here");
             throw new IllegalStateException("Should not have been able to reach here");
         }
 

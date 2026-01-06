@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -12,6 +11,8 @@ import org.junit.jupiter.params.provider.FieldSource;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -81,7 +82,7 @@ public class MessageBusTest {
         Truth.assertThat(bus).isNotNull();
         MessageProcessor first = Mockito.mock();
         MessageProcessorID firstID = MessageProcessorID.nextID(new Examinable.Name("test publish rapidfire"));
-        final Logger firstLogger = Logger
+        final Logger firstLogger = LoggerFactory
                 .getLogger(String.format("%s.%s", MessageProcessor.class.getClass().getName(), firstID));
         Mockito.when(first.messageProcessorID()).thenReturn(firstID);
         Mockito.when(first.process(Mockito.any(MessageContext.class), Mockito.any(Event.class)))
@@ -90,8 +91,7 @@ public class MessageBusTest {
                     @Override
                     public MessageProcessingResult answer(final InvocationOnMock invocation) throws Throwable {
                         final String invocationArgs = Arrays.toString(invocation.getArguments());
-                        firstLogger.info(
-                                () -> String.format("%s invoked %s", bus.getClass().getSimpleName(), invocationArgs));
+                        firstLogger.atInfo().log("{} invoked {}", bus.getClass().getSimpleName(), invocationArgs);
                         return MessageProcessingResult.HANDLED;
                     }
 

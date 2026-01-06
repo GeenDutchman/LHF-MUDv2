@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: lhf_mudv2
+  output:
+    ansi:
+      enabled: ALWAYS
+logging:
+  level: 
+    com.geendutchman: INFO
+  structured:
+    format:
+      # console: com.geendutchman.lhf_mudv2.display.YAMLFormatter
+      console: ecs
+      file: ecs

@@ -164,7 +164,7 @@ public class BasicIntegrationTest {
                     canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
                     // canProceed.await();
                 } catch (InterruptedException | BrokenBarrierException | TimeoutException e) {
-                    e.printStackTrace();
+                    logger.error("Testing had a problem", e);
                     throw new UncheckedTimeoutException(e);
                 }
             }
