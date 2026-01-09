@@ -184,10 +184,10 @@ public interface MessageBus {
 
             final Map<String, String> preMDC = MDC.getCopyOfContextMap();
 
-            MDC.pushByKey("messageType", message.getClass().getName());
-            MDC.pushByKey("messageTsid", message.tsid().toString());
+            MDC.put("messageType", message.getClass().getName());
+            MDC.put("messageTsid", message.tsid().toString());
             if (this.logger.isDebugEnabled()) {
-                MDC.pushByKey("messageContext", context.toString());
+                MDC.put("messageContext", context.toString());
             }
 
             final Logger eventLogger = this.logger;
@@ -199,7 +199,7 @@ public interface MessageBus {
                 return toReturn;
             }
 
-            MDC.pushByKey("processorId", processor.messageProcessorID().toString());
+            MDC.put("processorId", processor.messageProcessorID().toString());
             final Map<String, String> asMap = MDC.getCopyOfContextMap();
 
             try {

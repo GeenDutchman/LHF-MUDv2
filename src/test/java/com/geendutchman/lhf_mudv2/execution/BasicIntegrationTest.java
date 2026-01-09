@@ -31,6 +31,7 @@ import com.geendutchman.lhf_mudv2.entities.room.Room;
 import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
 import com.geendutchman.lhf_mudv2.entities.room.RoomBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.room.RoomSubject;
+import com.geendutchman.lhf_mudv2.execution.Event.PlainEvent;
 import com.geendutchman.lhf_mudv2.execution.Event.RoomSeenEvent;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
 import com.geendutchman.lhf_mudv2.execution.controllers.CreatureController;
@@ -140,7 +141,7 @@ public class BasicIntegrationTest {
 
         RoomID nullId = new RoomID(
                 new IEntityID.EntityID(Room.RoomID.ENTITY_CLASS_ROOM, new Examinable.Name("null"), Tsid.fast()));
-        roomZ.applyDelta(
+        roomA.applyDelta(
                 new Room.Delta.AddDoorway(Directions.SOUTH, new Doorway(nullId, CreatureQuery.builder().build())));
 
         roomBuilderFactory.singleConnect(roomA.roomID(), roomD.roomID(), Directions.EAST,
@@ -152,17 +153,28 @@ public class BasicIntegrationTest {
 
         roomA.applyDelta(new Room.Delta.AddCreatureDelta(tester));
 
-        MessageContext context = MessageContext.create(tester.creatureID(), tester.identifier());
-
         CyclicBarrier canProceed = new CyclicBarrier(2);
 
         CreatureController creatureController = new TestCreatureController(bus, creatureRepository) {
             @Override
-            protected void onRoomSeenEvent(MessageContext context, RoomSeenEvent event, Creature creature) {
-                super.onRoomSeenEvent(context, event, creature);
+            protected void onRoomSeenEvent(MessageContext rcontext, RoomSeenEvent event, Creature creature) {
+                super.onRoomSeenEvent(rcontext, event, creature);
                 try {
+                    logger.info(event.description().printIt());
                     canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
                     // canProceed.await();
+                } catch (InterruptedException | BrokenBarrierException | TimeoutException e) {
+                    logger.error("Testing had a problem", e);
+                    throw new UncheckedTimeoutException(e);
+                }
+            }
+
+            @Override
+            protected void onPlainEvent(MessageContext context, PlainEvent event, Creature creature) {
+                super.onPlainEvent(context, event, creature);
+                try {
+                    logger.info(event.description().printIt());
+                    canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
                 } catch (InterruptedException | BrokenBarrierException | TimeoutException e) {
                     logger.error("Testing had a problem", e);
                     throw new UncheckedTimeoutException(e);
@@ -178,14 +190,83 @@ public class BasicIntegrationTest {
         bus.registerProcessor(creatureController);
         bus.registerEntity(tester, creatureController.messageProcessorID());
 
-        MessageProcessingResult goResult = bus.send(context,
+        // do the four cardinal directions
+
+        MessageProcessingResult goResult = bus.send(MessageContext.create(tester.creatureID(), tester.identifier()),
                 new UserCommand.GoCommand(UserCommand.GoCommand.idFactory.create(), Directions.NORTH.name()));
         Truth.assertThat(goResult).isEqualTo(MessageProcessingResult.HANDLED);
 
         canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
-        // canProceed.await();
-
         Truth.assertAbout(CreatureSubject.creatures()).that(tester).locale().hasValue(roomB.roomID());
+        Truth.assertAbout(RoomSubject.rooms()).that(roomB).creatures().contains(tester);
+
+        canProceed.reset();
+        goResult = bus.send(MessageContext.create(tester.creatureID(), tester.identifier()),
+                new UserCommand.GoCommand(UserCommand.GoCommand.idFactory.create(), Directions.EAST.name()));
+        Truth.assertThat(goResult).isEqualTo(MessageProcessingResult.HANDLED);
+
+        canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
+        Truth.assertAbout(CreatureSubject.creatures()).that(tester).locale().hasValue(roomC.roomID());
+        Truth.assertAbout(RoomSubject.rooms()).that(roomC).creatures().contains(tester);
+
+        canProceed.reset();
+        goResult = bus.send(MessageContext.create(tester.creatureID(), tester.identifier()),
+                new UserCommand.GoCommand(UserCommand.GoCommand.idFactory.create(), Directions.SOUTH.name()));
+        Truth.assertThat(goResult).isEqualTo(MessageProcessingResult.HANDLED);
+
+        canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
+        Truth.assertAbout(CreatureSubject.creatures()).that(tester).locale().hasValue(roomD.roomID());
+        Truth.assertAbout(RoomSubject.rooms()).that(roomD).creatures().contains(tester);
+
+        canProceed.reset();
+        goResult = bus.send(MessageContext.create(tester.creatureID(), tester.identifier()),
+                new UserCommand.GoCommand(UserCommand.GoCommand.idFactory.create(), Directions.WEST.name()));
+        Truth.assertThat(goResult).isEqualTo(MessageProcessingResult.HANDLED);
+
+        canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
+        Truth.assertAbout(CreatureSubject.creatures()).that(tester).locale().hasValue(roomA.roomID());
+        Truth.assertAbout(RoomSubject.rooms()).that(roomA).creatures().contains(tester);
+
+        canProceed.reset();
+        goResult = bus.send(MessageContext.create(tester.creatureID(), tester.identifier()),
+                new UserCommand.GoCommand(UserCommand.GoCommand.idFactory.create(), Directions.UP.name()));
+        Truth.assertThat(goResult).isEqualTo(MessageProcessingResult.HANDLED);
+
+        canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
+        Truth.assertAbout(CreatureSubject.creatures()).that(tester).locale().hasValue(roomZ.roomID());
+        Truth.assertAbout(RoomSubject.rooms()).that(roomZ).creatures().contains(tester);
+
+        canProceed.reset();
+        goResult = bus.send(MessageContext.create(tester.creatureID(), tester.identifier()),
+                new UserCommand.GoCommand(UserCommand.GoCommand.idFactory.create(), Directions.DOWN.name()));
+        Truth.assertThat(goResult).isEqualTo(MessageProcessingResult.HANDLED);
+
+        canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
+        Truth.assertAbout(CreatureSubject.creatures()).that(tester).locale().hasValue(roomA.roomID());
+        Truth.assertAbout(RoomSubject.rooms()).that(roomA).creatures().contains(tester);
+
+        // Only Monsters can go from roomA east to roomD
+
+        canProceed.reset();
+        goResult = bus.send(MessageContext.create(tester.creatureID(), tester.identifier()),
+                new UserCommand.GoCommand(UserCommand.GoCommand.idFactory.create(), Directions.EAST.name()));
+        Truth.assertThat(goResult).isInstanceOf(MessageProcessingResult.Failed.class);
+
+        canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
+        Truth.assertAbout(CreatureSubject.creatures()).that(tester).locale().hasValue(roomA.roomID());
+        Truth.assertAbout(RoomSubject.rooms()).that(roomA).creatures().contains(tester);
+        Truth.assertAbout(RoomSubject.rooms()).that(roomD).creatures().doesNotContain(tester);
+
+        // And south to a null room does not work
+
+        canProceed.reset();
+        goResult = bus.send(MessageContext.create(tester.creatureID(), tester.identifier()),
+                new UserCommand.GoCommand(UserCommand.GoCommand.idFactory.create(), Directions.SOUTH.name()));
+        Truth.assertThat(goResult).isInstanceOf(MessageProcessingResult.Failed.class);
+
+        canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
+        Truth.assertAbout(CreatureSubject.creatures()).that(tester).locale().hasValue(roomA.roomID());
+        Truth.assertAbout(RoomSubject.rooms()).that(roomA).creatures().contains(tester);
 
     }
 

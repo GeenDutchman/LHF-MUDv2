@@ -40,61 +40,63 @@ public class TestCreatureController extends CreatureController {
     @Override
     protected MessageProcessingResult forwardUserCommand(MessageContext context, Creature creature,
             UserCommand userCommand) {
-        logger.info(String.format("Forwarding usercommand %s", userCommand));
+        logger.info("Forwarding usercommand {}", userCommand);
         return super.forwardUserCommand(context, creature, userCommand);
     }
 
     @Override
     protected void onCreatureChangedEvent(MessageContext context, CreatureChangedEvent event, Creature creature) {
-        logger.info(String.format("Creature changed: %s", event));
+        logger.info("Creature changed: {}", event);
         super.onCreatureChangedEvent(context, event, creature);
     }
 
     @Override
     protected void onCreatureSeenEvent(MessageContext context, CreatureSeenEvent event, Creature creature) {
-        logger.info(String.format("Creature seen: %s", event));
+        logger.info("Creature seen: {}", event);
         super.onCreatureSeenEvent(context, event, creature);
     }
 
     @Override
     protected void onInventoryEvent(MessageContext context, InventoryEvent event, Creature creature) {
-        logger.info(String.format("Inventory requested: %s", event));
+        logger.info("Inventory requested: {}", event);
         super.onInventoryEvent(context, event, creature);
     }
 
     @Override
     protected void onItemChangedEvent(MessageContext context, ItemChangedEvent event, Creature creature) {
-        logger.info(String.format("Item changed: %s", event));
+        logger.info("Item changed: {}", event);
         super.onItemChangedEvent(context, event, creature);
     }
 
     @Override
     protected void onItemSeenEvent(MessageContext context, ItemSeenEvent event, Creature creature) {
-        logger.info(String.format("Item seen: %s", event));
+        logger.info("Item seen: {}", event);
         super.onItemSeenEvent(context, event, creature);
     }
 
     @Override
     protected void onPlainEvent(MessageContext context, PlainEvent event, Creature creature) {
-        logger.info(String.format("Plain event: %s", event));
+        logger.atInfo().addKeyValue("description", event.description().printIt())
+                .setMessage(() -> String.format("Plain event: %s", event.description().printIt())).log();
         super.onPlainEvent(context, event, creature);
     }
 
     @Override
     protected void onRoomChangedEvent(MessageContext context, RoomChangedEvent event, Creature creature) {
-        logger.info(String.format("Room changed: %s", event));
+        logger.info("Room changed: {}", event);
         super.onRoomChangedEvent(context, event, creature);
     }
 
     @Override
     protected void onRoomSeenEvent(MessageContext context, RoomSeenEvent event, Creature creature) {
-        logger.info(String.format("Room seen: %s", event));
+        logger.atInfo().addKeyValue("description", event.description().printIt())
+                .log(String.format("Room seen: %s", event));
         super.onRoomSeenEvent(context, event, creature);
     }
 
     @Override
     protected void onSpokenEvent(MessageContext context, SpokenEvent event, Creature creature) {
-        logger.info(String.format("Message spoken: %s", event));
+        logger.atInfo().addKeyValue("message", event.message()).log(String.format("Message spoken: %s", event));
         super.onSpokenEvent(context, event, creature);
     }
 
