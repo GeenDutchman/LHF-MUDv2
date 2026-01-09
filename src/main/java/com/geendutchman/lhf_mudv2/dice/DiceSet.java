@@ -16,6 +16,12 @@ import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Table;
 import com.google.common.collect.TreeBasedTable;
 
+/**
+ * This is a set of dice, delineated by some enum of a flavor of some kind. The
+ * default flavor is {@link Plain}
+ * 
+ * @see Plain
+ */
 @AutoValue
 public abstract class DiceSet<E extends Enum<E>> implements Taggable {
 
@@ -26,10 +32,25 @@ public abstract class DiceSet<E extends Enum<E>> implements Taggable {
         return ImmutableSortedMap.copyOf(BASIC_ATTRIBUTES);
     }
 
+    /**
+     * Gets the dice in this dice set as an immutable table
+     * 
+     * @return immutable table of dice
+     */
     public abstract ImmutableTable<E, DieType, Byte> allDice();
 
+    /**
+     * Retrieves any note associated with this dice set
+     * 
+     * @return optional note
+     */
     public abstract Optional<String> note();
 
+    /**
+     * Retrieves which flavors are associated with this set of dice
+     * 
+     * @return set of flavors
+     */
     public ImmutableSet<E> flavors() {
         return this.allDice().rowKeySet();
     }
@@ -41,14 +62,30 @@ public abstract class DiceSet<E extends Enum<E>> implements Taggable {
         return DICE_SET_TAG;
     }
 
+    /**
+     * How many dice are in this set
+     * 
+     * @return size
+     */
     public int size() {
         return this.allDice().size();
     }
 
+    /**
+     * Are there dice in this set
+     * 
+     * @return true if empty, false otherwise
+     */
     public boolean isEmpty() {
         return this.allDice().isEmpty();
     }
 
+    /**
+     * Describes a flavor as a string
+     * 
+     * @param row
+     * @return
+     */
     public String rowContent(final E row) {
         StringJoiner sj = new StringJoiner("+", Plain.UNFLAVORED.equals(row) ? "(" : String.format("(%s:", row), ")")
                 .setEmptyValue("0");
@@ -74,6 +111,11 @@ public abstract class DiceSet<E extends Enum<E>> implements Taggable {
         return outer.toString() + this.note().orElse("");
     }
 
+    /**
+     * Roll the set of dice
+     * 
+     * @return {@link RollSet}
+     */
     public RollSet<E> roll() {
         ImmutableSortedMap.Builder<E, Integer> rolls = ImmutableSortedMap.<E, Integer>naturalOrder();
         for (final Entry<E, Map<DieType, Byte>> row : this.allDice().rowMap().entrySet()) {
@@ -88,12 +130,26 @@ public abstract class DiceSet<E extends Enum<E>> implements Taggable {
         return new RollSet<>(this, rolls.build(), ImmutableMap.of(), Optional.empty());
     }
 
+    /**
+     * Returns a builder for a particular flavor
+     * 
+     * @param <E>
+     * @return
+     */
     public static <E extends Enum<E>> DiceSetBuilder<E> builder() {
         return new AutoValue_DiceSet.Builder<>();
     }
 
+    /**
+     * Transform this set of dice into a builder
+     * 
+     * @return
+     */
     public abstract DiceSetBuilder<E> toBuilder();
 
+    /**
+     * A builder for a dice set
+     */
     @AutoValue.Builder
     public static abstract class DiceSetBuilder<E extends Enum<E>> {
 
@@ -103,20 +159,54 @@ public abstract class DiceSet<E extends Enum<E>> implements Taggable {
 
         abstract ImmutableTable<E, DieType, Byte> allDice();
 
+        /**
+         * Get whatever note you have set
+         * 
+         * @return
+         */
         public abstract Optional<String> note();
 
+        /**
+         * Set a note on the dice set
+         * 
+         * @param note
+         * @return
+         */
         public abstract DiceSetBuilder<E> setNote(Optional<String> note);
 
+        /**
+         * Append a note to whatever note is present
+         * 
+         * @param addition
+         * @return
+         */
         public final DiceSetBuilder<E> addNote(String addition) {
             return this.setNote(Optional.of(this.note().orElse("") + addition));
         }
 
+        /**
+         * Remove all dice of a type and flavor
+         * 
+         * e.g. Remove all slashing d6's.
+         * 
+         * @param type
+         * @param flavor
+         * @return
+         */
         public final DiceSetBuilder<E> zeroCount(DieType type, E flavor) {
             this.allDiceBuilder.remove(type, flavor);
             // this.setAllDice(allDiceBuilder);
             return this;
         }
 
+        /**
+         * Add a dice
+         * 
+         * @param type   of the dice
+         * @param count  of the dice
+         * @param flavor of the dice
+         * @return
+         */
         public final DiceSetBuilder<E> addDie(DieType type, byte count, E flavor) {
             if (count < 0) {
                 throw new IllegalArgumentException("cannot subtract dice");
@@ -137,6 +227,15 @@ public abstract class DiceSet<E extends Enum<E>> implements Taggable {
             return this;
         }
 
+        /**
+         * Add a numerical bonus to the flavor
+         * 
+         * This is essentially adding d1's
+         * 
+         * @param flavor
+         * @param bonus
+         * @return
+         */
         public final DiceSetBuilder<E> addBonus(E flavor, byte bonus) {
             this.allDiceBuilder.putAll(this.allDice());
             Byte there = allDiceBuilder.get(flavor, DieType.ONE);
@@ -156,6 +255,11 @@ public abstract class DiceSet<E extends Enum<E>> implements Taggable {
 
         abstract DiceSet<E> autoBuild();
 
+        /**
+         * Build the dice set
+         * 
+         * @return
+         */
         public DiceSet<E> build() {
             Preconditions.checkState(this.allDiceBuilder.size() > 0, "at least one die must be added");
             this.setAllDice(allDiceBuilder);

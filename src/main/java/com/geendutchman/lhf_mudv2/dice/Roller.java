@@ -2,6 +2,9 @@ package com.geendutchman.lhf_mudv2.dice;
 
 import java.util.Random;
 
+/**
+ * Just the roller for the dice
+ */
 enum Roller {
     BASE;
 

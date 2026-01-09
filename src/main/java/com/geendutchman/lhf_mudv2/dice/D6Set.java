@@ -6,9 +6,15 @@ import java.util.Optional;
 
 import com.google.common.collect.ImmutableSortedMap;
 
+/**
+ * A set of D6 dice, usually used to generate a statblock
+ */
 public enum D6Set {
     ONE, TWO, THREE, FOUR, FIVE, SIX;
 
+    /**
+     * Make a set of D6s, with one, two, three...up to six dice
+     */
     public static DiceSet<D6Set> makeSet(D6Set ofSize) {
         DiceSet.DiceSetBuilder<D6Set> builder = DiceSet.builder();
         if (ofSize == null) {
@@ -23,6 +29,13 @@ public enum D6Set {
         return builder.build();
     }
 
+    /**
+     * Drop the lowest `count` results from the set
+     * 
+     * @param set
+     * @param count
+     * @return
+     */
     public static RollSet<D6Set> dropLowest(DiceSet<D6Set> set, D6Set count) {
         if (set == null) {
             throw new IllegalArgumentException("provided set must not be null");
@@ -42,16 +55,31 @@ public enum D6Set {
         return result;
     }
 
+    /**
+     * Do a standard 4d6 drop lowest
+     * 
+     * @return
+     */
     public static RollSet<D6Set> fourD6DropLowest() {
         DiceSet<D6Set> set = D6Set.makeSet(FOUR);
         RollSet<D6Set> result = D6Set.dropLowest(set, ONE);
         return result;
     }
 
+    /**
+     * Get the result of a 4d6 drop lowest as an int
+     * 
+     * @return
+     */
     public static int fourD6DropLowestAsInt() {
         return D6Set.fourD6DropLowest().result();
     }
 
+    /**
+     * Get the result of a 4d6 drop lowest as a byte
+     * 
+     * @return
+     */
     public static byte fourD6DropLowestAsByte() {
         int result = D6Set.fourD6DropLowestAsInt();
         if (result > Byte.MAX_VALUE) {

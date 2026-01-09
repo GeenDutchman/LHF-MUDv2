@@ -7,30 +7,88 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedMap;
 
+/**
+ * A structured way to present output
+ * 
+ * @see RichOutputElement
+ */
 @AutoValue
 public abstract class RichOutput implements Serializable {
 
+    /**
+     * Any name of this particular sequence
+     * 
+     * @see Examinable.Name
+     * @return
+     */
     public abstract Optional<Examinable.Name> sequenceName();
 
+    /**
+     * What elements are in this RichOutput
+     * 
+     * @return
+     */
     public abstract ImmutableList<RichOutputElement> elements();
 
+    /**
+     * What separates the elements?
+     * 
+     * @return
+     */
     public abstract Optional<RichOutputElement> elementSeparator();
 
+    /**
+     * Is there a different separator between the penultimate and last element?
+     * 
+     * @return
+     */
     public abstract boolean isAndLast();
 
+    /**
+     * What tag should be associated with this RichOutput
+     * 
+     * @see Taggable
+     * @return
+     */
     public abstract Optional<Taggable.Tag> tag();
 
+    /**
+     * What attributes does this output have
+     * 
+     * @see Taggable#attributes()
+     * @return
+     */
     public abstract ImmutableSortedMap<String, String> attributes();
 
+    /**
+     * What should be displayed if this has no elements?
+     * 
+     * @return
+     */
     public abstract Optional<String> onEmpty();
 
+    /**
+     * Get a default builder for a RichOutput
+     * 
+     * @see RichOutput.Builder
+     * @return
+     */
     public static Builder builder() {
         return new AutoValue_RichOutput.Builder().setElementSeparator(Optional.of(RichOutputElement.ofString(" ")))
                 .setTag("output").setIsAndLast(false);
     }
 
+    /**
+     * Transform this into a builder
+     * 
+     * @see RichOutput.Builder
+     * @return
+     */
     public abstract Builder toBuilder();
 
+    /**
+     * A builder for a {@link RichOutput}
+     */
     @AutoValue.Builder
     public abstract static class Builder {
         public abstract Builder setSequenceName(Optional<Examinable.Name> sequenceName);

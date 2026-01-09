@@ -10,9 +10,17 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Streams;
 
+/**
+ * This represents different things one can do to modify a {@link RollSet}
+ */
 public sealed interface RollMods<E extends Enum<E>> extends UnaryOperator<RollSet<E>>, Taggable
         permits RollMods.Zeroed, RollMods.Doubled, RollMods.Halved, RollMods.Added {
 
+    /**
+     * A tag for roll mods
+     * 
+     * @see Taggable
+     */
     final static Taggable.Tag ROLL_MODIFIER_TAG = new Taggable.Tag("ROLL_MODIFIER");
 
     @Override
@@ -20,6 +28,15 @@ public sealed interface RollMods<E extends Enum<E>> extends UnaryOperator<RollSe
         return ROLL_MODIFIER_TAG;
     }
 
+    /**
+     * Adds a note to a roll result
+     * 
+     * @param <E>    dice flavor
+     * @param notes
+     * @param flavor
+     * @param s
+     * @return
+     */
     private static <E extends Enum<E>> ImmutableMap<E, String> appendNote(ImmutableMap<E, String> notes, E flavor,
             String s) {
         final ImmutableMap<E, String> justNote = ImmutableMap.of(flavor, s);
@@ -40,6 +57,10 @@ public sealed interface RollMods<E extends Enum<E>> extends UnaryOperator<RollSe
                         }));
     }
 
+    /**
+     * Cancells out any particular flavor, useful for things like "immune to
+     * bludgeoning"
+     */
     public record Zeroed<E extends Enum<E>>(E flavor) implements RollMods<E> {
         public Zeroed {
             Preconditions.checkNotNull(flavor, "flavor to zero cannot be null");
@@ -60,6 +81,9 @@ public sealed interface RollMods<E extends Enum<E>> extends UnaryOperator<RollSe
         }
     }
 
+    /**
+     * Doubles any particular flavor, "slashing x2"
+     */
     public record Doubled<E extends Enum<E>>(E flavor) implements RollMods<E> {
         public Doubled {
             Preconditions.checkNotNull(flavor, "flavor to double cannot be null");
@@ -84,6 +108,9 @@ public sealed interface RollMods<E extends Enum<E>> extends UnaryOperator<RollSe
         }
     }
 
+    /**
+     * Halves any particular flavor "slashing / 2"
+     */
     public record Halved<E extends Enum<E>>(E flavor) implements RollMods<E> {
         public Halved {
             Preconditions.checkNotNull(flavor, "flavor to halve cannot be null");
@@ -108,6 +135,9 @@ public sealed interface RollMods<E extends Enum<E>> extends UnaryOperator<RollSe
         }
     }
 
+    /**
+     * Adds a small bonus to any particular flavor
+     */
     public record Added<E extends Enum<E>>(E flavor, int bonus) implements RollMods<E> {
         public Added {
             Preconditions.checkNotNull(flavor, "flavor to add bonus cannot be null");

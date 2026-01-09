@@ -12,8 +12,16 @@ import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSortedMap;
 
+/**
+ * This represents the difficulty of some task, flavored according to the
+ * parameterized type
+ */
 public record Difficulty<E extends Enum<E>>(ImmutableSortedMap<E, Integer> dcs, boolean totalOnly)
         implements Predicate<RollSet<E>>, Taggable {
+
+    /**
+     * @see Taggable#produceBasicTagAttributes
+     */
     public final static NavigableMap<String, String> BASIC_ATTRIBUTES = Taggable.produceBasicTagAttributes();
 
     @Override
@@ -21,6 +29,11 @@ public record Difficulty<E extends Enum<E>>(ImmutableSortedMap<E, Integer> dcs, 
         return ImmutableSortedMap.copyOf(Difficulty.BASIC_ATTRIBUTES);
     }
 
+    /**
+     * A tag for the difficulty
+     * 
+     * @see Taggable
+     */
     final static Taggable.Tag DIFFICULTY_CLASS_TAG = new Taggable.Tag("DIFFICULTY_CLASS");
 
     @Override
@@ -28,6 +41,13 @@ public record Difficulty<E extends Enum<E>>(ImmutableSortedMap<E, Integer> dcs, 
         return DIFFICULTY_CLASS_TAG;
     }
 
+    /**
+     * Constructor for the difficulty
+     * 
+     * @param dcs       difficulty classes
+     * @param totalOnly if only the sum total of the roll matters, or if the best
+     *                  according to flavor is accounted for
+     */
     public Difficulty {
         Objects.requireNonNull(dcs, "difficulty classes must not be null");
         Preconditions.checkArgument(dcs.size() > 0, "difficulty classes must not be empty");
@@ -41,10 +61,23 @@ public record Difficulty<E extends Enum<E>>(ImmutableSortedMap<E, Integer> dcs, 
         return this.test(t, Optional.empty());
     }
 
+    /**
+     * Sum of all the values of the difficulty classes
+     * 
+     * @return
+     */
     public int sum() {
         return this.dcs.values().stream().filter(i -> i != null).mapToInt(i -> i).sum();
     }
 
+    /**
+     * Test a {@link RollSet} and optionally build a message about it
+     * 
+     * @param t      {@link RollSet} to test
+     * @param output {@link Optional} {@link RichOutput.Builder} to build a message
+     *               about the test results
+     * @return true if the rollset passes this Difficulty
+     */
     public boolean test(RollSet<E> t, Optional<RichOutput.Builder> output) {
         Preconditions.checkNotNull(t, "Roll must not be null");
         Preconditions.checkNotNull(output, "output must not be null, but may be empty");

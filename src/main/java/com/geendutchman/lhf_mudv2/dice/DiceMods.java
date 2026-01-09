@@ -9,9 +9,17 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableTable;
 
+/**
+ * This represents different things one can do to modify a {@link DiceSet}
+ */
 public sealed interface DiceMods<E extends Enum<E>> extends UnaryOperator<DiceSet<E>>, Taggable
         permits DiceMods.FlavoredBonus, DiceMods.DoubleDice, DiceMods.MoreDice {
 
+    /**
+     * A tag for dice mods
+     * 
+     * @see Taggable
+     */
     final static Taggable.Tag DICE_MOD_TAG = new Taggable.Tag("DICE_MODIFIER");
 
     @Override
@@ -19,8 +27,17 @@ public sealed interface DiceMods<E extends Enum<E>> extends UnaryOperator<DiceSe
         return DICE_MOD_TAG;
     }
 
+    /**
+     * This is a small bonus to one particular flavor, like "slashing + 1"
+     */
     public record FlavoredBonus<E extends Enum<E>>(E flavor, byte bonus) implements DiceMods<E> {
 
+        /**
+         * This creates a Flavored Bonus as a Dice Mod
+         * 
+         * @param flavor
+         * @param bonus
+         */
         public FlavoredBonus {
             Preconditions.checkNotNull(flavor, "bonus flavor cannot be null");
         }
@@ -37,8 +54,17 @@ public sealed interface DiceMods<E extends Enum<E>> extends UnaryOperator<DiceSe
 
     }
 
+    /**
+     * This indicates to double the result of a particular flavor, like 'slashing x
+     * 2'
+     */
     public record DoubleDice<E extends Enum<E>>(E flavor) implements DiceMods<E> {
 
+        /**
+         * Creates a DoubleDice Dice Mod
+         * 
+         * @param flavor
+         */
         public DoubleDice {
             Preconditions.checkNotNull(flavor, "flavor cannot be null for doubling dice");
         }
@@ -61,7 +87,17 @@ public sealed interface DiceMods<E extends Enum<E>> extends UnaryOperator<DiceSe
         }
     }
 
+    /**
+     * This adds dice to the result, like '+1d6 slashing'
+     */
     public record MoreDice<E extends Enum<E>>(E flavor, DieType type, byte count) implements DiceMods<E> {
+        /**
+         * Creates a MoreDice DiceMod
+         * 
+         * @param flavor
+         * @param type
+         * @param count
+         */
         public MoreDice {
             Preconditions.checkNotNull(flavor, "flavor cannot be null for adding dice");
             Preconditions.checkNotNull(type, "DieType must not be null");

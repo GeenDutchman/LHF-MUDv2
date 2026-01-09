@@ -10,6 +10,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 
+/**
+ * This represents the result from a {@link DiceSet}
+ */
 public record RollSet<E extends Enum<E>>(DiceSet<E> diceSet, ImmutableSortedMap<E, Integer> rolls,
         ImmutableMap<E, String> notes, Optional<RollSet<E>> origin) implements Taggable {
 
@@ -21,14 +24,29 @@ public record RollSet<E extends Enum<E>>(DiceSet<E> diceSet, ImmutableSortedMap<
         Preconditions.checkNotNull(origin, "optional origin must be empty, not null");
     }
 
+    /**
+     * Get the set of dice that caused this roll
+     * 
+     * @return
+     */
     public DiceSet<E> rollable() {
         return this.diceSet;
     }
 
+    /**
+     * Retrieves which flavors are associated with this set of dice
+     * 
+     * @return set of flavors
+     */
     public ImmutableSet<E> flavors() {
         return this.rolls.keySet();
     }
 
+    /**
+     * Gets the sum total of the result
+     * 
+     * @return
+     */
     public int result() {
         return this.rolls.values().stream().filter(one -> one != null).mapToInt(roll -> roll).sum();
     }
@@ -40,6 +58,12 @@ public record RollSet<E extends Enum<E>>(DiceSet<E> diceSet, ImmutableSortedMap<
         return ROLL_SET_TAG;
     }
 
+    /**
+     * Describes a flavor as a string
+     * 
+     * @param row
+     * @return
+     */
     public String rowContent(final E row) {
         StringBuilder sb = new StringBuilder();
         if (this.origin.isPresent()) {

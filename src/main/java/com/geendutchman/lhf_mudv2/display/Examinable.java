@@ -27,10 +27,21 @@ public interface Examinable extends Taggable {
             Preconditions.checkArgument(value.matches(NAME_PATTERN), "name '%s' must match '%s'", value, NAME_PATTERN);
         }
 
+        /**
+         * Creates a name from any CharSequence
+         * 
+         * @param sequence
+         * @return
+         */
         public static Name fromCharSequence(CharSequence sequence) {
             return new Name(sequence.toString());
         }
 
+        /**
+         * Compares this Name to another Name
+         * 
+         * @see Comparable
+         */
         @Override
         public int compareTo(Name o) {
             return this.value.compareTo(o.value);
@@ -98,6 +109,9 @@ public interface Examinable extends Taggable {
         }
     }
 
+    /**
+     * A Comparator for Examinables, based on name and description
+     */
     public static class ExaminableComparator implements Comparator<Examinable>, Serializable {
         @Override
         public int compare(Examinable o1, Examinable o2) {
@@ -115,6 +129,11 @@ public interface Examinable extends Taggable {
         }
     }
 
+    /**
+     * Returns a Comparable for Examinables
+     * 
+     * @return
+     */
     public static Comparator<Examinable> getExaminableComparator() {
         return new ExaminableComparator();
     }
