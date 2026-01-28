@@ -12,6 +12,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 
+import com.geendutchman.lhf_mudv2.junction.StreamJunction;
+
 @SpringBootApplication
 public class LhfMudv2Application {
 
@@ -28,6 +30,8 @@ public class LhfMudv2Application {
             final String[] beanNames = ctx.getBeanDefinitionNames();
             Arrays.sort(beanNames);
             logger.atDebug().addKeyValue("beans", Arrays.toString(beanNames)).log("available beans");
+            StreamJunction junction = new StreamJunction(System.console().reader(), System.console().writer());
+            junction.run();
         };
     }
 
