@@ -1,0 +1,11 @@
+scopes:
+  - applications.commands
+  - bot
+permissions: 
+  integer: 292057787392
+  - view channels
+  - send messages
+  - send messages in threads
+  - manage messages
+  - manage threads
+url: https://discord.com/oauth2/authorize?client_id=1459061040359669831
