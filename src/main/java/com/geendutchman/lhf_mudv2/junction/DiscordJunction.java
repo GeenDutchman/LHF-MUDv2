@@ -1,8 +1,12 @@
 package com.geendutchman.lhf_mudv2.junction;
 
 import java.io.BufferedReader;
+import java.io.CharArrayWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
+
+import com.geendutchman.lhf_mudv2.execution.CommandHandler;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -11,6 +15,8 @@ import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+import picocli.CommandLine;
+import picocli.CommandLine.Model.CommandSpec;
 
 public class DiscordJunction {
     private JDA api;
@@ -34,6 +40,14 @@ public class DiscordJunction {
         this.api.addEventListener(new SoulJunction());
     }
 
+    public static class Outy extends PrintWriter {
+        private CharArrayWriter subWriter;
+
+        Outy() {
+            super(subWriter, true);
+        }
+    }
+
     public static class SoulJunction extends ListenerAdapter {
         @Override
         public void onMessageReceived(MessageReceivedEvent event) {
@@ -41,6 +55,9 @@ public class DiscordJunction {
                 return;
             Message message = event.getMessage();
             String content = message.getContentRaw();
+            CommandLine cli = CommandSpec.create()
+                    .addSubcommand("ping", new CommandHandler.PingCommandHandler().createCommandLine(null, null))
+                    .mixinStandardHelpOptions(true).commandLine().setOut;
             if (content.contains("ping")) {
                 MessageChannel channel = event.getChannel();
                 channel.sendMessage("Soul Pong!").queue();
