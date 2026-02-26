@@ -38,11 +38,13 @@
 	</dependencyManagement>
 	<dependencies>
 
-		<dependency>
-			<groupId>info.picocli</groupId>
-			<artifactId>picocli</artifactId>
-			<version>4.7.7</version>
-		</dependency>
+<!-- Source: https://mvnrepository.com/artifact/info.picocli/picocli-spring-boot-starter -->
+<dependency>
+    <groupId>info.picocli</groupId>
+    <artifactId>picocli-spring-boot-starter</artifactId>
+    <version>4.7.7</version>
+    <scope>compile</scope>
+</dependency>
 
 
 		<dependency>
