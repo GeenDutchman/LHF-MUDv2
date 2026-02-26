@@ -7,8 +7,10 @@ spring:
 logging:
   level: 
     com.geendutchman: INFO
+  pattern: 
+    console: "%clr(%d{${logging.pattern.dateformat:yyyy-MM-dd'T'HH:mm:ss.SSSXXX}}){faint} %clr(${logging.pattern.level:%5p}){} %clr(${PID}){magenta} %clr(--- %esb(){spring.application.name}%esb{spring.application.group}[%20.20t] ${logging.pattern.correlation:}){faint}%clr(%-40.40logger{39}){cyan} %clr(:){faint} %m %clr(%kvp %X %marker){faint} %n${logging.exception-conversion-word:%wEx}"
   structured:
     format:
-      # console: com.geendutchman.lhf_mudv2.display.YAMLFormatter
-      console: ecs
+      console: com.geendutchman.lhf_mudv2.display.YAMLFormatter
+      # console: ecs
       file: ecs
