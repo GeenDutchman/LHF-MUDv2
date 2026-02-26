@@ -24,8 +24,12 @@ import picocli.CommandLine.IExecutionStrategy;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.ParseResult;
+import picocli.CommandLine.Spec;
 
 public interface CommandHandler {
+    // @Spec
+    // public CommandSpec spec();
+
     public boolean isEnabledFor(final CommandContext context);
 
     public IExecutionStrategy createRunner(final CommandContext context, final MessageBus bus);
@@ -64,8 +68,8 @@ public interface CommandHandler {
                 @Override
                 public int execute(ParseResult parseResult) throws ExecutionException, ParameterException {
                     parseResult.asCommandLineList().getLast().getOut().println("pong");
-                    bus.publish(MessageContext.create(context.sender(), context.sender()),
-                            PlainEvent.asDescribed(RichOutput.builder().addString("pong").build()));
+                    // bus.publish(MessageContext.create(context.sender(), context.sender()),
+                    // PlainEvent.asDescribed(RichOutput.builder().addString("pong").build()));
                     return 0;
                 }
 
@@ -76,7 +80,7 @@ public interface CommandHandler {
         public CommandLine createCommandLine(CommandContext context, MessageBus bus) {
             CommandSpec spec = CommandSpec.create().name("ping");
             spec.usageMessage().description("Tests connectivity");
-            return spec.commandLine();
+            return new CommandLine(spec).setExecutionStrategy(this.createRunner(context, bus));
         }
 
     }
