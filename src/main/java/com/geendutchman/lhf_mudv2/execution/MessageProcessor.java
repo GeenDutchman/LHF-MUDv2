@@ -9,7 +9,7 @@ import com.github.f4b6a3.tsid.Tsid;
 import com.github.f4b6a3.tsid.TsidFactory;
 import com.google.common.base.Preconditions;
 
-public interface MessageProcessor {
+public interface MessageProcessor extends EventProcessor {
 
     public final static TsidFactory messageProcessorTsidFactory = TsidFactory
             .newInstance1024(Math.abs("message_processor".hashCode() % 1024));
@@ -69,5 +69,4 @@ public interface MessageProcessor {
 
     public abstract MessageProcessingResult process(MessageContext context, UserCommand userCommand);
 
-    public abstract MessageProcessingResult process(MessageContext context, Event event);
 }

@@ -23,6 +23,7 @@ import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
 import com.geendutchman.lhf_mudv2.entities.item.ItemQuery;
 import com.geendutchman.lhf_mudv2.execution.Command;
 import com.geendutchman.lhf_mudv2.execution.Event;
+import com.geendutchman.lhf_mudv2.execution.EventProcessor;
 import com.geendutchman.lhf_mudv2.execution.Event.PlainEvent;
 import com.geendutchman.lhf_mudv2.execution.LHFCommand;
 import com.geendutchman.lhf_mudv2.execution.Message;
@@ -216,10 +217,8 @@ public class CreatureController implements MessageProcessor {
                     if (creature.locale().isPresent()) {
                         yield this.forwardUserCommand(context, creature, exitCommand);
                     }
-                    this.onPlainEvent(context,
-                            Event.PlainEvent.asDescribed(
-                                    RichOutput.builder().addString("Goodbye,").addTaggable(creature).build()),
-                            creature);
+                    this.itemizedEventBehavior(creature).onPlainEvent(context, Event.PlainEvent
+                            .asDescribed(RichOutput.builder().addString("Goodbye,").addTaggable(creature).build()));
                 } finally {
                     this.creatureRepository.remove(creature);
                 }
@@ -290,59 +289,66 @@ public class CreatureController implements MessageProcessor {
             return;
         }
 
-        try (MDC.MDCCloseable resource = MDC.putCloseable("creatureID", creature.creatureID().toString())) {
+        ItemizedBehavior behavior = this.itemizedEventBehavior(creature);
+        if (behavior == null) {
+            behavior = new ItemizedBehavior(creature);
+        }
 
-            switch (event) {
-            case Event.PlainEvent plainEvent -> onPlainEvent(context, plainEvent, creature);
-            case Event.ItemChangedEvent itemChanged -> onItemChangedEvent(context, itemChanged, creature);
-            case Event.CreatureChangedEvent creatureChanged -> onCreatureChangedEvent(context, creatureChanged,
-                    creature);
-            case Event.InventoryEvent inventory -> onInventoryEvent(context, inventory, creature);
-            case Event.RoomChangedEvent roomChanged -> onRoomChangedEvent(context, roomChanged, creature);
-            case Event.RoomSeenEvent roomSeen -> onRoomSeenEvent(context, roomSeen, creature);
-            case Event.CreatureSeenEvent creatureSeen -> onCreatureSeenEvent(context, creatureSeen, creature);
-            case Event.ItemSeenEvent itemSeen -> onItemSeenEvent(context, itemSeen, creature);
-            case Event.SpokenEvent speaking -> onSpokenEvent(context, speaking, creature);
-            }
+        try (MDC.MDCCloseable resource = MDC.putCloseable("creatureID", creature.creatureID().toString())) {
+            EventProcessor.Itemized.distribute(behavior, context, event);
         }
     }
 
-    protected void onPlainEvent(MessageContext context, Event.PlainEvent event, Creature creature) {
-        // default does nothing
+    // Specifically a non-static class, this indicates separate reactions per event
+    // type
+    public class ItemizedBehavior implements EventProcessor.Itemized {
+        private final Creature creature;
+
+        public ItemizedBehavior(Creature creature) {
+            this.creature = creature;
+        }
+
+        public void onPlainEvent(MessageContext context, Event.PlainEvent event) {
+            // default does nothing
+        }
+
+        public void onItemChangedEvent(MessageContext context, Event.ItemChangedEvent event) {
+            // default does nothing
+        }
+
+        public void onCreatureChangedEvent(MessageContext context, Event.CreatureChangedEvent event) {
+            // default does nothing
+        }
+
+        public void onInventoryEvent(MessageContext context, Event.InventoryEvent event) {
+            // default does nothing
+        }
+
+        public void onRoomChangedEvent(MessageContext context, Event.RoomChangedEvent event) {
+            // TODO: do something when a creature enters the room
+        }
+
+        public void onRoomSeenEvent(MessageContext context, Event.RoomSeenEvent event) {
+            // default does nothing
+        }
+
+        public void onCreatureSeenEvent(MessageContext context, Event.CreatureSeenEvent event) {
+            // default does nothing
+        }
+
+        public void onItemSeenEvent(MessageContext context, Event.ItemSeenEvent event) {
+            // default does nothing
+        }
+
+        public void onSpokenEvent(MessageContext context, Event.SpokenEvent event) {
+            UserCommand.SayCommand response = new UserCommand.SayCommand(UserCommand.SayCommand.idFactory.create(),
+                    "I am not sure what to say to you but TODO.", Optional.of(event.speaker().name().toString()));
+            CreatureController.this.bus.send(MessageContext.create(creature.creatureID(), event.speaker()), response);
+        }
     }
 
-    protected void onItemChangedEvent(MessageContext context, Event.ItemChangedEvent event, Creature creature) {
-        // default does nothing
-    }
-
-    protected void onCreatureChangedEvent(MessageContext context, Event.CreatureChangedEvent event, Creature creature) {
-        // default does nothing
-    }
-
-    protected void onInventoryEvent(MessageContext context, Event.InventoryEvent event, Creature creature) {
-        // default does nothing
-    }
-
-    protected void onRoomChangedEvent(MessageContext context, Event.RoomChangedEvent event, Creature creature) {
-        // TODO: do something when a creature enters the room
-    }
-
-    protected void onRoomSeenEvent(MessageContext context, Event.RoomSeenEvent event, Creature creature) {
-        // default does nothing
-    }
-
-    protected void onCreatureSeenEvent(MessageContext context, Event.CreatureSeenEvent event, Creature creature) {
-        // default does nothing
-    }
-
-    protected void onItemSeenEvent(MessageContext context, Event.ItemSeenEvent event, Creature creature) {
-        // default does nothing
-    }
-
-    protected void onSpokenEvent(MessageContext context, Event.SpokenEvent event, Creature creature) {
-        UserCommand.SayCommand response = new UserCommand.SayCommand(UserCommand.SayCommand.idFactory.create(),
-                "I am not sure what to say to you but TODO.", Optional.of(event.speaker().name().toString()));
-        this.bus.send(MessageContext.create(creature.creatureID(), event.speaker()), response);
+    protected ItemizedBehavior itemizedEventBehavior(Creature creature) {
+        return new ItemizedBehavior(creature);
     }
 
 }
