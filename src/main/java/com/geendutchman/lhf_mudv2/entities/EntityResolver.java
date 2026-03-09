@@ -1,4 +1,4 @@
-package com.geendutchman.lhf_mudv2.entities.repository;
+package com.geendutchman.lhf_mudv2.entities;
 
 import java.net.URI;
 import java.util.Map.Entry;
@@ -22,6 +22,7 @@ import com.geendutchman.lhf_mudv2.entities.creatures.CreatureContainer;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureQuery;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureRepository;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID.EntityID;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery.EntityQuery;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
@@ -38,26 +39,67 @@ import com.github.f4b6a3.tsid.Tsid;
 import com.google.common.collect.ImmutableSortedSet;
 
 public interface EntityResolver {
-    SortedSet<Entity> resolve(URI uri);
+    public SortedSet<Entity> resolve(URI uri);
+
+    public default ItemID itemIDFromString(String value) {
+        return ItemID.fromString(value);
+    }
+
+    public default CreatureID creatureIDFromString(String value) {
+        return CreatureID.fromString(value);
+    }
+
+    public default RoomID roomIDFromString(String value) {
+        return RoomID.fromString(value);
+    }
+
+    public default IEntityID idFromString(String value) {
+        if (value == null) {
+            throw new IllegalArgumentException("Cannot create Entity ID from null string");
+        }
+        final EntityID delegate = EntityID.fromString(value);
+        // let's go with forgiveness rather than permission
+        try {
+            final ItemID itemID = new ItemID(delegate);
+            return itemID;
+        } catch (Exception e) {
+            // Nope, not that one
+        }
+        try {
+            final CreatureID creatureID = new CreatureID(delegate);
+            return creatureID;
+        } catch (Exception e) {
+            // Nope, not that one
+        }
+        try {
+            final RoomID roomID = new RoomID(delegate);
+            return roomID;
+        } catch (Exception e) {
+            // Nope, not that one
+        }
+        return delegate;
+    }
+
+    public Optional<Item> byItemID(ItemID id);
+
+    public Optional<Creature> byCreatureID(CreatureID id);
+
+    public Optional<Room> byRoomID(RoomID id);
 
     @Service
     public final static class DefaultEntityResolver implements EntityResolver {
 
-        @Autowired
-        private final ItemRepository items;
+        private final ItemContainer items;
 
-        @Autowired
-        private final CreatureRepository creatures;
+        private final CreatureContainer creatures;
 
-        @Autowired
-        private final RoomRepository rooms;
+        private final RoomContainer rooms;
 
-        @Autowired
         private final QueryCodec.Factory queryCodecFactory;
 
         private final transient SortedMap<PathPattern, BiFunction<PathPattern.PathRemainingMatchInfo, URI, SortedSet<Entity>>> routes;
 
-        @Autowired
+        @Autowired(required = true)
         public DefaultEntityResolver(QueryCodec.Factory queryCodecFactory, ItemRepository items,
                 CreatureRepository creatures, RoomRepository rooms) {
             this.queryCodecFactory = queryCodecFactory;
@@ -66,6 +108,16 @@ public interface EntityResolver {
             this.rooms = rooms;
             this.routes = this.createRoutes();
         }
+
+        // private DefaultEntityResolver(QueryCodec.Factory codecFactory, ItemContainer
+        // itemContainer,
+        // CreatureContainer creatureContainer, RoomContainer roomContainer) {
+        // this.queryCodecFactory = codecFactory;
+        // this.items = itemContainer;
+        // this.creatures = creatureContainer;
+        // this.rooms = roomContainer;
+        // this.routes = this.createRoutes();
+        // }
 
         private Optional<Item> getItem(PathRemainingMatchInfo info, URI uri, ItemContainer itemContainer) {
             if (itemContainer == null || uri == null || info == null) {
@@ -280,6 +332,30 @@ public interface EntityResolver {
                 }
             }
             return ImmutableSortedSet.of();
+        }
+
+        @Override
+        public Optional<Item> byItemID(ItemID id) {
+            if (this.items == null) {
+                return Optional.empty();
+            }
+            return this.items.byItemID(id);
+        }
+
+        @Override
+        public Optional<Creature> byCreatureID(CreatureID id) {
+            if (this.creatures == null) {
+                return Optional.empty();
+            }
+            return this.creatures.byCreatureID(id);
+        }
+
+        @Override
+        public Optional<Room> byRoomID(RoomID id) {
+            if (this.rooms == null) {
+                return Optional.empty();
+            }
+            return this.rooms.byRoomID(id);
         }
 
     }

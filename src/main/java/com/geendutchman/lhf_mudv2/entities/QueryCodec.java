@@ -1,4 +1,4 @@
-package com.geendutchman.lhf_mudv2.entities.repository;
+package com.geendutchman.lhf_mudv2.entities;
 
 import java.net.URI;
 import java.util.Map;
