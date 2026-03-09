@@ -25,6 +25,16 @@ public interface Item extends Entity {
                     "an item id must be about items, but was %s", delegate.entityClass());
         }
 
+        public static ItemID fromString(final String value) {
+            try {
+                final EntityID delegate = EntityID.fromString(value);
+                final ItemID id = new ItemID(delegate);
+                return id;
+            } catch (IllegalArgumentException | IllegalStateException e) {
+                throw new IllegalArgumentException("Cannot create Item ID", e);
+            }
+        }
+
         public static final Taggable.Tag ENTITY_CLASS_ITEM = new Tag("items");
         protected static final TsidFactory tsidFactory = TsidFactory
                 .newInstance1024(Math.abs("items".hashCode() % 1024));

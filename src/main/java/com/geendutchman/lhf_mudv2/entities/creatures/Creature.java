@@ -31,6 +31,16 @@ public interface Creature extends Entity, ItemContainer {
                     "a creature id should be about creatures, but was '%s'", delegate.entityClass());
         }
 
+        public static CreatureID fromString(final String value) {
+            try {
+                final EntityID delegate = EntityID.fromString(value);
+                final CreatureID id = new CreatureID(delegate);
+                return id;
+            } catch (IllegalArgumentException | IllegalStateException e) {
+                throw new IllegalArgumentException("Cannot create Creature ID", e);
+            }
+        }
+
         public static final Taggable.Tag ENTITY_CLASS_CREATURE = new Tag("creatures");
         protected static final TsidFactory tsidFactory = TsidFactory
                 .newInstance1024(Math.abs("creatures".hashCode() % 1024));

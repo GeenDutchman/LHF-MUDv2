@@ -28,6 +28,16 @@ public interface Room extends Entity, ItemContainer, CreatureContainer {
                     "an room id must be about rooms, but was %s", delegate.entityClass());
         }
 
+        public static RoomID fromString(final String value) {
+            try {
+                final EntityID delegate = EntityID.fromString(value);
+                final RoomID id = new RoomID(delegate);
+                return id;
+            } catch (IllegalArgumentException | IllegalStateException e) {
+                throw new IllegalArgumentException("Cannot create Room ID", e);
+            }
+        }
+
         public static final Taggable.Tag ENTITY_CLASS_ROOM = new Tag("rooms");
         protected static final TsidFactory tsidFactory = TsidFactory
                 .newInstance1024(Math.abs("rooms".hashCode() % 1024));
