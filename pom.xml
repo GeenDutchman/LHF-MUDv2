@@ -38,13 +38,13 @@
 	</dependencyManagement>
 	<dependencies>
 
-<!-- Source: https://mvnrepository.com/artifact/info.picocli/picocli-spring-boot-starter -->
-<dependency>
-    <groupId>info.picocli</groupId>
-    <artifactId>picocli-spring-boot-starter</artifactId>
-    <version>4.7.7</version>
-    <scope>compile</scope>
-</dependency>
+		<!-- Source: https://mvnrepository.com/artifact/info.picocli/picocli-spring-boot-starter -->
+		<dependency>
+			<groupId>info.picocli</groupId>
+			<artifactId>picocli-spring-boot-starter</artifactId>
+			<version>4.7.7</version>
+			<scope>compile</scope>
+		</dependency>
 
 
 		<dependency>
@@ -131,7 +131,7 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<!-- annotationProcessorPaths requires maven-compiler-plugin version 3.5 or higher -->
-				<version>${maven-compiler-plugin-version}</version>
+				<!-- <version>${maven-compiler-plugin-version}</version> -->
 				<configuration>
 					<annotationProcessorPaths>
 						<path>
