@@ -63,10 +63,6 @@ public interface MessageProcessor extends EventProcessor {
 
     public abstract MessageProcessingResult process(MessageContext context, Message message);
 
-    public abstract MessageProcessingResult process(MessageContext context, Command command);
-
     public abstract MessageProcessingResult process(MessageContext context, LHFCommand lhfCommand);
-
-    public abstract MessageProcessingResult process(MessageContext context, UserCommand userCommand);
 
 }
