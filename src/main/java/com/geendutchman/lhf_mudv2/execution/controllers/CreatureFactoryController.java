@@ -1,5 +1,7 @@
 package com.geendutchman.lhf_mudv2.execution.controllers;
 
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -12,14 +14,12 @@ import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.room.Room;
 import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
 import com.geendutchman.lhf_mudv2.entities.room.RoomEffect;
-import com.geendutchman.lhf_mudv2.execution.Command;
 import com.geendutchman.lhf_mudv2.execution.Event;
 import com.geendutchman.lhf_mudv2.execution.LHFCommand;
 import com.geendutchman.lhf_mudv2.execution.Message;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor;
-import com.geendutchman.lhf_mudv2.execution.UserCommand;
 import com.github.f4b6a3.tsid.Tsid;
 import com.github.f4b6a3.tsid.TsidFactory;
 import com.google.common.base.Preconditions;
@@ -68,6 +68,7 @@ public class CreatureFactoryController implements MessageProcessor {
         return switch (lhfCommand) {
         case LHFCommand.ReassignProcessor rp -> MessageProcessingResult
                 .Failed("Only handles create creatures commands");
+        case LHFCommand.LineCommand lc -> MessageProcessingResult.Failed("Only handles create creatures commands");
         case LHFCommand.BuilderFactoryCommand bfc -> {
             yield switch (bfc) {
             case LHFCommand.BuilderFactoryCommand.CreateItemsForCreatureCommand cifcc -> MessageProcessingResult
@@ -79,7 +80,9 @@ public class CreatureFactoryController implements MessageProcessor {
                 if (made == null) {
                     yield MessageProcessingResult.Failed("created null creature");
                 }
-                yield bus.send(MessageContext.create(id, forRoom),
+                yield bus.send(
+                        MessageContext.builder().setSender(id).setDestination(forRoom).setRoom(Optional.empty())
+                                .build(),
                         new LHFCommand.ChangeEntityCommand.ChangeRoomCommand(
                                 LHFCommand.ChangeEntityCommand.ChangeRoomCommand.idFactory.create(),
                                 ImmutableList.of(RoomEffect.builder().addDeltas(Room.Delta.ofCreatureToAdd(made))
@@ -99,26 +102,11 @@ public class CreatureFactoryController implements MessageProcessor {
     }
 
     @Override
-    public MessageProcessingResult process(MessageContext context, Command command) {
-        return switch (command) {
-        case LHFCommand l -> this.process(context, l);
-        case null -> MessageProcessingResult.Failed("Only handles create creatures commands");
-        default -> this.process(context, (Message) command);
-
-        };
-    }
-
-    @Override
     public MessageProcessingResult process(MessageContext context, Message message) {
         if (message == null) {
             return MessageProcessingResult.Failed("cannot handle null message");
         }
         return MessageProcessingResult.Failed("Only handles create creatures commands");
-    }
-
-    @Override
-    public MessageProcessingResult process(MessageContext context, UserCommand userCommand) {
-        return this.process(context, (Message) userCommand);
     }
 
     @Override

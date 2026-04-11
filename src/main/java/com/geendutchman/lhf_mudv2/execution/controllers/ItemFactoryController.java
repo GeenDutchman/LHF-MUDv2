@@ -15,14 +15,12 @@ import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.room.Room;
 import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
 import com.geendutchman.lhf_mudv2.entities.room.RoomEffect;
-import com.geendutchman.lhf_mudv2.execution.Command;
 import com.geendutchman.lhf_mudv2.execution.Event;
 import com.geendutchman.lhf_mudv2.execution.LHFCommand;
 import com.geendutchman.lhf_mudv2.execution.Message;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor;
-import com.geendutchman.lhf_mudv2.execution.UserCommand;
 import com.github.f4b6a3.tsid.Tsid;
 import com.github.f4b6a3.tsid.TsidFactory;
 import com.google.common.base.Preconditions;
@@ -71,6 +69,7 @@ public class ItemFactoryController implements MessageProcessor {
         return switch (lhfCommand) {
         case LHFCommand.ReassignProcessor rp -> MessageProcessingResult
                 .Failed("only processes builder factory commands");
+        case LHFCommand.LineCommand lc -> MessageProcessingResult.Failed("Only processes builder factory commands");
         case LHFCommand.BuilderFactoryCommand bfc -> {
             yield switch (bfc) {
             case LHFCommand.BuilderFactoryCommand.CreateCreaturesForRoomCommand ccfrc -> MessageProcessingResult
@@ -80,7 +79,7 @@ public class ItemFactoryController implements MessageProcessor {
                 if (made == null) {
                     yield MessageProcessingResult.Failed("created null item");
                 }
-                yield bus.send(MessageContext.create(id, forCreature),
+                yield bus.send(MessageContext.builder().setSender(id).setDestination(forCreature).build(),
                         new LHFCommand.ChangeEntityCommand.ChangeCreatureCommand(
                                 LHFCommand.ChangeEntityCommand.ChangeCreatureCommand.idFactory.create(),
                                 ImmutableList.of(CreatureEffect.builder().addDeltas(Creature.Delta.ofItemToAdd(made))
@@ -94,7 +93,7 @@ public class ItemFactoryController implements MessageProcessor {
                 if (made == null) {
                     yield MessageProcessingResult.Failed("created null item");
                 }
-                yield bus.send(MessageContext.create(id, forRoom),
+                yield bus.send(MessageContext.builder().setSender(id).setDestination(forRoom).build(),
                         new LHFCommand.ChangeEntityCommand.ChangeRoomCommand(
                                 LHFCommand.ChangeEntityCommand.ChangeRoomCommand.idFactory.create(),
                                 ImmutableList.of(RoomEffect.builder().addDeltas(Room.Delta.ofItemToAdd(made))
@@ -114,26 +113,11 @@ public class ItemFactoryController implements MessageProcessor {
     }
 
     @Override
-    public MessageProcessingResult process(MessageContext context, Command command) {
-        return switch (command) {
-        case LHFCommand l -> this.process(context, l);
-        case null -> MessageProcessingResult.Failed("Only handles create items commands");
-        default -> this.process(context, (Message) command);
-
-        };
-    }
-
-    @Override
     public MessageProcessingResult process(MessageContext context, Message message) {
         if (message == null) {
             return MessageProcessingResult.Failed("cannot handle null message");
         }
         return MessageProcessingResult.Failed("Only handles create items commands");
-    }
-
-    @Override
-    public MessageProcessingResult process(MessageContext context, UserCommand userCommand) {
-        return this.process(context, (Message) userCommand);
     }
 
     @Override

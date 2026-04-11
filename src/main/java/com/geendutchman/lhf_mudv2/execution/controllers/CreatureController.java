@@ -1,6 +1,7 @@
 package com.geendutchman.lhf_mudv2.execution.controllers;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,30 +12,21 @@ import org.springframework.stereotype.Component;
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
-import com.geendutchman.lhf_mudv2.entities.creatures.Creature.CreatureID;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature.Delta;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureEffect;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureRepository;
-import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
-import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery;
-import com.geendutchman.lhf_mudv2.entities.entity.IEntityQuery.EntityQuery;
-import com.geendutchman.lhf_mudv2.entities.item.Item;
-import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
-import com.geendutchman.lhf_mudv2.entities.item.ItemQuery;
-import com.geendutchman.lhf_mudv2.execution.Command;
 import com.geendutchman.lhf_mudv2.execution.Event;
 import com.geendutchman.lhf_mudv2.execution.EventProcessor;
-import com.geendutchman.lhf_mudv2.execution.Event.PlainEvent;
 import com.geendutchman.lhf_mudv2.execution.LHFCommand;
 import com.geendutchman.lhf_mudv2.execution.Message;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor;
-import com.geendutchman.lhf_mudv2.execution.UserCommand;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
 import jakarta.annotation.PostConstruct;
+import picocli.CommandLine;
 
 @Component
 public class CreatureController implements MessageProcessor {
@@ -44,13 +36,18 @@ public class CreatureController implements MessageProcessor {
     @Autowired
     protected final CreatureRepository creatureRepository;
 
+    @Autowired
+    protected final Function<MessageContext, CommandLine> generator;
+
     private final MessageProcessorID processorID;
 
     protected final Logger logger;
 
-    CreatureController(@Autowired MessageBus bus, @Autowired CreatureRepository repo) {
+    CreatureController(@Autowired MessageBus bus, @Autowired CreatureRepository repo,
+            @Autowired Function<MessageContext, CommandLine> generator) {
         Preconditions.checkNotNull(bus, "message bus should not be null");
         Preconditions.checkNotNull(repo, "Creature repository should not be null");
+        Preconditions.checkNotNull(generator, "Command line generator should not be null");
         Examinable.Name name = this.name();
         if (name == null) {
             name = new Examinable.Name("Creature Controller");
@@ -58,6 +55,7 @@ public class CreatureController implements MessageProcessor {
         this.processorID = new MessageProcessorID(name, MessageProcessor.messageProcessorTsidFactory.create());
         this.bus = bus;
         this.creatureRepository = repo;
+        this.generator = generator;
         this.logger = LoggerFactory.getLogger(String.format("%s.%s", this.getClass().getName(), name));
     }
 
@@ -85,31 +83,17 @@ public class CreatureController implements MessageProcessor {
             return MessageProcessingResult.Failed("cannot handle null message");
         }
         return switch (message) {
-        case Command c -> this.process(context, c);
+        case LHFCommand c -> this.process(context, c);
         case Event e -> this.process(context, e);
         default -> MessageProcessingResult.Failed("unknown message type");
-        };
-    }
-
-    @Override
-    public final MessageProcessingResult process(MessageContext context, Command command) {
-        if (command == null) {
-            return MessageProcessingResult.Failed("cannot handle null command");
-        }
-
-        return switch (command) {
-        case UserCommand u -> this.process(context, u);
-        case LHFCommand l -> this.process(context, l);
         };
     }
 
     protected MessageProcessingResult processChangeCreatureCommand(MessageContext context,
             LHFCommand.ChangeEntityCommand.ChangeCreatureCommand changeCreatureCommand, Creature creature) {
         Preconditions.checkNotNull(creature, "creature should not be null");
-        Preconditions.checkArgument(
-                creature.identifier().equals(context.getDestinationTrace()
-                        .getOrDefault(CreatureID.ENTITY_CLASS_CREATURE, IEntityID.NULL_ID)),
-                "creature should be identified in the context trace");
+        Preconditions.checkArgument(creature.identifier().equals(context.destination()),
+                "should be directed to this creature");
         final ImmutableList<CreatureEffect> effects = changeCreatureCommand.effects();
         if (effects != null) {
             for (final CreatureEffect effect : effects) {
@@ -127,12 +111,15 @@ public class CreatureController implements MessageProcessor {
                         .addString("Something has changed with").addTaggable(creature).build()));
 
                 if (context.replyTo().isPresent()) {
-                    bus.publish(context.forward(context.replyTo().orElse(context.getSender())),
+                    bus.publish(
+                            MessageContext.builder().setSender(creature.identifier())
+                                    .setDestination(context.replyTo().orElse(context.getSender())).build(),
                             Event.CreatureChangedEvent.ofCreatureWithChangeDescription(creature, out.build()));
                 } else {
                     RichOutput description = out.build();
                     Event event = Event.CreatureChangedEvent.ofCreatureWithChangeDescription(creature, description);
-                    bus.publish(MessageContext.create(creature.creatureID(), context.getSender()), event);
+                    bus.publish(MessageContext.builder().setSender(creature.creatureID())
+                            .setDestination(context.getSender()).build(), event);
                     this.process(context, event);
                 }
             }
@@ -146,16 +133,15 @@ public class CreatureController implements MessageProcessor {
             return MessageProcessingResult.Failed("cannot handle null lhf command");
         }
 
-        final Optional<Creature> forCreature = this.creatureRepository.queryOneCreature(IEntityQuery
-                .entityQueryBuilder()
-                .setIdentifier(
-                        context.getDestinationTrace().getOrDefault(CreatureID.ENTITY_CLASS_CREATURE, IEntityID.NULL_ID))
-                .build());
+        final Optional<Creature> forCreature = context.creature();
         if (forCreature.isEmpty()) {
             return MessageProcessingResult.Failed("addressed creature does not exist");
         }
 
         final Creature creature = forCreature.get();
+        if (!creature.identifier().equals(context.destination())) {
+            return MessageProcessingResult.Failed("addressed creature not in context");
+        }
 
         return switch (lhfCommand) {
         case LHFCommand.ReassignProcessor rp -> MessageProcessingResult.Failed("cannot handle processor reassignment");
@@ -169,98 +155,19 @@ public class CreatureController implements MessageProcessor {
             case LHFCommand.ChangeEntityCommand.ChangeCreatureCommand ccc -> this.processChangeCreatureCommand(context,
                     ccc, creature);
             };
-
         }
-
-        };
-    }
-
-    protected MessageProcessingResult forwardUserCommand(MessageContext context, Creature creature,
-            UserCommand userCommand) {
-        final IEntityID toForward = creature.locale().orElse(IEntityID.NULL_ID);
-        final MessageProcessor processor = bus.processorForEntity(toForward);
-        if (processor == null) {
-            return MessageProcessingResult.Failed("no handler to forward request");
-        }
-        try (MDC.MDCCloseable asCloseable = MDC.putCloseable("processorId",
-                processor.messageProcessorID().toString())) {
-            return processor.process(context.forward(toForward), userCommand);
-        }
-    }
-
-    @Override
-    public final MessageProcessingResult process(MessageContext context, UserCommand userCommand) {
-        if (userCommand == null) {
-            return MessageProcessingResult.Failed("cannot handle null user command");
-        }
-
-        final Optional<Creature> forCreature = this.creatureRepository.queryOneCreature(IEntityQuery
-                .entityQueryBuilder()
-                .setIdentifier(
-                        context.getDestinationTrace().getOrDefault(CreatureID.ENTITY_CLASS_CREATURE, IEntityID.NULL_ID))
-                .build());
-        if (forCreature.isEmpty()) {
-            return MessageProcessingResult.Failed("addressed creature does not exist");
-        }
-
-        final Creature creature = forCreature.get();
-
-        return switch (userCommand) {
-        case UserCommand.SeeCommand seeCommand -> this.forwardUserCommand(context, creature, seeCommand);
-        case UserCommand.SayCommand sayCommand -> this.forwardUserCommand(context, creature, sayCommand);
-        case UserCommand.TakeCommand takeCommand -> this.forwardUserCommand(context, creature, takeCommand);
-        case UserCommand.DropCommand dropCommand -> this.forwardUserCommand(context, creature, dropCommand);
-        case UserCommand.GoCommand goCommand -> this.forwardUserCommand(context, creature, goCommand);
-        case UserCommand.ExitCommand exitCommand -> {
-            if (context.getSender().compareTo(creature.identifier()) == 0) {
-                try {
-                    if (creature.locale().isPresent()) {
-                        yield this.forwardUserCommand(context, creature, exitCommand);
-                    }
-                    this.itemizedEventBehavior(creature).onPlainEvent(context, Event.PlainEvent
-                            .asDescribed(RichOutput.builder().addString("Goodbye,").addTaggable(creature).build()));
-                } finally {
-                    this.creatureRepository.remove(creature);
-                }
-                yield MessageProcessingResult.HANDLED;
-            } else if (context.getSender().entityClass().equals(Item.ItemID.ENTITY_CLASS_ITEM)) {
-                ItemContainer itemContainer = creature
-                        .queryItems(ItemQuery.builder().setIdentifier(Optional.of(context.getSender())).build());
-                RichOutput.Builder out = RichOutput.builder().setIsAndLast(true).setSequenceName("Removed Items");
-                boolean hasItems = false;
-                for (final Item item : itemContainer.items()) {
-                    if (item == null) {
-                        continue;
-                    }
-                    hasItems = true;
-                    creature.applyDelta(Creature.Delta.ofItemToRemove(item));
-                    out.addTaggable(item);
-                }
-                if (hasItems) {
-                    bus.publish(MessageContext.create(creature.identifier(), creature.identifier()),
-                            PlainEvent.asDescribed(RichOutput.builder().addString("The following have exited")
-                                    .addTaggable(creature).addOutput(out.build()).build()));
-                }
-                if (creature.locale().isPresent()) {
-                    yield this.forwardUserCommand(context, creature, exitCommand);
-                }
-                yield MessageProcessingResult.HANDLED;
+        case LHFCommand.LineCommand lc -> {
+            CommandLine line = this.generator.apply(null);
+            // TODO deal with stdout and stderr
+            if (line == null) {
+                yield MessageProcessingResult.Failed("Could not produce a command line");
             }
-            yield MessageProcessingResult.Failed("this creature cannot handle requests to exit");
+            line.execute(lc.commandArray());
+            yield MessageProcessingResult.HANDLED;
+        }
 
-        }
-        case UserCommand.StatusCommand statusCommand -> {
-            bus.publish(MessageContext.create(creature.identifier(), creature.creatureID()),
-                    new Event.CreatureSeenEvent(creature));
-            yield MessageProcessingResult.HANDLED;
-        }
-        case UserCommand.InventoryCommand inventoryCommand -> {
-            bus.publish(MessageContext.create(creature.identifier(), creature.creatureID()),
-                    Event.InventoryEvent.ofCreature(creature));
-            yield MessageProcessingResult.HANDLED;
-        }
         };
-    };
+    }
 
     @Override
     public final MessageProcessingResult process(MessageContext context, Event event) {
@@ -268,18 +175,23 @@ public class CreatureController implements MessageProcessor {
             return MessageProcessingResult.Failed("cannot handle null event");
         }
 
-        Optional<Creature> forCreature = this.creatureRepository
-                .queryOneCreature(IEntityQuery.entityQueryBuilder().setIdentifier(context.destination()).build());
+        final Optional<Creature> forCreature = context.creature();
         if (forCreature.isEmpty()) {
             return MessageProcessingResult.Failed("addressed creature does not exist");
         }
 
-        this.processEvent(context, event, forCreature.get());
+        final Creature creature = forCreature.get();
+        if (!creature.identifier().equals(context.destination())) {
+            return MessageProcessingResult.Failed("addressed creature not in context");
+        }
 
-        forCreature.get().items().stream()
-                .filter(context.getForwardingRestrictions().orElse(EntityQuery.builder().build())).forEach(item -> {
-                    bus.publish(context.forwardCopy(item.itemID()), event);
-                });
+        this.processEvent(context, event, creature);
+
+        forCreature.get().items().stream().forEach(item -> {
+            bus.publish(
+                    MessageContext.builder().setSender(creature.creatureID()).setDestination(item.identifier()).build(),
+                    event);
+        });
 
         return MessageProcessingResult.HANDLED;
     }
@@ -341,9 +253,12 @@ public class CreatureController implements MessageProcessor {
         }
 
         public void onSpokenEvent(MessageContext context, Event.SpokenEvent event) {
-            UserCommand.SayCommand response = new UserCommand.SayCommand(UserCommand.SayCommand.idFactory.create(),
-                    "I am not sure what to say to you but TODO.", Optional.of(event.speaker().name().toString()));
-            CreatureController.this.bus.send(MessageContext.create(creature.creatureID(), event.speaker()), response);
+            CreatureController.this.process(
+                    MessageContext.builder().setSender(creature.creatureID()).setDestination(event.speaker()).build(),
+                    new LHFCommand.LineCommand(LHFCommand.idFactory.create(),
+                            String.format("say \"I am not sure what to say to you but TODO.\" to \"%s\"",
+                                    event.speaker().name()),
+                            false));
         }
     }
 
