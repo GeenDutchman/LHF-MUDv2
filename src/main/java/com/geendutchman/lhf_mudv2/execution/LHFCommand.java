@@ -1,5 +1,9 @@
 package com.geendutchman.lhf_mudv2.execution;
 
+import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature.CreatureID;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureEffect;
@@ -14,14 +18,42 @@ import com.github.f4b6a3.tsid.TsidFactory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
-public sealed interface LHFCommand extends Command {
+public sealed interface LHFCommand extends Message, Comparable<LHFCommand> {
     public static final TsidFactory idFactory = TsidFactory.newInstance1024(Math.abs("lhfcommands".hashCode() % 1024));
+
+    @Override
+    public default int compareTo(LHFCommand o) {
+        return this.tsid().compareTo(o.tsid());
+    }
 
     public record ReassignProcessor(Tsid tsid, IEntityID entity, MessageProcessorID processor) implements LHFCommand {
         public ReassignProcessor {
             Preconditions.checkNotNull(tsid, "tsid must not be null");
             Preconditions.checkNotNull(entity, "must reassign an entity");
             Preconditions.checkNotNull(processor, "must assign the entity a processor");
+        }
+    }
+
+    public record LineCommand(Tsid tsid, String command, boolean autocomplete) implements LHFCommand {
+        private final static Pattern splitter = Pattern.compile("\"((?:\"|[^\"])*?)\"|([^ ]+)");
+
+        public LineCommand {
+            Preconditions.checkNotNull(tsid, "tsid must not be null");
+            Preconditions.checkNotNull(command, "command must not be null");
+        }
+
+        public String[] commandArray() {
+            final Matcher splitten = splitter.matcher(command);
+            final ArrayList<String> argsAL = new ArrayList<>();
+            while (splitten.find()) {
+                if (splitten.group(1) != null) {
+                    argsAL.add(splitten.group(1));
+                } else {
+                    argsAL.add(splitten.group(2));
+                }
+            }
+            final String[] args = argsAL.toArray(new String[0]);
+            return args;
         }
     }
 
