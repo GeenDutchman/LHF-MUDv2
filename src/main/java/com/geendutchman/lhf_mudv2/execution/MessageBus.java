@@ -63,7 +63,7 @@ public interface MessageBus {
 
     public abstract MessageProcessingResult publish(final MessageContext context, final Event event);
 
-    public abstract MessageProcessingResult send(final MessageContext context, final Command command);
+    public abstract MessageProcessingResult send(final MessageContext context, final LHFCommand command);
 
     public abstract class AbstractMessageBus implements MessageBus {
         final private ConcurrentMap<IEntityID, MessageProcessorID> entityToProcessor = new ConcurrentHashMap<>();
@@ -74,9 +74,12 @@ public interface MessageBus {
 
         @Autowired
         private Duration timing;
+        @Autowired
+        private final MessageContextInflator inflator;
 
-        protected AbstractMessageBus(@Autowired Duration timing) {
+        protected AbstractMessageBus(@Autowired Duration timing, @Autowired MessageContextInflator inflator) {
             this.timing = timing;
+            this.inflator = inflator;
             logger.atLevel(Level.TRACE).log("initialized");
         }
 
@@ -147,7 +150,7 @@ public interface MessageBus {
         }
 
         @Override
-        public MessageProcessingResult send(MessageContext context, Command command) {
+        public MessageProcessingResult send(MessageContext context, LHFCommand command) {
             if (command == null) {
                 return MessageProcessingResult.Failed("cannot send null command");
             }
@@ -174,13 +177,19 @@ public interface MessageBus {
             return dproc;
         }
 
-        private MessageProcessingResult handle(final MessageContext context, final Message message) {
+        private MessageProcessingResult handle(final MessageContext ctx, final Message message) {
             if (message == null) {
                 return MessageProcessingResult.Failed("cannot handle null message");
             }
-            if (context == null) {
+            if (ctx == null) {
                 return MessageProcessingResult.Failed("cannot direct message with null context");
             }
+
+            MessageContext ctx1 = ctx;
+            if (this.inflator != null) {
+                ctx1 = this.inflator.inflate(ctx);
+            }
+            final MessageContext context = ctx1;
 
             final Map<String, String> preMDC = MDC.getCopyOfContextMap();
 
@@ -219,7 +228,7 @@ public interface MessageBus {
                     });
                     MDC.setContextMap(preMDC);
                     return MessageProcessingResult.HANDLED;
-                } else if (message instanceof Command asCommand) {
+                } else if (message instanceof LHFCommand asCommand) {
                     final MessageProcessingResult recieved = executor.submit(() -> {
                         MDC.setContextMap(asMap);
                         MessageProcessingResult value = NO_RESULT;
@@ -266,8 +275,8 @@ public interface MessageBus {
     @Primary
     public final class VirtualMessageBus extends AbstractMessageBus {
 
-        public VirtualMessageBus(@Autowired Duration timing) {
-            super(timing);
+        public VirtualMessageBus(@Autowired Duration timing, @Autowired MessageContextInflator inflator) {
+            super(timing, inflator);
         }
 
         @Override
@@ -282,8 +291,8 @@ public interface MessageBus {
 
         private final ExecutorService service;
 
-        public QueuedMessageBus(@Autowired Duration timing) {
-            super(timing);
+        public QueuedMessageBus(@Autowired Duration timing, @Autowired MessageContextInflator inflator) {
+            super(timing, inflator);
             final ThreadFactory factory = Thread.ofVirtual().name(this.getClass().getName(), 0).factory();
             this.service = Executors.newSingleThreadExecutor(factory);
         }
