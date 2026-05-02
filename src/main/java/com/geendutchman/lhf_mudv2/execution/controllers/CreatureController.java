@@ -14,7 +14,6 @@ import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature.Delta;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureEffect;
-import com.geendutchman.lhf_mudv2.entities.creatures.CreatureRepository;
 import com.geendutchman.lhf_mudv2.execution.Event;
 import com.geendutchman.lhf_mudv2.execution.EventProcessor;
 import com.geendutchman.lhf_mudv2.execution.LHFCommand;
@@ -34,19 +33,14 @@ public class CreatureController implements MessageProcessor {
     protected final MessageBus bus;
 
     @Autowired
-    protected final CreatureRepository creatureRepository;
-
-    @Autowired
     protected final Function<MessageContext, CommandLine> generator;
 
     private final MessageProcessorID processorID;
 
     protected final Logger logger;
 
-    CreatureController(@Autowired MessageBus bus, @Autowired CreatureRepository repo,
-            @Autowired Function<MessageContext, CommandLine> generator) {
+    CreatureController(@Autowired MessageBus bus, @Autowired Function<MessageContext, CommandLine> generator) {
         Preconditions.checkNotNull(bus, "message bus should not be null");
-        Preconditions.checkNotNull(repo, "Creature repository should not be null");
         Preconditions.checkNotNull(generator, "Command line generator should not be null");
         Examinable.Name name = this.name();
         if (name == null) {
@@ -54,7 +48,6 @@ public class CreatureController implements MessageProcessor {
         }
         this.processorID = new MessageProcessorID(name, MessageProcessor.messageProcessorTsidFactory.create());
         this.bus = bus;
-        this.creatureRepository = repo;
         this.generator = generator;
         this.logger = LoggerFactory.getLogger(String.format("%s.%s", this.getClass().getName(), name));
     }
@@ -157,7 +150,7 @@ public class CreatureController implements MessageProcessor {
             };
         }
         case LHFCommand.LineCommand lc -> {
-            CommandLine line = this.generator.apply(null);
+            CommandLine line = this.generator.apply(context);
             // TODO deal with stdout and stderr
             if (line == null) {
                 yield MessageProcessingResult.Failed("Could not produce a command line");

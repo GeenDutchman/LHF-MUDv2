@@ -3,23 +3,39 @@ package com.geendutchman.lhf_mudv2.execution;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Consumer;
 
+import com.geendutchman.lhf_mudv2.display.Examinable;
+import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
+import com.geendutchman.lhf_mudv2.entities.creatures.Creature.CreatureID;
+import com.geendutchman.lhf_mudv2.entities.creatures.CreatureContainer;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
+import com.geendutchman.lhf_mudv2.entities.entity.EntityContainer;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
+import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
+import com.geendutchman.lhf_mudv2.entities.item.ItemContainer;
 import com.geendutchman.lhf_mudv2.entities.room.Room;
+import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
+import com.geendutchman.lhf_mudv2.entities.room.RoomContainer;
 import com.github.f4b6a3.tsid.Tsid;
 import com.github.f4b6a3.tsid.TsidFactory;
 import com.google.auto.value.AutoBuilder;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 
-public final class MessageContext implements Serializable {
+public final class MessageContext
+        implements Serializable, ItemContainer, CreatureContainer, RoomContainer, EntityContainer {
     private static final TsidFactory idFactory = TsidFactory
             .newInstance1024(Math.abs("messageContext".hashCode() % 1024));
+    private static final Name contextName = Name.fromCharSequence("MessageContext");
+    private static final Tag contextTag = new Tag("MessageContext");
     private final Tsid tsid;
     private final IEntityID sender;
     private final IEntityID destination;
@@ -187,6 +203,117 @@ public final class MessageContext implements Serializable {
 
     public ImmutableBiMap<String, Entity> getOthers() {
         return others;
+    }
+
+    @Override
+    public ImmutableSortedMap<String, String> attributes() {
+        return Examinable.BASIC_TAGGABLE_ATTRIBUTES;
+    }
+
+    @Override
+    public Optional<Item> byItemID(ItemID id) {
+        return this.items().stream().filter(i -> i != null && id != null && id.compareTo(i.identifier()) == 0)
+                .findFirst();
+    }
+
+    @Override
+    public boolean hasItem(Item item) {
+        return this.items().contains(item);
+    }
+
+    @Override
+    public ImmutableSet<Item> items() {
+        ImmutableSet.Builder<Item> items = ImmutableSet.builder();
+        this.item.ifPresent(i -> items.add(i));
+        this.creature.ifPresent(c -> items.addAll(c.items()));
+        this.room.ifPresent(r -> items.addAll(r.items()));
+        this.others.values().forEach(e -> {
+            if (e instanceof Item i) {
+                items.add(i);
+            }
+        });
+        return items.build();
+    }
+
+    @Override
+    public Name name() {
+        return MessageContext.contextName;
+    }
+
+    @Override
+    public Optional<Creature> byCreatureID(CreatureID id) {
+        return this.creatures().stream().filter(c -> c != null && id != null && c.identifier().compareTo(id) == 0)
+                .findFirst();
+    }
+
+    @Override
+    public ImmutableSet<Creature> creatures() {
+        ImmutableSet.Builder<Creature> creatures = ImmutableSet.builder();
+        this.creature.ifPresent(c -> creatures.add(c));
+        this.room.ifPresent(r -> creatures.addAll(r.creatures()));
+        this.others.values().forEach(e -> {
+            if (e instanceof Creature c) {
+                creatures.add(c);
+            }
+        });
+        return creatures.build();
+    }
+
+    @Override
+    public boolean hasCreature(Creature creature) {
+        return this.creatures().contains(creature);
+    }
+
+    @Override
+    public Optional<Room> byRoomID(RoomID id) {
+        return Optional.ofNullable(this.roomMap().getOrDefault(id, null));
+    }
+
+    @Override
+    public boolean hasRoom(Room room) {
+        return this.roomMap().containsValue(room);
+    }
+
+    @Override
+    public ImmutableBiMap<RoomID, Room> roomMap() {
+        ImmutableBiMap.Builder<RoomID, Room> builder = ImmutableBiMap.builder();
+        this.room.ifPresent(r -> builder.put(r.roomID(), r));
+        this.others.values().forEach(e -> {
+            if (e instanceof Room r) {
+                builder.put(r.roomID(), r);
+            }
+        });
+        return builder.build();
+    }
+
+    @Override
+    public ImmutableSet<Room> rooms() {
+        return this.roomMap().values();
+    }
+
+    @Override
+    public ConcurrentNavigableMap<IEntityID, Entity> entities() {
+        ConcurrentSkipListMap<IEntityID, Entity> mapping = new ConcurrentSkipListMap<>();
+        this.items().forEach(i -> mapping.put(i.identifier(), i));
+        this.creatures().forEach(c -> mapping.put(c.identifier(), c));
+        mapping.putAll(this.roomMap());
+        this.others.values().forEach(o -> mapping.put(o.identifier(), o));
+        return mapping;
+    }
+
+    @Override
+    public String content() {
+        return String.format("%s : %s -> %s", this.tsid, this.sender, this.destination);
+    }
+
+    @Override
+    public Optional<RichOutput> description() {
+        return Optional.empty();
+    }
+
+    @Override
+    public Tag tag() {
+        return MessageContext.contextTag;
     }
 
     @Override
