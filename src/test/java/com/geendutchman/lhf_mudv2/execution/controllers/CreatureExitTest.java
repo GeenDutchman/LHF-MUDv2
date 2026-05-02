@@ -17,9 +17,9 @@ import com.geendutchman.lhf_mudv2.entities.creatures.CreatureRepository;
 import com.geendutchman.lhf_mudv2.entities.creatures.Faction;
 import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.item.ItemRepository;
+import com.geendutchman.lhf_mudv2.execution.LHFCommand;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
-import com.geendutchman.lhf_mudv2.execution.UserCommand;
 import com.google.common.truth.Truth;
 
 @SpringBootTest
@@ -68,9 +68,10 @@ public class CreatureExitTest extends ItemExitTest {
     @Test
     void testCreatureExit() {
         CreatureContainerSubject.assertThat(creatureRepository).hasCreature(creature);
-        final MessageContext context = MessageContext.create(creature.creatureID(), creature.creatureID());
-        final UserCommand.ExitCommand exitCommand = new UserCommand.ExitCommand(
-                UserCommand.ExitCommand.idFactory.create());
+        final MessageContext context = MessageContext.builder().setSender(creature.creatureID())
+                .setDestination(creature.creatureID()).build();
+        final LHFCommand.LineCommand exitCommand = new LHFCommand.LineCommand(LHFCommand.idFactory.create(), "exit",
+                false);
         final MessageProcessingResult result = creatureController.process(context, exitCommand);
         Truth.assertThat(result).isEqualTo(MessageProcessingResult.HANDLED);
         CreatureContainerSubject.assertThat(creatureRepository).doesNotHaveCreature(creature);

@@ -207,7 +207,7 @@ public class CreatureController implements MessageProcessor {
     // Specifically a non-static class, this indicates separate reactions per event
     // type
     public class ItemizedBehavior implements EventProcessor.Itemized {
-        private final Creature creature;
+        protected final Creature creature;
 
         public ItemizedBehavior(Creature creature) {
             this.creature = creature;

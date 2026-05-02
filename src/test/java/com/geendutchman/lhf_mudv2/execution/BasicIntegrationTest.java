@@ -1,15 +1,17 @@
 package com.geendutchman.lhf_mudv2.execution;
 
 import java.time.Duration;
-import java.util.Optional;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -31,14 +33,13 @@ import com.geendutchman.lhf_mudv2.entities.room.Room;
 import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
 import com.geendutchman.lhf_mudv2.entities.room.RoomBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.room.RoomSubject;
-import com.geendutchman.lhf_mudv2.execution.Event.PlainEvent;
-import com.geendutchman.lhf_mudv2.execution.Event.RoomSeenEvent;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
-import com.geendutchman.lhf_mudv2.execution.controllers.CreatureController;
 import com.geendutchman.lhf_mudv2.execution.controllers.TestCreatureController;
 import com.github.f4b6a3.tsid.Tsid;
 import com.google.common.truth.Truth;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
+
+import picocli.CommandLine;
 
 @SpringBootTest
 public class BasicIntegrationTest {
@@ -47,6 +48,8 @@ public class BasicIntegrationTest {
     MessageBus bus;
     @Autowired
     CreatureRepository creatureRepository;
+    @Autowired
+    Function<MessageContext, CommandLine> generator;
     @Autowired
     Duration duration;
 
@@ -63,20 +66,19 @@ public class BasicIntegrationTest {
 
         CountDownLatch canProceed = new CountDownLatch(1);
 
-        CreatureController creatureController = new TestCreatureController(bus, creatureRepository) {
-            @Override
-            protected void onRoomSeenEvent(MessageContext context, RoomSeenEvent event, Creature creature) {
-                if (event != null && event.toString().contains("Statue Bust")) {
-                    canProceed.countDown();
-                }
-                super.onRoomSeenEvent(context, event, creature);
-            }
+        TestCreatureController creatureController = new TestCreatureController(bus, generator) {
 
             @Override
             protected Name name() {
                 return new Examinable.Name("Look Tester");
             }
         };
+        creatureController.setRoomSeenHook((context, creature, event) -> {
+            if (event != null && event.toString().contains("Statue Bust")) {
+                canProceed.countDown();
+            }
+            return false;
+        });
 
         bus.registerProcessor(creatureController);
         bus.registerEntity(tester, creatureController.messageProcessorID());
@@ -84,8 +86,8 @@ public class BasicIntegrationTest {
         room.applyDelta(Room.Delta.ofCreatureToAdd(tester));
 
         MessageProcessingResult sendResult = creatureController.process(
-                MessageContext.create(tester.creatureID(), tester.creatureID()),
-                new UserCommand.SeeCommand(UserCommand.SeeCommand.idFactory.create(), Optional.empty()));
+                MessageContext.builder().setSender(tester.creatureID()).setDestination(tester.creatureID()).build(),
+                new LHFCommand.LineCommand(LHFCommand.idFactory.create(), "see", false));
         Truth.assertThat(sendResult).isEqualTo(MessageProcessingResult.HANDLED);
 
         canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
@@ -108,10 +110,11 @@ public class BasicIntegrationTest {
         RoomSubject.assertThat(room).items().queryOne(ItemQuery.builder().setDisplayName("Statue Bust").build())
                 .isPresent();
 
-        MessageContext context = MessageContext.create(tester.creatureID(), tester.identifier());
+        MessageContext context = MessageContext.builder().setSender(tester.creatureID())
+                .setDestination(tester.identifier()).build();
 
         MessageProcessingResult takeResult = bus.send(context,
-                new UserCommand.TakeCommand(UserCommand.TakeCommand.idFactory.create(), "Statue Bust"));
+                new LHFCommand.LineCommand(LHFCommand.idFactory.create(), "take \"Statue Bust\"", false));
         Truth.assertThat(takeResult).isEqualTo(MessageProcessingResult.HANDLED);
 
         Assertions.assertTimeout(duration, () -> {
@@ -152,48 +155,48 @@ public class BasicIntegrationTest {
                 .scores4d6DropLowest().setFaction(Faction.NPC).build(creatureBuilderFactory);
 
         roomA.applyDelta(new Room.Delta.AddCreatureDelta(tester));
+        final Logger logger = LoggerFactory.getLogger(getClass());
 
         CyclicBarrier canProceed = new CyclicBarrier(2);
 
-        CreatureController creatureController = new TestCreatureController(bus, creatureRepository) {
-            @Override
-            protected void onRoomSeenEvent(MessageContext rcontext, RoomSeenEvent event, Creature creature) {
-                super.onRoomSeenEvent(rcontext, event, creature);
-                try {
-                    logger.info(event.description().printIt());
-                    canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
-                    // canProceed.await();
-                } catch (InterruptedException | BrokenBarrierException | TimeoutException e) {
-                    logger.error("Testing had a problem", e);
-                    throw new UncheckedTimeoutException(e);
-                }
-            }
-
-            @Override
-            protected void onPlainEvent(MessageContext context, PlainEvent event, Creature creature) {
-                super.onPlainEvent(context, event, creature);
-                try {
-                    logger.info(event.description().printIt());
-                    canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
-                } catch (InterruptedException | BrokenBarrierException | TimeoutException e) {
-                    logger.error("Testing had a problem", e);
-                    throw new UncheckedTimeoutException(e);
-                }
-            }
+        TestCreatureController creatureController = new TestCreatureController(bus, generator) {
 
             @Override
             protected Name name() {
                 return new Examinable.Name("Test Going");
             }
         };
+        creatureController.setRoomSeenHook((context, creature, event) -> {
+            try {
+                logger.info(event.description().printIt());
+                canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
+                // canProceed.await();
+            } catch (InterruptedException | BrokenBarrierException | TimeoutException e) {
+                logger.error("Testing had a problem", e);
+                throw new UncheckedTimeoutException(e);
+            }
+            return false;
+        });
+        creatureController.setPlainEventHook((context, creature, event) -> {
+            try {
+                logger.info(event.description().printIt());
+                canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
+            } catch (InterruptedException | BrokenBarrierException | TimeoutException e) {
+                logger.error("Testing had a problem", e);
+                throw new UncheckedTimeoutException(e);
+            }
+            return false;
+        });
 
         bus.registerProcessor(creatureController);
         bus.registerEntity(tester, creatureController.messageProcessorID());
 
         // do the four cardinal directions
 
-        MessageProcessingResult goResult = bus.send(MessageContext.create(tester.creatureID(), tester.identifier()),
-                new UserCommand.GoCommand(UserCommand.GoCommand.idFactory.create(), Directions.NORTH.name()));
+        MessageProcessingResult goResult = bus.send(
+                MessageContext.builder().setSender(tester.creatureID()).setDestination(tester.identifier()).build(),
+                new LHFCommand.LineCommand(LHFCommand.idFactory.create(),
+                        String.format("go %s", Directions.NORTH.name()), false));
         Truth.assertThat(goResult).isEqualTo(MessageProcessingResult.HANDLED);
 
         canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
@@ -201,8 +204,10 @@ public class BasicIntegrationTest {
         Truth.assertAbout(RoomSubject.rooms()).that(roomB).creatures().contains(tester);
 
         canProceed.reset();
-        goResult = bus.send(MessageContext.create(tester.creatureID(), tester.identifier()),
-                new UserCommand.GoCommand(UserCommand.GoCommand.idFactory.create(), Directions.EAST.name()));
+        goResult = bus.send(
+                MessageContext.builder().setSender(tester.creatureID()).setDestination(tester.identifier()).build(),
+                new LHFCommand.LineCommand(LHFCommand.idFactory.create(),
+                        String.format("go %s", Directions.EAST.name()), false));
         Truth.assertThat(goResult).isEqualTo(MessageProcessingResult.HANDLED);
 
         canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
@@ -210,8 +215,10 @@ public class BasicIntegrationTest {
         Truth.assertAbout(RoomSubject.rooms()).that(roomC).creatures().contains(tester);
 
         canProceed.reset();
-        goResult = bus.send(MessageContext.create(tester.creatureID(), tester.identifier()),
-                new UserCommand.GoCommand(UserCommand.GoCommand.idFactory.create(), Directions.SOUTH.name()));
+        goResult = bus.send(
+                MessageContext.builder().setSender(tester.creatureID()).setDestination(tester.identifier()).build(),
+                new LHFCommand.LineCommand(LHFCommand.idFactory.create(),
+                        String.format("go %s", Directions.SOUTH.name()), false));
         Truth.assertThat(goResult).isEqualTo(MessageProcessingResult.HANDLED);
 
         canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
@@ -219,8 +226,10 @@ public class BasicIntegrationTest {
         Truth.assertAbout(RoomSubject.rooms()).that(roomD).creatures().contains(tester);
 
         canProceed.reset();
-        goResult = bus.send(MessageContext.create(tester.creatureID(), tester.identifier()),
-                new UserCommand.GoCommand(UserCommand.GoCommand.idFactory.create(), Directions.WEST.name()));
+        goResult = bus.send(
+                MessageContext.builder().setSender(tester.creatureID()).setDestination(tester.identifier()).build(),
+                new LHFCommand.LineCommand(LHFCommand.idFactory.create(), String.format("go %s", Directions.WEST),
+                        false));
         Truth.assertThat(goResult).isEqualTo(MessageProcessingResult.HANDLED);
 
         canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
@@ -228,8 +237,10 @@ public class BasicIntegrationTest {
         Truth.assertAbout(RoomSubject.rooms()).that(roomA).creatures().contains(tester);
 
         canProceed.reset();
-        goResult = bus.send(MessageContext.create(tester.creatureID(), tester.identifier()),
-                new UserCommand.GoCommand(UserCommand.GoCommand.idFactory.create(), Directions.UP.name()));
+        goResult = bus.send(
+                MessageContext.builder().setSender(tester.creatureID()).setDestination(tester.identifier()).build(),
+                new LHFCommand.LineCommand(LHFCommand.idFactory.create(), String.format("go %s", Directions.UP.name()),
+                        false));
         Truth.assertThat(goResult).isEqualTo(MessageProcessingResult.HANDLED);
 
         canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
@@ -237,8 +248,10 @@ public class BasicIntegrationTest {
         Truth.assertAbout(RoomSubject.rooms()).that(roomZ).creatures().contains(tester);
 
         canProceed.reset();
-        goResult = bus.send(MessageContext.create(tester.creatureID(), tester.identifier()),
-                new UserCommand.GoCommand(UserCommand.GoCommand.idFactory.create(), Directions.DOWN.name()));
+        goResult = bus.send(
+                MessageContext.builder().setSender(tester.creatureID()).setDestination(tester.identifier()).build(),
+                new LHFCommand.LineCommand(LHFCommand.idFactory.create(),
+                        String.format("go %s", Directions.DOWN.name()), false));
         Truth.assertThat(goResult).isEqualTo(MessageProcessingResult.HANDLED);
 
         canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
@@ -248,8 +261,10 @@ public class BasicIntegrationTest {
         // Only Monsters can go from roomA east to roomD
 
         canProceed.reset();
-        goResult = bus.send(MessageContext.create(tester.creatureID(), tester.identifier()),
-                new UserCommand.GoCommand(UserCommand.GoCommand.idFactory.create(), Directions.EAST.name()));
+        goResult = bus.send(
+                MessageContext.builder().setSender(tester.creatureID()).setDestination(tester.identifier()).build(),
+                new LHFCommand.LineCommand(LHFCommand.idFactory.create(),
+                        String.format("go %s", Directions.EAST.name()), false));
         Truth.assertThat(goResult).isInstanceOf(MessageProcessingResult.Failed.class);
 
         canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
@@ -260,8 +275,10 @@ public class BasicIntegrationTest {
         // And south to a null room does not work
 
         canProceed.reset();
-        goResult = bus.send(MessageContext.create(tester.creatureID(), tester.identifier()),
-                new UserCommand.GoCommand(UserCommand.GoCommand.idFactory.create(), Directions.SOUTH.name()));
+        goResult = bus.send(
+                MessageContext.builder().setSender(tester.creatureID()).setDestination(tester.identifier()).build(),
+                new LHFCommand.LineCommand(LHFCommand.idFactory.create(),
+                        String.format("go %s", Directions.SOUTH.name()), false));
         Truth.assertThat(goResult).isInstanceOf(MessageProcessingResult.Failed.class);
 
         canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);

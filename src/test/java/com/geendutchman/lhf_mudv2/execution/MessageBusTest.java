@@ -3,7 +3,6 @@ package com.geendutchman.lhf_mudv2.execution;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -49,7 +48,7 @@ public class MessageBusTest {
         bus.registerEntity(entity, firstID);
 
         Event event = Event.PlainEvent.asDescribed(RichOutput.builder().addString("I have coconuts").build());
-        MessageContext context = MessageContext.create(entity, entity);
+        MessageContext context = MessageContext.builder().setSender(entity).setDestination(entity).build();
         MessageProcessingResult result = bus.publish(context, event);
         Truth.assertThat(result).isEqualTo(MessageProcessingResult.HANDLED);
 
@@ -68,9 +67,8 @@ public class MessageBusTest {
         bus.registerProcessor(first);
         bus.registerEntity(entity, firstID);
 
-        Command command = new UserCommand.SayCommand(UserCommand.SayCommand.idFactory.create(), "Hello there",
-                Optional.empty());
-        MessageContext context = MessageContext.create(entity, entity);
+        LHFCommand command = new LHFCommand.LineCommand(LHFCommand.idFactory.create(), "say \"Hello there\"", false);
+        MessageContext context = MessageContext.builder().setSender(entity).setDestination(entity).build();
         bus.send(context, command);
 
         Mockito.verify(first, Mockito.timeout(timing.toMillis())).process(context, command);
@@ -101,7 +99,7 @@ public class MessageBusTest {
         bus.registerProcessor(first);
         bus.registerEntity(entity, firstID);
 
-        MessageContext context = MessageContext.create(entity, entity);
+        MessageContext context = MessageContext.builder().setSender(entity).setDestination(entity).build();
         final int count = 30;
         for (int i = 0; i < count; i++) {
             Event event = Event.PlainEvent.asDescribed(RichOutput.builder()

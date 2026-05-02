@@ -15,9 +15,9 @@ import com.geendutchman.lhf_mudv2.entities.room.RoomBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.room.RoomContainerSubject;
 import com.geendutchman.lhf_mudv2.entities.room.RoomRepository;
 import com.geendutchman.lhf_mudv2.entities.room.RoomSubject;
+import com.geendutchman.lhf_mudv2.execution.LHFCommand;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
-import com.geendutchman.lhf_mudv2.execution.UserCommand;
 import com.google.common.truth.Truth;
 
 @SpringBootTest
@@ -67,9 +67,11 @@ public class RoomExitTest extends CreatureExitTest {
         Item roomItem = ItemBuilderFactory.builder().setName("Floor Item").build(itemBuilderFactory);
         this.room.applyDelta(Room.Delta.ofItemToAdd(roomItem));
         RoomSubject.assertThat(room).items().hasItem(roomItem);
-        final MessageContext context = MessageContext.create(roomItem.itemID(), roomItem.itemID());
-        final UserCommand.ExitCommand exitCommand = new UserCommand.ExitCommand(
-                UserCommand.ExitCommand.idFactory.create());
+        final MessageContext context = MessageContext.builder().setSender(roomItem.itemID())
+                .setDestination(roomItem.itemID()).build();
+        final LHFCommand.LineCommand exitCommand = new LHFCommand.LineCommand(LHFCommand.idFactory.create(), "exit",
+                false);
+
         final MessageProcessingResult result = itemController.process(context, exitCommand);
         Truth.assertThat(result).isEqualTo(MessageProcessingResult.HANDLED);
         RoomSubject.assertThat(room).items().doesNotHaveItem(roomItem);
@@ -86,9 +88,11 @@ public class RoomExitTest extends CreatureExitTest {
     @Test
     void testRoomExit() {
         RoomContainerSubject.assertThat(roomRepository).hasRoom(room);
-        final MessageContext context = MessageContext.create(room.roomID(), room.roomID());
-        final UserCommand.ExitCommand exitCommand = new UserCommand.ExitCommand(
-                UserCommand.ExitCommand.idFactory.create());
+        final MessageContext context = MessageContext.builder().setSender(room.roomID()).setDestination(room.roomID())
+                .build();
+        final LHFCommand.LineCommand exitCommand = new LHFCommand.LineCommand(LHFCommand.idFactory.create(), "exit",
+                false);
+
         final MessageProcessingResult result = roomController.process(context, exitCommand);
         Truth.assertThat(result).isEqualTo(MessageProcessingResult.HANDLED);
         RoomContainerSubject.assertThat(roomRepository).doesNotHaveRoom(room);

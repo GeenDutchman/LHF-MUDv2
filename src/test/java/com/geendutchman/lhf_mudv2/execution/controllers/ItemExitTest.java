@@ -9,9 +9,9 @@ import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.item.ItemContainerSubject;
 import com.geendutchman.lhf_mudv2.entities.item.ItemRepository;
+import com.geendutchman.lhf_mudv2.execution.LHFCommand;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
-import com.geendutchman.lhf_mudv2.execution.UserCommand;
 import com.google.common.truth.Truth;
 
 @SpringBootTest
@@ -44,9 +44,11 @@ public class ItemExitTest {
     @Test
     void testItemExit() {
         ItemContainerSubject.assertThat(itemRepository).hasItem(item);
-        final MessageContext context = MessageContext.create(item.itemID(), item.itemID());
-        final UserCommand.ExitCommand exitCommand = new UserCommand.ExitCommand(
-                UserCommand.ExitCommand.idFactory.create());
+        final MessageContext context = MessageContext.builder().setSender(item.itemID()).setDestination(item.itemID())
+                .build();
+        final LHFCommand.LineCommand exitCommand = new LHFCommand.LineCommand(LHFCommand.idFactory.create(), "exit",
+                false);
+
         final MessageProcessingResult result = itemController.process(context, exitCommand);
         Truth.assertThat(result).isEqualTo(MessageProcessingResult.HANDLED);
         ItemContainerSubject.assertThat(itemRepository).doesNotHaveItem(item);
