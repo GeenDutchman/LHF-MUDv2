@@ -32,70 +32,116 @@ import com.google.common.collect.ImmutableSortedMap;
 
 public final class MessageContext
         implements Serializable, ItemContainer, CreatureContainer, RoomContainer, EntityContainer {
+
+    public record EntityStack(IEntityID baseId, Optional<Item> item, Optional<Creature> creature, Optional<Room> room) {
+        public EntityStack {
+            Preconditions.checkNotNull(baseId, "base ID should not be null");
+            Preconditions.checkNotNull(item, "item may be empty but must not be null");
+            Preconditions.checkNotNull(creature, "creature may be empty but must not be null");
+            Preconditions.checkNotNull(room, "room may be empty but must not be null");
+        }
+
+        protected static EntityStackBuilder builder() {
+            return new AutoBuilder_MessageContext_EntityStack_EntityStackBuilder();
+        }
+
+        protected EntityStackBuilder toBuilder() {
+            EntityStackBuilder builder = EntityStack.builder().baseId(this.baseId);
+            this.item.ifPresent(i -> builder.item(i));
+            this.creature.ifPresent(c -> builder.creature(c));
+            this.room.ifPresent(r -> builder.room(r));
+            return builder;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append("EntityStack [").append("baseId=").append(baseId).append(", item=")
+                    .append(item.map(i -> i.itemID())).append(", creature=").append(creature.map(c -> c.creatureID()))
+                    .append(", room=").append(room.map(r -> r.roomID())).append("]");
+            return builder.toString();
+        }
+
+        @AutoBuilder
+        protected interface EntityStackBuilder {
+            EntityStackBuilder baseId(IEntityID base);
+
+            IEntityID baseId();
+
+            EntityStackBuilder item(Item item);
+
+            Optional<Item> item();
+
+            EntityStackBuilder creature(Creature creature);
+
+            Optional<Creature> creature();
+
+            EntityStackBuilder room(Room room);
+
+            Optional<Room> room();
+
+            EntityStack build();
+        }
+    }
+
     private static final TsidFactory idFactory = TsidFactory
             .newInstance1024(Math.abs("messageContext".hashCode() % 1024));
     private static final Name contextName = Name.fromCharSequence("MessageContext");
     private static final Tag contextTag = new Tag("MessageContext");
     private final Tsid tsid;
-    private final IEntityID sender;
-    private final IEntityID destination;
-    private final Optional<IEntityID> replyTo;
-    private final Optional<Item> item;
-    private final Optional<Creature> creature;
-    private final Optional<Room> room;
+    private final EntityStack sender;
+    private final EntityStack destination;
+    private final Optional<EntityStack> replyTo;
     private final ImmutableBiMap<String, Entity> others;
 
-    MessageContext(IEntityID sender, IEntityID destination, Optional<IEntityID> replyTo, Optional<Item> item,
-            Optional<Creature> creature, Optional<Room> room, Optional<Tsid> tsid, BiMap<String, Entity> others) {
+    MessageContext(EntityStack sender, EntityStack destination, Optional<EntityStack> replyTo, Optional<Tsid> tsid,
+            BiMap<String, Entity> others) {
         Preconditions.checkNotNull(sender, "sender must not be null");
         Preconditions.checkNotNull(destination, "destination must not be null");
         Preconditions.checkNotNull(replyTo, "replyTo may be empty but must not be null");
-        Preconditions.checkNotNull(item, "item may be empty but must not be null");
-        Preconditions.checkNotNull(creature, "creature may be empty but must not be null");
-        Preconditions.checkNotNull(room, "room may be empty but must not be null");
         this.sender = sender;
         this.destination = destination;
         this.replyTo = replyTo;
-        this.item = item;
-        this.creature = creature;
-        this.room = room;
         this.tsid = tsid == null ? MessageContext.idFactory.create() : tsid.orElse(MessageContext.idFactory.create());
         this.others = others != null ? ImmutableBiMap.copyOf(others) : ImmutableBiMap.of();
     }
 
     @AutoBuilder
     public static abstract class MessageContextBuilder {
-        public abstract MessageContextBuilder setSender(IEntityID sender);
+        public abstract MessageContextBuilder setSender(EntityStack sender);
 
-        public abstract MessageContextBuilder setDestination(IEntityID destination);
+        public abstract MessageContextBuilder setDestination(EntityStack destination);
 
-        public abstract MessageContextBuilder setReplyTo(IEntityID replyto);
-
-        public abstract MessageContextBuilder setItem(Item item);
-
-        public abstract MessageContextBuilder setItem(Optional<Item> item);
-
-        public abstract Optional<Item> item();
-
-        public abstract MessageContextBuilder setCreature(Creature creature);
-
-        public abstract MessageContextBuilder setCreature(Optional<Creature> creature);
-
-        public abstract Optional<Creature> creature();
-
-        public abstract MessageContextBuilder setRoom(Room room);
-
-        public abstract MessageContextBuilder setRoom(Optional<Room> room);
-
-        public abstract Optional<Room> room();
+        public abstract MessageContextBuilder setReplyTo(EntityStack replyto);
 
         protected abstract MessageContextBuilder setTsid(Optional<Tsid> tsid);
 
         protected abstract Optional<Tsid> tsid();
 
-        public MessageContextBuilder setMainEntities(Item item, Creature creature, Room room) {
-            return this.setItem(Optional.ofNullable(item)).setCreature(Optional.ofNullable(creature))
-                    .setRoom(Optional.ofNullable(room));
+        protected abstract EntityStack.EntityStackBuilder senderBuilder();
+
+        protected abstract EntityStack.EntityStackBuilder destinationBuilder();
+
+        public MessageContextBuilder setSenderDetails(Consumer<EntityStack.EntityStackBuilder> buildit) {
+            if (buildit != null) {
+                buildit.accept(this.senderBuilder());
+            }
+            return this;
+        }
+
+        public MessageContextBuilder setDestinationDetails(Consumer<EntityStack.EntityStackBuilder> buildit) {
+            if (buildit != null) {
+                buildit.accept(this.destinationBuilder());
+            }
+            return this;
+        }
+
+        public MessageContextBuilder setSenderId(IEntityID id) {
+            return this.setSenderDetails(b -> b.baseId(id));
+        }
+
+        public MessageContextBuilder setDestinationId(IEntityID id) {
+            return this.setDestinationDetails(b -> b.baseId(id));
         }
 
         public abstract ImmutableBiMap.Builder<String, Entity> othersBuilder();
@@ -149,15 +195,15 @@ public final class MessageContext
         return tsid;
     }
 
-    public IEntityID sender() {
+    public EntityStack sender() {
         return sender;
     }
 
-    public IEntityID getSender() {
+    public EntityStack getSender() {
         return sender;
     }
 
-    public Optional<IEntityID> replyTo() {
+    public Optional<EntityStack> replyTo() {
         return this.replyTo;
     }
 
@@ -165,40 +211,16 @@ public final class MessageContext
         return idFactory;
     }
 
-    public IEntityID destination() {
+    public EntityStack destination() {
         return destination;
     }
 
-    public IEntityID getDestination() {
+    public EntityStack getDestination() {
         return destination;
     }
 
-    public Optional<IEntityID> getReplyTo() {
+    public Optional<EntityStack> getReplyTo() {
         return replyTo;
-    }
-
-    public Optional<Item> getItem() {
-        return item;
-    }
-
-    public Optional<Item> item() {
-        return this.item;
-    }
-
-    public Optional<Creature> getCreature() {
-        return creature;
-    }
-
-    public Optional<Creature> creature() {
-        return creature;
-    }
-
-    public Optional<Room> getRoom() {
-        return room;
-    }
-
-    public Optional<Room> room() {
-        return room;
     }
 
     public ImmutableBiMap<String, Entity> getOthers() {
@@ -224,9 +246,12 @@ public final class MessageContext
     @Override
     public ImmutableSet<Item> items() {
         ImmutableSet.Builder<Item> items = ImmutableSet.builder();
-        this.item.ifPresent(i -> items.add(i));
-        this.creature.ifPresent(c -> items.addAll(c.items()));
-        this.room.ifPresent(r -> items.addAll(r.items()));
+        this.sender.item.ifPresent(i -> items.add(i));
+        this.sender.creature.ifPresent(c -> items.addAll(c.items()));
+        this.sender.room.ifPresent(r -> items.addAll(r.items()));
+        this.destination.item.ifPresent(i -> items.add(i));
+        this.destination.creature.ifPresent(c -> items.addAll(c.items()));
+        this.destination.room.ifPresent(r -> items.addAll(r.items()));
         this.others.values().forEach(e -> {
             if (e instanceof Item i) {
                 items.add(i);
@@ -249,8 +274,10 @@ public final class MessageContext
     @Override
     public ImmutableSet<Creature> creatures() {
         ImmutableSet.Builder<Creature> creatures = ImmutableSet.builder();
-        this.creature.ifPresent(c -> creatures.add(c));
-        this.room.ifPresent(r -> creatures.addAll(r.creatures()));
+        this.sender.creature.ifPresent(c -> creatures.add(c));
+        this.sender.room.ifPresent(r -> creatures.addAll(r.creatures()));
+        this.destination.creature.ifPresent(c -> creatures.add(c));
+        this.destination.room.ifPresent(r -> creatures.addAll(r.creatures()));
         this.others.values().forEach(e -> {
             if (e instanceof Creature c) {
                 creatures.add(c);
@@ -277,7 +304,8 @@ public final class MessageContext
     @Override
     public ImmutableBiMap<RoomID, Room> roomMap() {
         ImmutableBiMap.Builder<RoomID, Room> builder = ImmutableBiMap.builder();
-        this.room.ifPresent(r -> builder.put(r.roomID(), r));
+        this.sender.room.ifPresent(r -> builder.put(r.roomID(), r));
+        this.destination.room.ifPresent(r -> builder.put(r.roomID(), r));
         this.others.values().forEach(e -> {
             if (e instanceof Room r) {
                 builder.put(r.roomID(), r);
@@ -303,7 +331,7 @@ public final class MessageContext
 
     @Override
     public String content() {
-        return String.format("%s : %s -> %s", this.tsid, this.sender, this.destination);
+        return String.format("%s : %s -> %s", this.tsid, this.sender.baseId, this.destination.baseId);
     }
 
     @Override
@@ -318,7 +346,7 @@ public final class MessageContext
 
     @Override
     public int hashCode() {
-        return Objects.hash(tsid, sender, destination, replyTo, item, creature, room, others);
+        return Objects.hash(tsid, sender, destination, replyTo, others);
     }
 
     @Override
@@ -330,17 +358,15 @@ public final class MessageContext
         MessageContext other = (MessageContext) obj;
         return Objects.equals(tsid, other.tsid) && Objects.equals(sender, other.sender)
                 && Objects.equals(destination, other.destination) && Objects.equals(replyTo, other.replyTo)
-                && Objects.equals(item, other.item) && Objects.equals(creature, other.creature)
-                && Objects.equals(room, other.room) && Objects.equals(others, other.others);
+                && Objects.equals(others, other.others);
     }
 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("MessageContext [tsid=").append(tsid).append(", sender=").append(sender).append(", destination=")
-                .append(destination).append(", replyTo=").append(replyTo).append(", item=")
-                .append(item.map(i -> i.identifier())).append(", creature=").append(creature.map(c -> c.identifier()))
-                .append(", room=").append(room.map(r -> r.identifier())).append(", others=").append(others).append("]");
+                .append(destination).append(", replyTo=").append(replyTo).append(", others=").append(others)
+                .append("]");
         return builder.toString();
     }
 
