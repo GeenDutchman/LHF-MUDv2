@@ -51,7 +51,7 @@ public interface IEntityID extends Comparable<IEntityID>, Taggable {
         return this.tsid().compareTo(o.tsid());
     }
 
-    public final static IEntityID NULL_ID = new EntityID(new Taggable.Tag("null"), new Examinable.Name("null"),
+    public final static IEntityID BLANK_ID = new EntityID(new Taggable.Tag("blank"), new Examinable.Name("blank"),
             TsidFactory.newInstance1024(0).create());
 
     /**

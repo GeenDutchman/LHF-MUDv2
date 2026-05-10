@@ -79,7 +79,7 @@ public class ItemFactoryController implements MessageProcessor {
                 if (made == null) {
                     yield MessageProcessingResult.Failed("created null item");
                 }
-                yield bus.send(MessageContext.builder().setSender(id).setDestination(forCreature).build(),
+                yield bus.send(MessageContext.builder().setSenderId(id).setDestinationId(forCreature).build(),
                         new LHFCommand.ChangeEntityCommand.ChangeCreatureCommand(
                                 LHFCommand.ChangeEntityCommand.ChangeCreatureCommand.idFactory.create(),
                                 ImmutableList.of(CreatureEffect.builder().addDeltas(Creature.Delta.ofItemToAdd(made))
@@ -93,7 +93,7 @@ public class ItemFactoryController implements MessageProcessor {
                 if (made == null) {
                     yield MessageProcessingResult.Failed("created null item");
                 }
-                yield bus.send(MessageContext.builder().setSender(id).setDestination(forRoom).build(),
+                yield bus.send(MessageContext.builder().setSenderId(id).setDestinationId(forRoom).build(),
                         new LHFCommand.ChangeEntityCommand.ChangeRoomCommand(
                                 LHFCommand.ChangeEntityCommand.ChangeRoomCommand.idFactory.create(),
                                 ImmutableList.of(RoomEffect.builder().addDeltas(Room.Delta.ofItemToAdd(made))

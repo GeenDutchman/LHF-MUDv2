@@ -9,8 +9,6 @@ import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.ItemEffect;
-import com.geendutchman.lhf_mudv2.entities.item.ItemQuery;
-import com.geendutchman.lhf_mudv2.entities.item.ItemRepository;
 import com.geendutchman.lhf_mudv2.execution.Event;
 import com.geendutchman.lhf_mudv2.execution.LHFCommand;
 import com.geendutchman.lhf_mudv2.execution.Message;
@@ -29,17 +27,12 @@ public class ItemController implements MessageProcessor {
     @Autowired
     protected final MessageBus bus;
 
-    @Autowired
-    protected final ItemRepository itemRepository;
-
     private final MessageProcessorID processorID = new MessageProcessorID(new Examinable.Name("Item Controller"),
             MessageProcessor.messageProcessorTsidFactory.create());
 
-    ItemController(@Autowired MessageBus bus, @Autowired ItemRepository repo) {
+    ItemController(@Autowired MessageBus bus) {
         Preconditions.checkNotNull(bus, "message bus should not be null");
-        Preconditions.checkNotNull(repo, "Item repository should not be null");
         this.bus = bus;
-        this.itemRepository = repo;
     }
 
     @PostConstruct
@@ -73,8 +66,7 @@ public class ItemController implements MessageProcessor {
         if (lhfCommand == null) {
             return MessageProcessingResult.Failed("cannot handle null lhf command");
         }
-        final Optional<Item> forItem = this.itemRepository
-                .queryOneItem(ItemQuery.builder().setIdentifier(Optional.of(context.destination())).build());
+        final Optional<Item> forItem = context.sender().item();
         if (forItem.isEmpty()) {
             return MessageProcessingResult.Failed("addressed item does not exist");
         }
@@ -109,7 +101,7 @@ public class ItemController implements MessageProcessor {
                 }
                 Event event = new Event.ItemChangedEvent(item);
                 bus.publish(
-                        MessageContext.builder().setSender(item.itemID()).setDestination(context.getSender()).build(),
+                        MessageContext.builder().setSenderId(item.itemID()).setDestination(context.getSender()).build(),
                         event);
                 yield MessageProcessingResult.HANDLED;
 
@@ -125,8 +117,7 @@ public class ItemController implements MessageProcessor {
         if (event == null) {
             return MessageProcessingResult.Failed("cannot handle null event");
         }
-        Optional<Item> forItem = this.itemRepository.queryOneItem(
-                ItemQuery.builder().adjustEntityQuery(eqb -> eqb.setIdentifier(context.destination())).build());
+        Optional<Item> forItem = context.destination().item();
         if (forItem.isEmpty()) {
             return MessageProcessingResult.Failed("addressed item does not exist");
         }

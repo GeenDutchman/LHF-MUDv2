@@ -63,7 +63,7 @@ public final class MessageContext
         }
 
         @AutoBuilder
-        protected interface EntityStackBuilder {
+        public interface EntityStackBuilder {
             EntityStackBuilder baseId(IEntityID base);
 
             IEntityID baseId();

@@ -41,13 +41,13 @@ public final class SeeCommand extends SwitchedHandler {
                 this.onCreature(creature);
             } else if (this.what.get() instanceof Room room) {
                 this.onRoom(room);
-            } else if (this.context.room().isPresent()) {
-                this.onRoom(this.context.room().get());
+            } else if (this.context.sender().room().isPresent()) {
+                this.onRoom(this.context.sender().room().get());
             } else {
                 this.unrecognized();
             }
-        } else if (this.context.room().isPresent()) {
-            this.onRoom(this.context.room().get());
+        } else if (this.context.sender().room().isPresent()) {
+            this.onRoom(this.context.sender().room().get());
         } else {
             this.unrecognized();
         }
@@ -55,12 +55,12 @@ public final class SeeCommand extends SwitchedHandler {
 
     @Override
     protected void onItem(Item item) {
-        context.creature()
+        context.sender().creature()
                 .filter(creature -> creature.hasItem(item)
                         || item.visibility().test(creature.plainCheck(AttributeScores.SAVVY)))
                 .ifPresentOrElse(creature -> {
                     bus.publish(
-                            MessageContext.builder().setSender(context.room().get().roomID())
+                            MessageContext.builder().setSenderId(context.sender().room().get().roomID())
                                     .setDestination(context.sender()).addOther("seenItem", item).build(),
                             new ItemSeenEvent(item));
                 }, () -> {
@@ -70,13 +70,13 @@ public final class SeeCommand extends SwitchedHandler {
 
     @Override
     protected void onCreature(Creature creature) {
-        bus.publish(MessageContext.builder().setSender(context.room().get().roomID()).setDestination(context.sender())
-                .build(), new CreatureSeenEvent(creature));
+        bus.publish(MessageContext.builder().setSenderId(context.sender().room().get().roomID())
+                .setDestination(context.sender()).build(), new CreatureSeenEvent(creature));
     }
 
     @Override
     protected void onRoom(Room room) {
-        bus.publish(MessageContext.builder().setSender(room.roomID()).setDestination(context.sender()).build(),
+        bus.publish(MessageContext.builder().setSenderId(room.roomID()).setDestination(context.sender()).build(),
                 new RoomSeenEvent(room, null, null));
     }
 

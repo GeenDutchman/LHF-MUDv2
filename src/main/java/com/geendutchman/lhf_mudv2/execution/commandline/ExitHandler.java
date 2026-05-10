@@ -50,10 +50,10 @@ public final class ExitHandler extends SwitchedHandler {
     @Override
     protected void onItem(Item item) {
         try (final Defer onClose = new Defer()) {
-            context.room().ifPresent(r -> {
+            context.sender().room().ifPresent(r -> {
                 r.applyDelta(Room.Delta.ofItemToRemove(item));
             });
-            context.creature().ifPresent(c -> {
+            context.sender().creature().ifPresent(c -> {
                 c.applyDelta(Creature.Delta.ofItemToRemove(item));
             });
             onClose.addLast(() -> itemRepository.remove(item));
@@ -64,8 +64,8 @@ public final class ExitHandler extends SwitchedHandler {
     protected void onCreature(Creature creature) {
         try (final Defer onClose = new Defer()) {
             bus.publish(
-                    context.toBuilder().setCreature(creature).setSender(creature.identifier())
-                            .setDestination(creature.identifier()).build(),
+                    context.toBuilder().setSenderId(creature.identifier()).setSenderDetails(d -> d.creature(creature))
+                            .setDestinationId(creature.identifier()).build(),
                     Event.PlainEvent
                             .asDescribed(RichOutput.builder().addString("Goodbye,").addTaggable(creature).build()));
             final RichOutput message = RichOutput.builder().addString("Cataclysm,").addTaggable(creature)
@@ -74,13 +74,14 @@ public final class ExitHandler extends SwitchedHandler {
                 onClose.addLast(() -> creature.applyDelta(Creature.Delta.ofItemToRemove(i)));
                 onClose.addLast(() -> itemRepository.remove(i));
                 bus.publish(
-                        MessageContext.builder().setSender(creature.identifier()).setDestination(i.identifier())
+                        MessageContext.builder().setSenderId(creature.identifier()).setDestinationId(i.identifier())
                                 .addOther("lostItem:" + i.identifier().toString(), i).build(),
                         Event.PlainEvent.asDescribed(message));
             });
-            context.room().ifPresent(r -> {
+            context.sender().room().ifPresent(r -> {
                 r.applyDelta(Room.Delta.ofCreatureToRemove(creature));
-                bus.publish(MessageContext.builder().setSender(r.identifier()).setDestination(r.identifier()).build(),
+                bus.publish(
+                        MessageContext.builder().setSenderId(r.identifier()).setDestinationId(r.identifier()).build(),
                         PlainEvent.asDescribed(
                                 RichOutput.builder().addTaggable(creature).addString("has exited Ibaif").build()));
             });
@@ -100,8 +101,8 @@ public final class ExitHandler extends SwitchedHandler {
                 onClose.addLast(() -> creatureRepository.remove(c));
                 return (Entity) c;
             })).filter(EntityQuery.builder().build()).forEach(entity -> {
-                bus.publish(MessageContext.builder().setSender(room.identifier()).setDestination(entity.identifier())
-                        .build(), Event.PlainEvent.asDescribed(message));
+                bus.publish(MessageContext.builder().setSenderId(room.identifier())
+                        .setDestinationId(entity.identifier()).build(), Event.PlainEvent.asDescribed(message));
             });
             onClose.addLast(() -> roomRepository.remove(room));
         }

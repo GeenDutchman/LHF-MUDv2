@@ -200,7 +200,7 @@ public interface MessageBus {
             }
 
             final Logger eventLogger = this.logger;
-            final MessageProcessor processor = this.processorForEntity(context.destination());
+            final MessageProcessor processor = this.processorForEntity(context.destination().baseId());
             if (processor == null) {
                 MessageProcessingResult.Failed toReturn = MessageProcessingResult.Failed("no processor found");
                 this.logger.atWarn().addKeyValue("context.destination", context.destination()).log(toReturn.reason());

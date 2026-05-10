@@ -28,15 +28,16 @@ public final class SayCommand extends UserCommandHandler {
 
     @Override
     public void run() {
-        if (context.room().isPresent()) {
+        if (context.sender().room().isPresent()) {
             RichOutput.Builder builder = RichOutput.builder();
             for (final String string : message) {
                 builder.addString(string);
             }
 
-            this.bus.publish(MessageContext.builder().setSender(context.sender())
-                    .setDestination(context.room().get().roomID()).build(),
-                    Event.SpokenEvent.speaking(context.sender(), builder.build()));
+            this.bus.publish(
+                    MessageContext.builder().setSender(context.sender())
+                            .setDestinationId(context.sender().room().get().roomID()).build(),
+                    Event.SpokenEvent.speaking(context.sender().baseId(), builder.build()));
             return;
         } else {
             // TODO: alert about problem
@@ -52,8 +53,8 @@ public final class SayCommand extends UserCommandHandler {
             builder.addString(string);
         }
         this.bus.publish(
-                MessageContext.builder().setSender(context.sender()).setDestination(listener.creatureID()).build(),
-                Event.SpokenEvent.speaking(context.sender(), builder.build()));
+                MessageContext.builder().setSender(context.sender()).setDestinationId(listener.creatureID()).build(),
+                Event.SpokenEvent.speaking(context.sender().baseId(), builder.build()));
     }
 
 }

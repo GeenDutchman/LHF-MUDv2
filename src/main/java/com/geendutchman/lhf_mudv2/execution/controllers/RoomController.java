@@ -77,7 +77,7 @@ public class RoomController implements MessageProcessor {
         }
 
         final Optional<Room> forRoom = this.roomRepository
-                .queryOneRoom(IEntityQuery.entityQueryBuilder().setIdentifier(context.destination()).build());
+                .queryOneRoom(IEntityQuery.entityQueryBuilder().setIdentifier(context.destination().baseId()).build());
         if (forRoom.isEmpty()) {
             return MessageProcessingResult.Failed("addressed room does not exist");
         }
@@ -117,7 +117,7 @@ public class RoomController implements MessageProcessor {
                         } else {
                             RichOutput description = out.build();
                             Event event = Event.RoomChangedEvent.ofRoomWithChangeDescription(room, description);
-                            bus.publish(MessageContext.builder().setSender(room.roomID())
+                            bus.publish(MessageContext.builder().setSenderId(room.roomID())
                                     .setDestination(context.getSender()).build(), event);
                             this.process(context, event);
                         }
@@ -139,7 +139,7 @@ public class RoomController implements MessageProcessor {
         }
 
         final Optional<Room> forRoom = this.roomRepository
-                .queryOneRoom(IEntityQuery.entityQueryBuilder().setIdentifier(context.destination()).build());
+                .queryOneRoom(IEntityQuery.entityQueryBuilder().setIdentifier(context.destination().baseId()).build());
         if (forRoom.isEmpty()) {
             return MessageProcessingResult.Failed("addressed room does not exist");
         }
@@ -147,7 +147,7 @@ public class RoomController implements MessageProcessor {
         final Room room = forRoom.get();
         Stream.concat(room.items().stream().map(i -> (Entity) i), room.creatures().stream().map(c -> (Entity) c))
                 .forEach(entity -> {
-                    bus.publish(context.toBuilder().setDestination(entity.identifier()).build(), event);
+                    bus.publish(context.toBuilder().setDestinationId(entity.identifier()).build(), event);
                 });
 
         return MessageProcessingResult.HANDLED;

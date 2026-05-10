@@ -1,7 +1,5 @@
 package com.geendutchman.lhf_mudv2.execution.controllers;
 
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -80,9 +78,7 @@ public class CreatureFactoryController implements MessageProcessor {
                 if (made == null) {
                     yield MessageProcessingResult.Failed("created null creature");
                 }
-                yield bus.send(
-                        MessageContext.builder().setSender(id).setDestination(forRoom).setRoom(Optional.empty())
-                                .build(),
+                yield bus.send(MessageContext.builder().setSenderId(id).setDestinationId(forRoom).build(),
                         new LHFCommand.ChangeEntityCommand.ChangeRoomCommand(
                                 LHFCommand.ChangeEntityCommand.ChangeRoomCommand.idFactory.create(),
                                 ImmutableList.of(RoomEffect.builder().addDeltas(Room.Delta.ofCreatureToAdd(made))

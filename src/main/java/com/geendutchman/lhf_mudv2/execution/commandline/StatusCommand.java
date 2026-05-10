@@ -28,20 +28,19 @@ public final class StatusCommand extends SwitchedHandler {
 
     @Override
     protected void onCreature(Creature creature) {
-        this.bus.publish(
-                MessageContext.builder().setSender(creature.identifier()).setDestination(creature.creatureID()).build(),
-                new Event.CreatureSeenEvent(creature));
+        this.bus.publish(MessageContext.builder().setSenderId(creature.identifier())
+                .setDestinationId(creature.creatureID()).build(), new Event.CreatureSeenEvent(creature));
     }
 
     @Override
     protected void onItem(Item item) {
-        bus.publish(MessageContext.builder().setSender(item.identifier()).setDestination(item.itemID()).build(),
+        bus.publish(MessageContext.builder().setSenderId(item.identifier()).setDestinationId(item.itemID()).build(),
                 new Event.ItemSeenEvent(item));
     }
 
     @Override
     protected void onRoom(Room room) {
-        bus.publish(MessageContext.builder().setSender(room.roomID()).setDestination(room.roomID()).build(),
+        bus.publish(MessageContext.builder().setSenderId(room.roomID()).setDestinationId(room.roomID()).build(),
                 new Event.RoomSeenEvent(room, null, null));
     }
 

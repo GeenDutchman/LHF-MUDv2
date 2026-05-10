@@ -18,14 +18,15 @@ abstract class SwitchedHandler extends UserCommandHandler {
     }
 
     protected final void contextSplit() {
-        if (context.creature().map(c -> c.identifier()).filter(i -> i.equals(context.sender())).isPresent()) {
-            this.onCreature(context.creature().get());
-        } else if (context.item().map(item -> item.identifier()).filter(id -> id.equals(context.sender()))
+        if (context.sender().creature().map(c -> c.identifier()).filter(i -> i.equals(context.sender().baseId()))
                 .isPresent()) {
-            this.onItem(context.item().get());
-        } else if (context.room().map(room -> room.identifier()).filter(id -> id.equals(context.sender()))
-                .isPresent()) {
-            this.onRoom(context.room().get());
+            this.onCreature(context.sender().creature().get());
+        } else if (context.sender().item().map(item -> item.identifier())
+                .filter(id -> id.equals(context.sender().baseId())).isPresent()) {
+            this.onItem(context.sender().item().get());
+        } else if (context.sender().room().map(room -> room.identifier())
+                .filter(id -> id.equals(context.sender().baseId())).isPresent()) {
+            this.onRoom(context.sender().room().get());
         }
     }
 

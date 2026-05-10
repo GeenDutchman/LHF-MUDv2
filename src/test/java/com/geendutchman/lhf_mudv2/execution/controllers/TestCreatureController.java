@@ -1,6 +1,6 @@
 package com.geendutchman.lhf_mudv2.execution.controllers;
 
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import org.slf4j.Logger;
 import org.springframework.boot.test.context.TestComponent;
@@ -42,7 +42,7 @@ public class TestCreatureController extends CreatureController {
     EventPredicate<RoomSeenEvent> roomSeenHook;
     EventPredicate<SpokenEvent> spokenHook;
 
-    public TestCreatureController(MessageBus bus, Function<MessageContext, CommandLine> generator) {
+    public TestCreatureController(MessageBus bus, BiFunction<MessageBus, MessageContext, CommandLine> generator) {
         super(bus, generator);
     }
 

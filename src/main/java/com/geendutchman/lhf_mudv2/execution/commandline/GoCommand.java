@@ -39,16 +39,16 @@ public final class GoCommand extends UserCommandHandler {
 
     @Override
     public void run() {
-        if (context.room().isEmpty()) {
+        if (context.sender().room().isEmpty()) {
             // TODO: some sort of error message
             return;
         }
-        final Room room = context.room().get();
-        if (context.creature().isEmpty()) {
+        final Room room = context.sender().room().get();
+        if (context.sender().creature().isEmpty()) {
             // TODO: some sort of error message
             return;
         }
-        final Creature creature = context.creature().get();
+        final Creature creature = context.sender().creature().get();
 
         final ImmutableSortedMap<Directions, Doorway> doorways = room.doorways();
 
@@ -79,7 +79,7 @@ public final class GoCommand extends UserCommandHandler {
             desc.addOutput(out.build());
 
             this.bus.publish(
-                    MessageContext.builder().setSender(room.roomID()).setDestination(creature.creatureID()).build(),
+                    MessageContext.builder().setSenderId(room.roomID()).setDestinationId(creature.creatureID()).build(),
                     Event.PlainEvent.asDescribed(desc.build()));
         };
 

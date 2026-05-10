@@ -44,8 +44,8 @@ public class ItemExitTest {
     @Test
     void testItemExit() {
         ItemContainerSubject.assertThat(itemRepository).hasItem(item);
-        final MessageContext context = MessageContext.builder().setSender(item.itemID()).setDestination(item.itemID())
-                .build();
+        final MessageContext context = MessageContext.builder().setSenderId(item.itemID())
+                .setDestinationId(item.itemID()).build();
         final LHFCommand.LineCommand exitCommand = new LHFCommand.LineCommand(LHFCommand.idFactory.create(), "exit",
                 false);
 

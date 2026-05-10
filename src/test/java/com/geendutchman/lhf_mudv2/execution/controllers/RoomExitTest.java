@@ -67,8 +67,8 @@ public class RoomExitTest extends CreatureExitTest {
         Item roomItem = ItemBuilderFactory.builder().setName("Floor Item").build(itemBuilderFactory);
         this.room.applyDelta(Room.Delta.ofItemToAdd(roomItem));
         RoomSubject.assertThat(room).items().hasItem(roomItem);
-        final MessageContext context = MessageContext.builder().setSender(roomItem.itemID())
-                .setDestination(roomItem.itemID()).build();
+        final MessageContext context = MessageContext.builder().setSenderId(roomItem.itemID())
+                .setDestinationId(roomItem.itemID()).build();
         final LHFCommand.LineCommand exitCommand = new LHFCommand.LineCommand(LHFCommand.idFactory.create(), "exit",
                 false);
 
@@ -88,8 +88,8 @@ public class RoomExitTest extends CreatureExitTest {
     @Test
     void testRoomExit() {
         RoomContainerSubject.assertThat(roomRepository).hasRoom(room);
-        final MessageContext context = MessageContext.builder().setSender(room.roomID()).setDestination(room.roomID())
-                .build();
+        final MessageContext context = MessageContext.builder().setSenderId(room.roomID())
+                .setDestinationId(room.roomID()).build();
         final LHFCommand.LineCommand exitCommand = new LHFCommand.LineCommand(LHFCommand.idFactory.create(), "exit",
                 false);
 

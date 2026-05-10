@@ -29,9 +29,8 @@ public final class InventoryCommand extends SwitchedHandler {
 
     @Override
     protected void onCreature(Creature creature) {
-        bus.publish(
-                MessageContext.builder().setSender(creature.identifier()).setDestination(creature.creatureID()).build(),
-                Event.InventoryEvent.ofCreature(creature));
+        bus.publish(MessageContext.builder().setSenderId(creature.identifier()).setDestinationId(creature.creatureID())
+                .build(), Event.InventoryEvent.ofCreature(creature));
     }
 
     @Override

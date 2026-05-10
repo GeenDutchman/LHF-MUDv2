@@ -1,17 +1,26 @@
 package com.geendutchman.lhf_mudv2.execution;
 
+import java.io.PrintWriter;
 import java.time.Duration;
+import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
+import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DynamicContainer;
+import org.junit.jupiter.api.DynamicNode;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -35,6 +44,7 @@ import com.geendutchman.lhf_mudv2.entities.room.RoomBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.room.RoomSubject;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
 import com.geendutchman.lhf_mudv2.execution.controllers.TestCreatureController;
+import com.geendutchman.lhf_mudv2.junction.LogWriter;
 import com.github.f4b6a3.tsid.Tsid;
 import com.google.common.truth.Truth;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -49,9 +59,35 @@ public class BasicIntegrationTest {
     @Autowired
     CreatureRepository creatureRepository;
     @Autowired
-    Function<MessageContext, CommandLine> generator;
+    BiFunction<MessageBus, MessageContext, CommandLine> generator;
     @Autowired
     Duration duration;
+
+    private Stream<DynamicNode> expandCLI(Collection<CommandLine> lines) {
+        if (lines == null) {
+            return Stream.of();
+        }
+        return lines.stream().filter(line -> line != null).map(line -> {
+            DynamicNode node = DynamicContainer.dynamicContainer(line.getCommandName(),
+                    Stream.concat(Stream.of(DynamicTest.dynamicTest(line.getCommandName(), () -> {
+                        line.usage(line.getOut());
+                    })), expandCLI(line.getSubcommands().values())));
+            return node;
+        });
+    }
+
+    @TestFactory
+    Stream<DynamicNode> testGenerate() {
+        Logger logger = LoggerFactory.getLogger(getClass());
+        MessageContext ctx = MessageContext.builder().setSenderId(IEntityID.BLANK_ID)
+                .setDestinationId(IEntityID.BLANK_ID).build();
+        CommandLine built = generator.apply(bus, ctx);
+        built.setOut(new PrintWriter(new LogWriter(logger)));
+        built.setErr(new PrintWriter(new LogWriter(logger, Level.ERROR)));
+        built.usage(built.getOut());
+        return expandCLI(Set.of(built));
+
+    }
 
     @Test
     void testLook(@Autowired RoomBuilderFactory roomBuilderFactory,
@@ -85,8 +121,8 @@ public class BasicIntegrationTest {
 
         room.applyDelta(Room.Delta.ofCreatureToAdd(tester));
 
-        MessageProcessingResult sendResult = creatureController.process(
-                MessageContext.builder().setSender(tester.creatureID()).setDestination(tester.creatureID()).build(),
+        MessageProcessingResult sendResult = bus.send(
+                MessageContext.builder().setSenderId(tester.creatureID()).setDestinationId(tester.creatureID()).build(),
                 new LHFCommand.LineCommand(LHFCommand.idFactory.create(), "see", false));
         Truth.assertThat(sendResult).isEqualTo(MessageProcessingResult.HANDLED);
 
@@ -110,8 +146,8 @@ public class BasicIntegrationTest {
         RoomSubject.assertThat(room).items().queryOne(ItemQuery.builder().setDisplayName("Statue Bust").build())
                 .isPresent();
 
-        MessageContext context = MessageContext.builder().setSender(tester.creatureID())
-                .setDestination(tester.identifier()).build();
+        MessageContext context = MessageContext.builder().setSenderId(tester.creatureID())
+                .setDestinationId(tester.identifier()).build();
 
         MessageProcessingResult takeResult = bus.send(context,
                 new LHFCommand.LineCommand(LHFCommand.idFactory.create(), "take \"Statue Bust\"", false));
@@ -194,7 +230,7 @@ public class BasicIntegrationTest {
         // do the four cardinal directions
 
         MessageProcessingResult goResult = bus.send(
-                MessageContext.builder().setSender(tester.creatureID()).setDestination(tester.identifier()).build(),
+                MessageContext.builder().setSenderId(tester.creatureID()).setDestinationId(tester.identifier()).build(),
                 new LHFCommand.LineCommand(LHFCommand.idFactory.create(),
                         String.format("go %s", Directions.NORTH.name()), false));
         Truth.assertThat(goResult).isEqualTo(MessageProcessingResult.HANDLED);
@@ -205,7 +241,7 @@ public class BasicIntegrationTest {
 
         canProceed.reset();
         goResult = bus.send(
-                MessageContext.builder().setSender(tester.creatureID()).setDestination(tester.identifier()).build(),
+                MessageContext.builder().setSenderId(tester.creatureID()).setDestinationId(tester.identifier()).build(),
                 new LHFCommand.LineCommand(LHFCommand.idFactory.create(),
                         String.format("go %s", Directions.EAST.name()), false));
         Truth.assertThat(goResult).isEqualTo(MessageProcessingResult.HANDLED);
@@ -216,7 +252,7 @@ public class BasicIntegrationTest {
 
         canProceed.reset();
         goResult = bus.send(
-                MessageContext.builder().setSender(tester.creatureID()).setDestination(tester.identifier()).build(),
+                MessageContext.builder().setSenderId(tester.creatureID()).setDestinationId(tester.identifier()).build(),
                 new LHFCommand.LineCommand(LHFCommand.idFactory.create(),
                         String.format("go %s", Directions.SOUTH.name()), false));
         Truth.assertThat(goResult).isEqualTo(MessageProcessingResult.HANDLED);
@@ -227,7 +263,7 @@ public class BasicIntegrationTest {
 
         canProceed.reset();
         goResult = bus.send(
-                MessageContext.builder().setSender(tester.creatureID()).setDestination(tester.identifier()).build(),
+                MessageContext.builder().setSenderId(tester.creatureID()).setDestinationId(tester.identifier()).build(),
                 new LHFCommand.LineCommand(LHFCommand.idFactory.create(), String.format("go %s", Directions.WEST),
                         false));
         Truth.assertThat(goResult).isEqualTo(MessageProcessingResult.HANDLED);
@@ -238,7 +274,7 @@ public class BasicIntegrationTest {
 
         canProceed.reset();
         goResult = bus.send(
-                MessageContext.builder().setSender(tester.creatureID()).setDestination(tester.identifier()).build(),
+                MessageContext.builder().setSenderId(tester.creatureID()).setDestinationId(tester.identifier()).build(),
                 new LHFCommand.LineCommand(LHFCommand.idFactory.create(), String.format("go %s", Directions.UP.name()),
                         false));
         Truth.assertThat(goResult).isEqualTo(MessageProcessingResult.HANDLED);
@@ -249,7 +285,7 @@ public class BasicIntegrationTest {
 
         canProceed.reset();
         goResult = bus.send(
-                MessageContext.builder().setSender(tester.creatureID()).setDestination(tester.identifier()).build(),
+                MessageContext.builder().setSenderId(tester.creatureID()).setDestinationId(tester.identifier()).build(),
                 new LHFCommand.LineCommand(LHFCommand.idFactory.create(),
                         String.format("go %s", Directions.DOWN.name()), false));
         Truth.assertThat(goResult).isEqualTo(MessageProcessingResult.HANDLED);
@@ -262,7 +298,7 @@ public class BasicIntegrationTest {
 
         canProceed.reset();
         goResult = bus.send(
-                MessageContext.builder().setSender(tester.creatureID()).setDestination(tester.identifier()).build(),
+                MessageContext.builder().setSenderId(tester.creatureID()).setDestinationId(tester.identifier()).build(),
                 new LHFCommand.LineCommand(LHFCommand.idFactory.create(),
                         String.format("go %s", Directions.EAST.name()), false));
         Truth.assertThat(goResult).isInstanceOf(MessageProcessingResult.Failed.class);
@@ -276,7 +312,7 @@ public class BasicIntegrationTest {
 
         canProceed.reset();
         goResult = bus.send(
-                MessageContext.builder().setSender(tester.creatureID()).setDestination(tester.identifier()).build(),
+                MessageContext.builder().setSenderId(tester.creatureID()).setDestinationId(tester.identifier()).build(),
                 new LHFCommand.LineCommand(LHFCommand.idFactory.create(),
                         String.format("go %s", Directions.SOUTH.name()), false));
         Truth.assertThat(goResult).isInstanceOf(MessageProcessingResult.Failed.class);

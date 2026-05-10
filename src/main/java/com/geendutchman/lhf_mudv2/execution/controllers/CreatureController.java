@@ -1,7 +1,7 @@
 package com.geendutchman.lhf_mudv2.execution.controllers;
 
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,13 +33,14 @@ public class CreatureController implements MessageProcessor {
     protected final MessageBus bus;
 
     @Autowired
-    protected final Function<MessageContext, CommandLine> generator;
+    protected final BiFunction<MessageBus, MessageContext, CommandLine> generator;
 
     private final MessageProcessorID processorID;
 
     protected final Logger logger;
 
-    CreatureController(@Autowired MessageBus bus, @Autowired Function<MessageContext, CommandLine> generator) {
+    CreatureController(@Autowired MessageBus bus,
+            @Autowired BiFunction<MessageBus, MessageContext, CommandLine> generator) {
         Preconditions.checkNotNull(bus, "message bus should not be null");
         Preconditions.checkNotNull(generator, "Command line generator should not be null");
         Examinable.Name name = this.name();
@@ -105,13 +106,13 @@ public class CreatureController implements MessageProcessor {
 
                 if (context.replyTo().isPresent()) {
                     bus.publish(
-                            MessageContext.builder().setSender(creature.identifier())
-                                    .setDestination(context.replyTo().orElse(context.getSender())).build(),
+                            MessageContext.builder().setSenderId(creature.identifier())
+                                    .setDestinationId(context.replyTo().orElse(context.getSender()).baseId()).build(),
                             Event.CreatureChangedEvent.ofCreatureWithChangeDescription(creature, out.build()));
                 } else {
                     RichOutput description = out.build();
                     Event event = Event.CreatureChangedEvent.ofCreatureWithChangeDescription(creature, description);
-                    bus.publish(MessageContext.builder().setSender(creature.creatureID())
+                    bus.publish(MessageContext.builder().setSenderId(creature.creatureID())
                             .setDestination(context.getSender()).build(), event);
                     this.process(context, event);
                 }
@@ -126,7 +127,7 @@ public class CreatureController implements MessageProcessor {
             return MessageProcessingResult.Failed("cannot handle null lhf command");
         }
 
-        final Optional<Creature> forCreature = context.creature();
+        final Optional<Creature> forCreature = context.sender().creature();
         if (forCreature.isEmpty()) {
             return MessageProcessingResult.Failed("addressed creature does not exist");
         }
@@ -150,7 +151,7 @@ public class CreatureController implements MessageProcessor {
             };
         }
         case LHFCommand.LineCommand lc -> {
-            CommandLine line = this.generator.apply(context);
+            CommandLine line = this.generator.apply(bus, context);
             // TODO deal with stdout and stderr
             if (line == null) {
                 yield MessageProcessingResult.Failed("Could not produce a command line");
@@ -168,22 +169,21 @@ public class CreatureController implements MessageProcessor {
             return MessageProcessingResult.Failed("cannot handle null event");
         }
 
-        final Optional<Creature> forCreature = context.creature();
+        final Optional<Creature> forCreature = context.destination().creature();
         if (forCreature.isEmpty()) {
             return MessageProcessingResult.Failed("addressed creature does not exist");
         }
 
         final Creature creature = forCreature.get();
-        if (!creature.identifier().equals(context.destination())) {
+        if (!creature.identifier().equals(context.destination().baseId())) {
             return MessageProcessingResult.Failed("addressed creature not in context");
         }
 
         this.processEvent(context, event, creature);
 
         forCreature.get().items().stream().forEach(item -> {
-            bus.publish(
-                    MessageContext.builder().setSender(creature.creatureID()).setDestination(item.identifier()).build(),
-                    event);
+            bus.publish(MessageContext.builder().setSenderId(creature.creatureID()).setDestinationId(item.identifier())
+                    .build(), event);
         });
 
         return MessageProcessingResult.HANDLED;
@@ -247,7 +247,8 @@ public class CreatureController implements MessageProcessor {
 
         public void onSpokenEvent(MessageContext context, Event.SpokenEvent event) {
             CreatureController.this.process(
-                    MessageContext.builder().setSender(creature.creatureID()).setDestination(event.speaker()).build(),
+                    MessageContext.builder().setSenderId(creature.creatureID()).setDestinationId(event.speaker())
+                            .build(),
                     new LHFCommand.LineCommand(LHFCommand.idFactory.create(),
                             String.format("say \"I am not sure what to say to you but TODO.\" to \"%s\"",
                                     event.speaker().name()),

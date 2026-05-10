@@ -68,8 +68,8 @@ public class CreatureExitTest extends ItemExitTest {
     @Test
     void testCreatureExit() {
         CreatureContainerSubject.assertThat(creatureRepository).hasCreature(creature);
-        final MessageContext context = MessageContext.builder().setSender(creature.creatureID())
-                .setDestination(creature.creatureID()).build();
+        final MessageContext context = MessageContext.builder().setSenderId(creature.creatureID())
+                .setDestinationId(creature.creatureID()).build();
         final LHFCommand.LineCommand exitCommand = new LHFCommand.LineCommand(LHFCommand.idFactory.create(), "exit",
                 false);
         final MessageProcessingResult result = creatureController.process(context, exitCommand);

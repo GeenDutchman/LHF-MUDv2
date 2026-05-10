@@ -10,6 +10,7 @@ import com.geendutchman.lhf_mudv2.entities.room.Room;
 import com.geendutchman.lhf_mudv2.execution.Event;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
+import com.geendutchman.lhf_mudv2.execution.commandline.converters.SenderCreatureItemsOnly;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
@@ -24,21 +25,20 @@ public final class DropCommand extends UserCommandHandler {
         super(messbus, context);
     }
 
-    // TODO: correct converter limited to Creature
-    @Parameters(arity = "1", index = "0", description = "What you want to drop. Provide the name \"In quotes\" for the best results")
+    @Parameters(arity = "1", index = "0", description = "What you want to drop. Provide the name \"In quotes\" for the best results", converter = SenderCreatureItemsOnly.class)
     protected Item target;
 
     @Override
     public void run() {
-        if (context.room().isPresent() && context.creature().isPresent()) {
-            final Room room = context.room().get();
-            final Creature creature = context.creature().get();
+        if (context.sender().room().isPresent() && context.sender().creature().isPresent()) {
+            final Room room = context.sender().room().get();
+            final Creature creature = context.sender().creature().get();
 
             creature.applyDelta(Creature.Delta.ofItemToRemove(target));
             room.applyDelta(Room.Delta.ofItemToAdd(target));
             this.bus.publish(
-                    MessageContext.builder().setRoom(room).addOther("itemDropper", creature).setSender(room.roomID())
-                            .setDestination(room.roomID()).build(),
+                    MessageContext.builder().addOther("itemDropper", creature).setSenderId(room.roomID())
+                            .setDestinationId(room.roomID()).setDestinationDetails(e -> e.room(room)).build(),
                     Event.RoomChangedEvent.ofRoomWithChangeDescription(room, RichOutput.builder().addTaggable(creature)
                             .addString("dropped").addTaggable(target).build()));
         } else {

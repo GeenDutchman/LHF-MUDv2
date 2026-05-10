@@ -48,7 +48,7 @@ public class MessageBusTest {
         bus.registerEntity(entity, firstID);
 
         Event event = Event.PlainEvent.asDescribed(RichOutput.builder().addString("I have coconuts").build());
-        MessageContext context = MessageContext.builder().setSender(entity).setDestination(entity).build();
+        MessageContext context = MessageContext.builder().setSenderId(entity).setDestinationId(entity).build();
         MessageProcessingResult result = bus.publish(context, event);
         Truth.assertThat(result).isEqualTo(MessageProcessingResult.HANDLED);
 
@@ -68,7 +68,7 @@ public class MessageBusTest {
         bus.registerEntity(entity, firstID);
 
         LHFCommand command = new LHFCommand.LineCommand(LHFCommand.idFactory.create(), "say \"Hello there\"", false);
-        MessageContext context = MessageContext.builder().setSender(entity).setDestination(entity).build();
+        MessageContext context = MessageContext.builder().setSenderId(entity).setDestinationId(entity).build();
         bus.send(context, command);
 
         Mockito.verify(first, Mockito.timeout(timing.toMillis())).process(context, command);
@@ -99,7 +99,7 @@ public class MessageBusTest {
         bus.registerProcessor(first);
         bus.registerEntity(entity, firstID);
 
-        MessageContext context = MessageContext.builder().setSender(entity).setDestination(entity).build();
+        MessageContext context = MessageContext.builder().setSenderId(entity).setDestinationId(entity).build();
         final int count = 30;
         for (int i = 0; i < count; i++) {
             Event event = Event.PlainEvent.asDescribed(RichOutput.builder()

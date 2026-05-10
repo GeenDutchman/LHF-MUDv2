@@ -136,7 +136,7 @@ public abstract class CommandHandler implements Runnable {
     @Component
     @Scope("prototype")
     @Command(name = "ping", description = "Tests connectivity", subcommands = { HelpCommand.class })
-    public final class PingCommandHandler extends CommandHandler {
+    public final static class PingCommandHandler extends CommandHandler {
 
         @Autowired
         protected PingCommandHandler(MessageBus messbus, MessageContext context) {
