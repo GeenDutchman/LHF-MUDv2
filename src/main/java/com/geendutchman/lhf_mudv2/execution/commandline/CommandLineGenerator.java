@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureRepository;
 import com.geendutchman.lhf_mudv2.entities.entity.Entity;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.item.ItemRepository;
 import com.geendutchman.lhf_mudv2.entities.room.RoomRepository;
@@ -19,6 +20,7 @@ import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingRe
 import com.geendutchman.lhf_mudv2.execution.commandline.CommandHandler.PingCommandHandler;
 import com.geendutchman.lhf_mudv2.execution.commandline.converters.CreatureFromContext;
 import com.geendutchman.lhf_mudv2.execution.commandline.converters.EntityFromContext;
+import com.geendutchman.lhf_mudv2.execution.commandline.converters.EntityIDConverter;
 import com.geendutchman.lhf_mudv2.execution.commandline.converters.ItemFromContext;
 import com.geendutchman.lhf_mudv2.execution.commandline.converters.SenderCreatureItemsOnly;
 import com.geendutchman.lhf_mudv2.execution.commandline.converters.SenderRoomCreaturesOnly;
@@ -58,6 +60,7 @@ public record CommandLineGenerator(IFactory factory, ItemRepository itemReposito
         final SenderCreatureItemsOnly scio = new SenderCreatureItemsOnly(t);
         final SenderRoomCreaturesOnly srco = new SenderRoomCreaturesOnly(t);
         final SenderRoomItemsOnly srio = new SenderRoomItemsOnly(t);
+        final EntityIDConverter eic = new EntityIDConverter();
 
         IFactory injectFactory = new IFactory() {
 
@@ -114,6 +117,7 @@ public record CommandLineGenerator(IFactory factory, ItemRepository itemReposito
             line.registerConverter(Creature.class, cfc);
             line.registerConverter(Item.class, ifc);
             line.registerConverter(Entity.class, efc);
+            line.registerConverter(IEntityID.class, eic);
         }
         return line;
     }

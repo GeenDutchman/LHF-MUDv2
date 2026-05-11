@@ -1,4 +1,4 @@
-package com.geendutchman.lhf_mudv2.junction.cliconverters;
+package com.geendutchman.lhf_mudv2.execution.commandline.converters;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.Taggable;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature.CreatureID;
+import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID.EntityID;
 import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
@@ -17,10 +18,10 @@ import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.TypeConversionException;
 
 @Component
-public record EntityIDConverter() implements ITypeConverter<EntityID> {
+public record EntityIDConverter() implements ITypeConverter<IEntityID> {
 
     @Override
-    public EntityID convert(String value) throws Exception {
+    public IEntityID convert(String value) throws Exception {
         return this.convertEntityID(value);
     }
 
