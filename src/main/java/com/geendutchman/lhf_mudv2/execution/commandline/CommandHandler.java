@@ -3,6 +3,7 @@ package com.geendutchman.lhf_mudv2.execution.commandline;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayDeque;
+import java.util.concurrent.Callable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +12,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
+import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 
 import picocli.CommandLine;
@@ -19,7 +21,7 @@ import picocli.CommandLine.HelpCommand;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
-public abstract class CommandHandler implements Runnable {
+public abstract class CommandHandler implements Callable<MessageProcessingResult> {
     @Spec
     protected CommandSpec spec;
 
@@ -144,8 +146,9 @@ public abstract class CommandHandler implements Runnable {
         }
 
         @Override
-        public void run() {
+        public MessageProcessingResult call() {
             this.spec.commandLine().getOut().println("pong");
+            return MessageProcessingResult.HANDLED;
         }
 
     }

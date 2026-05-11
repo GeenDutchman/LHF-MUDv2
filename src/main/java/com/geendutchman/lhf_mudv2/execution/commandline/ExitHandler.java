@@ -17,6 +17,7 @@ import com.geendutchman.lhf_mudv2.entities.room.Room;
 import com.geendutchman.lhf_mudv2.entities.room.RoomRepository;
 import com.geendutchman.lhf_mudv2.execution.Event;
 import com.geendutchman.lhf_mudv2.execution.Event.PlainEvent;
+import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
 
@@ -43,12 +44,12 @@ public final class ExitHandler extends SwitchedHandler {
     }
 
     @Override
-    public void run() {
-        contextSplit();
+    public MessageProcessingResult call() {
+        return contextSplit();
     }
 
     @Override
-    protected void onItem(Item item) {
+    protected MessageProcessingResult onItem(Item item) {
         try (final Defer onClose = new Defer()) {
             context.sender().room().ifPresent(r -> {
                 r.applyDelta(Room.Delta.ofItemToRemove(item));
@@ -58,10 +59,11 @@ public final class ExitHandler extends SwitchedHandler {
             });
             onClose.addLast(() -> itemRepository.remove(item));
         }
+        return MessageProcessingResult.HANDLED;
     }
 
     @Override
-    protected void onCreature(Creature creature) {
+    protected MessageProcessingResult onCreature(Creature creature) {
         try (final Defer onClose = new Defer()) {
             bus.publish(
                     context.toBuilder().setSenderId(creature.identifier()).setSenderDetails(d -> d.creature(creature))
@@ -86,11 +88,12 @@ public final class ExitHandler extends SwitchedHandler {
                                 RichOutput.builder().addTaggable(creature).addString("has exited Ibaif").build()));
             });
             onClose.addLast(() -> creatureRepository.remove(creature));
+            return MessageProcessingResult.HANDLED;
         }
     }
 
     @Override
-    protected void onRoom(Room room) {
+    protected MessageProcessingResult onRoom(Room room) {
         try (final Defer onClose = new Defer()) {
             final RichOutput message = RichOutput.builder().addString("Cataclysm,").addTaggable(room)
                     .addString("is exiting, taking you with it!").build();
@@ -106,13 +109,16 @@ public final class ExitHandler extends SwitchedHandler {
             });
             onClose.addLast(() -> roomRepository.remove(room));
         }
+        return MessageProcessingResult.HANDLED;
     }
 
     @Override
-    protected void unrecognized() {
-        bus.publish(MessageContext.builder().setSender(context.sender()).setDestination(context.sender()).build(),
-                PlainEvent.asDescribed(RichOutput.builder()
-                        .addString("Somehow, you can't exit right now. That is a heckin' huge problem!").build()));
+    protected MessageProcessingResult unrecognized() {
+        return bus
+                .publish(MessageContext.builder().setSender(context.sender()).setDestination(context.sender()).build(),
+                        PlainEvent.asDescribed(RichOutput.builder()
+                                .addString("Somehow, you can't exit right now. That is a heckin' huge problem!")
+                                .build()));
     }
 
 }

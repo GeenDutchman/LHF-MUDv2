@@ -4,6 +4,7 @@ import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.room.Room;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
+import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 
 abstract class SwitchedHandler extends UserCommandHandler {
@@ -13,29 +14,30 @@ abstract class SwitchedHandler extends UserCommandHandler {
     }
 
     @Override
-    public void run() {
-        contextSplit();
+    public MessageProcessingResult call() {
+        return contextSplit();
     }
 
-    protected final void contextSplit() {
+    protected final MessageProcessingResult contextSplit() {
         if (context.sender().creature().map(c -> c.identifier()).filter(i -> i.equals(context.sender().baseId()))
                 .isPresent()) {
-            this.onCreature(context.sender().creature().get());
+            return this.onCreature(context.sender().creature().get());
         } else if (context.sender().item().map(item -> item.identifier())
                 .filter(id -> id.equals(context.sender().baseId())).isPresent()) {
-            this.onItem(context.sender().item().get());
+            return this.onItem(context.sender().item().get());
         } else if (context.sender().room().map(room -> room.identifier())
                 .filter(id -> id.equals(context.sender().baseId())).isPresent()) {
-            this.onRoom(context.sender().room().get());
+            return this.onRoom(context.sender().room().get());
         }
+        return this.unrecognized();
     }
 
-    protected abstract void onItem(final Item item);
+    protected abstract MessageProcessingResult onItem(final Item item);
 
-    protected abstract void onCreature(final Creature creature);
+    protected abstract MessageProcessingResult onCreature(final Creature creature);
 
-    protected abstract void onRoom(final Room room);
+    protected abstract MessageProcessingResult onRoom(final Room room);
 
-    protected abstract void unrecognized();
+    protected abstract MessageProcessingResult unrecognized();
 
 }

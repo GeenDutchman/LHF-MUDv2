@@ -15,6 +15,7 @@ import com.geendutchman.lhf_mudv2.execution.Event.ItemSeenEvent;
 import com.geendutchman.lhf_mudv2.execution.Event.RoomSeenEvent;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
+import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
@@ -33,56 +34,55 @@ public final class SeeCommand extends SwitchedHandler {
     protected Optional<Entity> what;
 
     @Override
-    public void run() {
+    public MessageProcessingResult call() {
         if (this.what != null && this.what.isPresent()) {
             if (this.what.get() instanceof Item item) {
-                this.onItem(item);
+                return this.onItem(item);
             } else if (this.what.get() instanceof Creature creature) {
-                this.onCreature(creature);
+                return this.onCreature(creature);
             } else if (this.what.get() instanceof Room room) {
-                this.onRoom(room);
+                return this.onRoom(room);
             } else if (this.context.sender().room().isPresent()) {
-                this.onRoom(this.context.sender().room().get());
+                return this.onRoom(this.context.sender().room().get());
             } else {
-                this.unrecognized();
+                return this.unrecognized();
             }
         } else if (this.context.sender().room().isPresent()) {
-            this.onRoom(this.context.sender().room().get());
+            return this.onRoom(this.context.sender().room().get());
         } else {
-            this.unrecognized();
+            return this.unrecognized();
         }
     }
 
     @Override
-    protected void onItem(Item item) {
-        context.sender().creature()
-                .filter(creature -> creature.hasItem(item)
-                        || item.visibility().test(creature.plainCheck(AttributeScores.SAVVY)))
-                .ifPresentOrElse(creature -> {
+    protected MessageProcessingResult onItem(Item item) {
+        return context.sender().creature().filter(creature -> creature.hasItem(item)
+                || item.visibility().test(creature.plainCheck(AttributeScores.SAVVY))).flatMap(creature -> {
                     bus.publish(
                             MessageContext.builder().setSenderId(context.sender().room().get().roomID())
                                     .setDestination(context.sender()).addOther("seenItem", item).build(),
                             new ItemSeenEvent(item));
-                }, () -> {
-                    // TODO: failure message
-                });
+                    return Optional.<MessageProcessingResult>of(MessageProcessingResult.HANDLED);
+                }).or(() -> {
+                    return Optional.<MessageProcessingResult>of(MessageProcessingResult.Failed("No item to see"));
+                }).get();
     }
 
     @Override
-    protected void onCreature(Creature creature) {
-        bus.publish(MessageContext.builder().setSenderId(context.sender().room().get().roomID())
+    protected MessageProcessingResult onCreature(Creature creature) {
+        return bus.publish(MessageContext.builder().setSenderId(context.sender().room().get().roomID())
                 .setDestination(context.sender()).build(), new CreatureSeenEvent(creature));
     }
 
     @Override
-    protected void onRoom(Room room) {
-        bus.publish(MessageContext.builder().setSenderId(room.roomID()).setDestination(context.sender()).build(),
+    protected MessageProcessingResult onRoom(Room room) {
+        return bus.publish(MessageContext.builder().setSenderId(room.roomID()).setDestination(context.sender()).build(),
                 new RoomSeenEvent(room, null, null));
     }
 
     @Override
-    protected void unrecognized() {
-        // TODO: does nothing for now
+    protected MessageProcessingResult unrecognized() {
+        return MessageProcessingResult.Failed("Whatever that is, we don't know what it is");
     }
 
 }

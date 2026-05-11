@@ -10,6 +10,7 @@ import com.geendutchman.lhf_mudv2.entities.room.Room;
 import com.geendutchman.lhf_mudv2.execution.Event;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
+import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
 import com.geendutchman.lhf_mudv2.execution.commandline.converters.SenderRoomItemsOnly;
 
 import picocli.CommandLine.Command;
@@ -29,20 +30,20 @@ public final class TakeCommand extends UserCommandHandler {
     protected Item target;
 
     @Override
-    public void run() {
+    public MessageProcessingResult call() {
         if (context.sender().room().isPresent() && context.sender().creature().isPresent()) {
             final Room room = context.sender().room().get();
             final Creature creature = context.sender().creature().get();
 
             room.applyDelta(Room.Delta.ofItemToRemove(target));
             creature.applyDelta(Creature.Delta.ofItemToAdd(target));
-            this.bus.publish(
+            return this.bus.publish(
                     MessageContext.builder().setSenderId(room.roomID()).setDestinationId(room.roomID())
                             .addOther("takenItem", target).build(),
                     Event.RoomChangedEvent.ofRoomWithChangeDescription(room,
                             RichOutput.builder().addTaggable(creature).addString("took").addTaggable(target).build()));
         } else {
-            // TODO: some warning
+            return MessageProcessingResult.Failed("You likely are not in a room where you can take stuff");
         }
     }
 

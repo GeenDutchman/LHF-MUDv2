@@ -1,5 +1,6 @@
 package com.geendutchman.lhf_mudv2.execution.commandline;
 
+import java.util.concurrent.Callable;
 import java.util.function.BiFunction;
 
 import org.springframework.beans.factory.ObjectProvider;
@@ -14,10 +15,14 @@ import com.geendutchman.lhf_mudv2.entities.item.ItemRepository;
 import com.geendutchman.lhf_mudv2.entities.room.RoomRepository;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
+import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
 import com.geendutchman.lhf_mudv2.execution.commandline.CommandHandler.PingCommandHandler;
 import com.geendutchman.lhf_mudv2.execution.commandline.converters.CreatureFromContext;
 import com.geendutchman.lhf_mudv2.execution.commandline.converters.EntityFromContext;
 import com.geendutchman.lhf_mudv2.execution.commandline.converters.ItemFromContext;
+import com.geendutchman.lhf_mudv2.execution.commandline.converters.SenderCreatureItemsOnly;
+import com.geendutchman.lhf_mudv2.execution.commandline.converters.SenderRoomCreaturesOnly;
+import com.geendutchman.lhf_mudv2.execution.commandline.converters.SenderRoomItemsOnly;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -36,20 +41,46 @@ public record CommandLineGenerator(IFactory factory, ItemRepository itemReposito
 
     @Command(name = "mud", description = "The base of all commands to do things here.", subcommands = {
             HelpCommand.class })
-    private static record MudCommand() {
+    private static record MudCommand() implements Callable<MessageProcessingResult> {
+
+        @Override
+        public MessageProcessingResult call() throws Exception {
+            throw new UnsupportedOperationException("You must specify a subcommand");
+        }
     }
 
     @Override
     public CommandLine apply(final MessageBus bus, final MessageContext t) {
+
+        final CreatureFromContext cfc = new CreatureFromContext(t);
+        final EntityFromContext efc = new EntityFromContext(t);
+        final ItemFromContext ifc = new ItemFromContext(t);
+        final SenderCreatureItemsOnly scio = new SenderCreatureItemsOnly(t);
+        final SenderRoomCreaturesOnly srco = new SenderRoomCreaturesOnly(t);
+        final SenderRoomItemsOnly srio = new SenderRoomItemsOnly(t);
+
         IFactory injectFactory = new IFactory() {
 
+            @SuppressWarnings("unchecked")
             @Override
             public <K> K create(Class<K> cls) throws Exception {
                 try {
                     if (t != null && t.getClass().isAssignableFrom(cls)) {
-                        @SuppressWarnings("unchecked")
                         K result = (K) t;
                         return result;
+                    }
+                    if (cfc.getClass().isAssignableFrom(cls)) {
+                        return (K) cfc;
+                    } else if (efc.getClass().isAssignableFrom(cls)) {
+                        return (K) efc;
+                    } else if (ifc.getClass().isAssignableFrom(cls)) {
+                        return (K) ifc;
+                    } else if (scio.getClass().isAssignableFrom(cls)) {
+                        return (K) scio;
+                    } else if (srco.getClass().isAssignableFrom(cls)) {
+                        return (K) srco;
+                    } else if (srio.getClass().isAssignableFrom(cls)) {
+                        return (K) srio;
                     }
                     return factory.create(cls);
                 } catch (Exception e) {
@@ -80,9 +111,9 @@ public record CommandLineGenerator(IFactory factory, ItemRepository itemReposito
         line.addSubcommand(take);
 
         if (t != null) {
-            line.registerConverter(Creature.class, new CreatureFromContext(t));
-            line.registerConverter(Item.class, new ItemFromContext(t));
-            line.registerConverter(Entity.class, new EntityFromContext(t));
+            line.registerConverter(Creature.class, cfc);
+            line.registerConverter(Item.class, ifc);
+            line.registerConverter(Entity.class, efc);
         }
         return line;
     }

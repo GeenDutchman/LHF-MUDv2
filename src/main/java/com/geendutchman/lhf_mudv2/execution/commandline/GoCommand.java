@@ -1,7 +1,7 @@
 package com.geendutchman.lhf_mudv2.execution.commandline;
 
 import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -16,6 +16,7 @@ import com.geendutchman.lhf_mudv2.entities.room.RoomRepository;
 import com.geendutchman.lhf_mudv2.execution.Event;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
+import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
 import com.google.common.collect.ImmutableSortedMap;
 
 import picocli.CommandLine.Command;
@@ -38,21 +39,19 @@ public final class GoCommand extends UserCommandHandler {
     protected Directions direction;
 
     @Override
-    public void run() {
+    public MessageProcessingResult call() {
         if (context.sender().room().isEmpty()) {
-            // TODO: some sort of error message
-            return;
+            return MessageProcessingResult.Failed("You are not currently in a room to be able to \"go\" anywhere");
         }
         final Room room = context.sender().room().get();
         if (context.sender().creature().isEmpty()) {
-            // TODO: some sort of error message
-            return;
+            return MessageProcessingResult.Failed("Only creatures can \"go\"");
         }
         final Creature creature = context.sender().creature().get();
 
         final ImmutableSortedMap<Directions, Doorway> doorways = room.doorways();
 
-        Consumer<Directions> onFail = (goDir) -> {
+        Function<Directions, MessageProcessingResult> onFail = (goDir) -> {
             RichOutput.Builder desc = RichOutput.builder().addTaggable(creature).addString("- you cannot go");
             if (goDir != null) {
                 desc.addTaggable(goDir);
@@ -81,12 +80,21 @@ public final class GoCommand extends UserCommandHandler {
             this.bus.publish(
                     MessageContext.builder().setSenderId(room.roomID()).setDestinationId(creature.creatureID()).build(),
                     Event.PlainEvent.asDescribed(desc.build()));
+            return MessageProcessingResult.Failed(String.format("Cannot go \"%s\"", goDir));
         };
 
-        final Optional<Room> nextRoom = this.roomRepository.byRoomID(doorways.get(direction).target());
+        final Doorway door = doorways.getOrDefault(direction, null);
+        if (door == null) {
+            return onFail.apply(direction);
+        }
+
+        if (!door.filter().typedTest(creature)) {
+            return onFail.apply(direction);
+        }
+
+        final Optional<Room> nextRoom = this.roomRepository.byRoomID(door.target());
         if (nextRoom == null || nextRoom.isEmpty()) {
-            onFail.accept(direction);
-            return;
+            return onFail.apply(direction);
         }
 
         final Room retrieved = nextRoom.get();
@@ -96,7 +104,7 @@ public final class GoCommand extends UserCommandHandler {
         final SeeCommand seecommand = new SeeCommand(bus, context);
         seecommand.setSpec(this.spec);
         seecommand.what = Optional.empty();
-        seecommand.run();
+        return seecommand.call();
     }
 
 }

@@ -9,6 +9,7 @@ import com.geendutchman.lhf_mudv2.entities.room.Room;
 import com.geendutchman.lhf_mudv2.execution.Event;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
+import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
@@ -22,30 +23,31 @@ public final class StatusCommand extends SwitchedHandler {
     }
 
     @Override
-    public void run() {
-        this.contextSplit();
+    public MessageProcessingResult call() {
+        return this.contextSplit();
     }
 
     @Override
-    protected void onCreature(Creature creature) {
-        this.bus.publish(MessageContext.builder().setSenderId(creature.identifier())
+    protected MessageProcessingResult onCreature(Creature creature) {
+        return this.bus.publish(MessageContext.builder().setSenderId(creature.identifier())
                 .setDestinationId(creature.creatureID()).build(), new Event.CreatureSeenEvent(creature));
     }
 
     @Override
-    protected void onItem(Item item) {
-        bus.publish(MessageContext.builder().setSenderId(item.identifier()).setDestinationId(item.itemID()).build(),
+    protected MessageProcessingResult onItem(Item item) {
+        return bus.publish(
+                MessageContext.builder().setSenderId(item.identifier()).setDestinationId(item.itemID()).build(),
                 new Event.ItemSeenEvent(item));
     }
 
     @Override
-    protected void onRoom(Room room) {
-        bus.publish(MessageContext.builder().setSenderId(room.roomID()).setDestinationId(room.roomID()).build(),
+    protected MessageProcessingResult onRoom(Room room) {
+        return bus.publish(MessageContext.builder().setSenderId(room.roomID()).setDestinationId(room.roomID()).build(),
                 new Event.RoomSeenEvent(room, null, null));
     }
 
     @Override
-    protected void unrecognized() {
-        // does nothing
+    protected MessageProcessingResult unrecognized() {
+        return MessageProcessingResult.Failed("An unknown object cannot get its status");
     }
 }

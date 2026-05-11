@@ -26,6 +26,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
 import com.geendutchman.lhf_mudv2.display.Examinable.Name;
+import com.geendutchman.lhf_mudv2.entities.creature.CreatureContainerSubject;
 import com.geendutchman.lhf_mudv2.entities.creature.CreatureSubject;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
 import com.geendutchman.lhf_mudv2.entities.creatures.CreatureBuilderFactory;
@@ -204,7 +205,8 @@ public class BasicIntegrationTest {
         };
         creatureController.setRoomSeenHook((context, creature, event) -> {
             try {
-                logger.info(event.description().printIt());
+                logger.atInfo().addKeyValue("RoomSeenEvent", event.description().printIt())
+                        .addKeyValue("Room", event.getRoomID()).log("Room seen");
                 canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
                 // canProceed.await();
             } catch (InterruptedException | BrokenBarrierException | TimeoutException e) {
@@ -229,6 +231,8 @@ public class BasicIntegrationTest {
 
         // do the four cardinal directions
 
+        logger.atInfo().log("Heading North");
+
         MessageProcessingResult goResult = bus.send(
                 MessageContext.builder().setSenderId(tester.creatureID()).setDestinationId(tester.identifier()).build(),
                 new LHFCommand.LineCommand(LHFCommand.idFactory.create(),
@@ -238,6 +242,8 @@ public class BasicIntegrationTest {
         canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
         Truth.assertAbout(CreatureSubject.creatures()).that(tester).locale().hasValue(roomB.roomID());
         Truth.assertAbout(RoomSubject.rooms()).that(roomB).creatures().contains(tester);
+
+        logger.atInfo().log("Heading East");
 
         canProceed.reset();
         goResult = bus.send(
@@ -250,6 +256,8 @@ public class BasicIntegrationTest {
         Truth.assertAbout(CreatureSubject.creatures()).that(tester).locale().hasValue(roomC.roomID());
         Truth.assertAbout(RoomSubject.rooms()).that(roomC).creatures().contains(tester);
 
+        logger.atInfo().log("Heading South");
+
         canProceed.reset();
         goResult = bus.send(
                 MessageContext.builder().setSenderId(tester.creatureID()).setDestinationId(tester.identifier()).build(),
@@ -260,6 +268,8 @@ public class BasicIntegrationTest {
         canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
         Truth.assertAbout(CreatureSubject.creatures()).that(tester).locale().hasValue(roomD.roomID());
         Truth.assertAbout(RoomSubject.rooms()).that(roomD).creatures().contains(tester);
+
+        logger.atInfo().log("Heading West");
 
         canProceed.reset();
         goResult = bus.send(
@@ -272,6 +282,8 @@ public class BasicIntegrationTest {
         Truth.assertAbout(CreatureSubject.creatures()).that(tester).locale().hasValue(roomA.roomID());
         Truth.assertAbout(RoomSubject.rooms()).that(roomA).creatures().contains(tester);
 
+        logger.atInfo().log("Heading Up");
+
         canProceed.reset();
         goResult = bus.send(
                 MessageContext.builder().setSenderId(tester.creatureID()).setDestinationId(tester.identifier()).build(),
@@ -282,6 +294,8 @@ public class BasicIntegrationTest {
         canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
         Truth.assertAbout(CreatureSubject.creatures()).that(tester).locale().hasValue(roomZ.roomID());
         Truth.assertAbout(RoomSubject.rooms()).that(roomZ).creatures().contains(tester);
+
+        logger.atInfo().log("Heading Down");
 
         canProceed.reset();
         goResult = bus.send(
@@ -295,6 +309,7 @@ public class BasicIntegrationTest {
         Truth.assertAbout(RoomSubject.rooms()).that(roomA).creatures().contains(tester);
 
         // Only Monsters can go from roomA east to roomD
+        logger.atInfo().addKeyValue("Filter", "Only Monsters can go from RoomA east to RoomD").log("Heading East");
 
         canProceed.reset();
         goResult = bus.send(
@@ -309,6 +324,7 @@ public class BasicIntegrationTest {
         Truth.assertAbout(RoomSubject.rooms()).that(roomD).creatures().doesNotContain(tester);
 
         // And south to a null room does not work
+        logger.atInfo().addKeyValue("Filter", "Cannot head to null room").log("Heading South");
 
         canProceed.reset();
         goResult = bus.send(
@@ -320,6 +336,30 @@ public class BasicIntegrationTest {
         canProceed.await(duration.toMillis(), TimeUnit.MILLISECONDS);
         Truth.assertAbout(CreatureSubject.creatures()).that(tester).locale().hasValue(roomA.roomID());
         Truth.assertAbout(RoomSubject.rooms()).that(roomA).creatures().contains(tester);
+
+    }
+
+    @Test
+    void testExit(@Autowired RoomBuilderFactory roomBuilderFactory,
+            @Autowired CreatureBuilderFactory creatureBuilderFactory) {
+        final Creature tester = CreatureBuilderFactory.builder()
+                .setNameGenerationStrategy(NameGenerationStrategy.ofPinnedFirstname("Tester")).setHealth(10)
+                .scores4d6DropLowest().setFaction(Faction.NPC).build(creatureBuilderFactory);
+        final Room roomA = RoomBuilderFactory.builder().setName("roomA").build(roomBuilderFactory);
+        roomA.applyDelta(new Room.Delta.AddCreatureDelta(tester));
+
+        CreatureContainerSubject.assertThat(creatureRepository).hasCreature(tester);
+        CreatureContainerSubject.assertThat(roomA).hasCreature(tester);
+
+        final MessageContext context = MessageContext.builder().setSenderId(tester.creatureID())
+                .setDestinationId(tester.identifier()).build();
+        final LHFCommand.LineCommand exitCommand = new LHFCommand.LineCommand(LHFCommand.idFactory.create(), "exit",
+                false);
+        MessageProcessingResult result = bus.send(context, exitCommand);
+        Truth.assertThat(result).isEqualTo(MessageProcessingResult.HANDLED);
+
+        CreatureContainerSubject.assertThat(roomA).doesNotHaveCreature(tester);
+        CreatureContainerSubject.assertThat(creatureRepository).doesNotHaveCreature(tester);
 
     }
 

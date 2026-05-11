@@ -33,7 +33,7 @@ public interface MessageContextInflator {
         Consumer<EntityStackBuilder> inflateStack = (stack) -> {
             IEntityID sender = stack.baseId();
             while (sender != null) {
-                if (sender instanceof ItemID iid && stack.item().isEmpty()) {
+                if (sender instanceof ItemID iid) {
                     Optional<Item> item = stack.item().or(() -> this.byItemID(iid));
                     if (item.isPresent()) {
                         sender = item.get().locale().orElse(null);
@@ -41,7 +41,7 @@ public interface MessageContextInflator {
                     } else {
                         sender = null;
                     }
-                } else if (sender instanceof CreatureID cid && stack.creature().isEmpty()) {
+                } else if (sender instanceof CreatureID cid) {
                     Optional<Creature> creature = stack.creature().or(() -> this.byCreatureID(cid));
                     if (creature.isPresent()) {
                         sender = creature.get().locale().orElse(null);
@@ -49,7 +49,7 @@ public interface MessageContextInflator {
                     } else {
                         sender = null;
                     }
-                } else if (sender instanceof RoomID rid && stack.room().isEmpty()) {
+                } else if (sender instanceof RoomID rid) {
                     Optional<Room> room = stack.room().or(() -> this.byRoomID(rid));
                     if (room.isPresent()) {
                         sender = room.get().locale().orElse(null);
@@ -60,7 +60,7 @@ public interface MessageContextInflator {
                 } else {
                     if (sender != null) {
                         LoggerFactory.getLogger(this.getClass()).atDebug().addKeyValue("sender", sender)
-                                .log("unknown sender");
+                                .addKeyValue("id-class", sender.getClass().getCanonicalName()).log("unknown sender");
                         sender = null;
                     }
                 }

@@ -9,6 +9,7 @@ import com.geendutchman.lhf_mudv2.entities.room.Room;
 import com.geendutchman.lhf_mudv2.execution.Event;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
+import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
@@ -23,23 +24,23 @@ public final class InventoryCommand extends SwitchedHandler {
     }
 
     @Override
-    protected void onItem(Item item) {
-        // items generally don't have an inventory
+    protected MessageProcessingResult onItem(Item item) {
+        return MessageProcessingResult.Failed("Items don't generally have an inventory");
     }
 
     @Override
-    protected void onCreature(Creature creature) {
-        bus.publish(MessageContext.builder().setSenderId(creature.identifier()).setDestinationId(creature.creatureID())
-                .build(), Event.InventoryEvent.ofCreature(creature));
+    protected MessageProcessingResult onCreature(Creature creature) {
+        return bus.publish(MessageContext.builder().setSenderId(creature.identifier())
+                .setDestinationId(creature.creatureID()).build(), Event.InventoryEvent.ofCreature(creature));
     }
 
     @Override
-    protected void onRoom(Room room) {
-        // room cannot handle inventory command
+    protected MessageProcessingResult onRoom(Room room) {
+        return MessageProcessingResult.Failed("Room cannot handle inventory command");
     }
 
     @Override
-    protected void unrecognized() {
-        // this really can't handle inventory command
+    protected MessageProcessingResult unrecognized() {
+        return MessageProcessingResult.Failed("Whatever this is *really* cannot handle the inventory command");
     }
 }

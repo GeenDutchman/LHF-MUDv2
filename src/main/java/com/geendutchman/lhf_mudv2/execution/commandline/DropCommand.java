@@ -10,6 +10,7 @@ import com.geendutchman.lhf_mudv2.entities.room.Room;
 import com.geendutchman.lhf_mudv2.execution.Event;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
+import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
 import com.geendutchman.lhf_mudv2.execution.commandline.converters.SenderCreatureItemsOnly;
 
 import picocli.CommandLine.Command;
@@ -29,7 +30,7 @@ public final class DropCommand extends UserCommandHandler {
     protected Item target;
 
     @Override
-    public void run() {
+    public MessageProcessingResult call() {
         if (context.sender().room().isPresent() && context.sender().creature().isPresent()) {
             final Room room = context.sender().room().get();
             final Creature creature = context.sender().creature().get();
@@ -41,8 +42,9 @@ public final class DropCommand extends UserCommandHandler {
                             .setDestinationId(room.roomID()).setDestinationDetails(e -> e.room(room)).build(),
                     Event.RoomChangedEvent.ofRoomWithChangeDescription(room, RichOutput.builder().addTaggable(creature)
                             .addString("dropped").addTaggable(target).build()));
+            return MessageProcessingResult.HANDLED;
         } else {
-            // TODO: some warning
+            return MessageProcessingResult.Failed("You must be in a room");
         }
     }
 

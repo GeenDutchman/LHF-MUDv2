@@ -8,6 +8,7 @@ import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
 import com.geendutchman.lhf_mudv2.execution.Event;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
+import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
 import com.google.common.collect.ImmutableList;
 
 import picocli.CommandLine.Command;
@@ -27,32 +28,31 @@ public final class SayCommand extends UserCommandHandler {
     protected ImmutableList<String> message;
 
     @Override
-    public void run() {
+    public MessageProcessingResult call() {
         if (context.sender().room().isPresent()) {
             RichOutput.Builder builder = RichOutput.builder();
             for (final String string : message) {
                 builder.addString(string);
             }
 
-            this.bus.publish(
+            return this.bus.publish(
                     MessageContext.builder().setSender(context.sender())
                             .setDestinationId(context.sender().room().get().roomID()).build(),
                     Event.SpokenEvent.speaking(context.sender().baseId(), builder.build()));
-            return;
         } else {
-            // TODO: alert about problem
+            return MessageProcessingResult.Failed("No room present, cannot send message");
         }
     }
 
     @Command(name = "to", description = "Directs the message to a particular creature. Provide the name \"In quotes\" for the best results.", subcommands = {
             HelpCommand.class })
-    public void to(
+    public MessageProcessingResult to(
             @Parameters(arity = "1", index = "0", description = "To whom this message is directed.") Creature listener) {
         final RichOutput.Builder builder = RichOutput.builder();
         for (final String string : message) {
             builder.addString(string);
         }
-        this.bus.publish(
+        return this.bus.publish(
                 MessageContext.builder().setSender(context.sender()).setDestinationId(listener.creatureID()).build(),
                 Event.SpokenEvent.speaking(context.sender().baseId(), builder.build()));
     }

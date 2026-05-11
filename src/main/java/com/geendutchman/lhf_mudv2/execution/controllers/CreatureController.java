@@ -1,5 +1,6 @@
 package com.geendutchman.lhf_mudv2.execution.controllers;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
@@ -26,6 +27,7 @@ import com.google.common.collect.ImmutableList;
 
 import jakarta.annotation.PostConstruct;
 import picocli.CommandLine;
+import picocli.CommandLine.ParseResult;
 
 @Component
 public class CreatureController implements MessageProcessor {
@@ -86,7 +88,7 @@ public class CreatureController implements MessageProcessor {
     protected MessageProcessingResult processChangeCreatureCommand(MessageContext context,
             LHFCommand.ChangeEntityCommand.ChangeCreatureCommand changeCreatureCommand, Creature creature) {
         Preconditions.checkNotNull(creature, "creature should not be null");
-        Preconditions.checkArgument(creature.identifier().equals(context.destination()),
+        Preconditions.checkArgument(creature.identifier().equals(context.destination().baseId()),
                 "should be directed to this creature");
         final ImmutableList<CreatureEffect> effects = changeCreatureCommand.effects();
         if (effects != null) {
@@ -129,12 +131,12 @@ public class CreatureController implements MessageProcessor {
 
         final Optional<Creature> forCreature = context.sender().creature();
         if (forCreature.isEmpty()) {
-            return MessageProcessingResult.Failed("addressed creature does not exist");
+            return MessageProcessingResult.Failed("sending creature does not exist");
         }
 
         final Creature creature = forCreature.get();
-        if (!creature.identifier().equals(context.destination())) {
-            return MessageProcessingResult.Failed("addressed creature not in context");
+        if (!creature.identifier().equals(context.destination().baseId())) {
+            return MessageProcessingResult.Failed("sending creature is not the same as the command destination");
         }
 
         return switch (lhfCommand) {
@@ -157,7 +159,14 @@ public class CreatureController implements MessageProcessor {
                 yield MessageProcessingResult.Failed("Could not produce a command line");
             }
             line.execute(lc.commandArray());
-            yield MessageProcessingResult.HANDLED;
+            ParseResult parseResult = line.getParseResult();
+            List<CommandLine> cmdlist = parseResult.asCommandLineList();
+            Object result = cmdlist.getLast().getExecutionResult();
+            if (result instanceof MessageProcessingResult mpr) {
+                yield mpr;
+            } else {
+                yield MessageProcessingResult.Failed(String.format("Unknown result -> '%s'", result));
+            }
         }
 
         };
@@ -171,7 +180,7 @@ public class CreatureController implements MessageProcessor {
 
         final Optional<Creature> forCreature = context.destination().creature();
         if (forCreature.isEmpty()) {
-            return MessageProcessingResult.Failed("addressed creature does not exist");
+            return MessageProcessingResult.Failed("destination creature does not exist");
         }
 
         final Creature creature = forCreature.get();

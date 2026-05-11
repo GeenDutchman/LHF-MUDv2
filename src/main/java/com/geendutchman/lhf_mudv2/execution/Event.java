@@ -180,7 +180,7 @@ public sealed interface Event extends Message, Comparable<Event> {
 
         @Override
         public RichOutput description() {
-            RichOutput.Builder builder = RichOutput.builder();
+            RichOutput.Builder builder = RichOutput.builder().setSequenceName(this.room.name().toString());
             this.room.description().ifPresent(rd -> builder.addOutput(rd));
             if (this.directions != null && this.directions.size() > 0) {
                 RichOutput.Builder dirBuilder = RichOutput.builder().setSequenceName("Directions")
