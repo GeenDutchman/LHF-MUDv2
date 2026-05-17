@@ -13,6 +13,7 @@ import com.geendutchman.lhf_mudv2.entities.item.Item.ItemID;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 
 final class ConcreteCreature implements Creature {
     final private CreatureID creatureID;
@@ -25,22 +26,23 @@ final class ConcreteCreature implements Creature {
     private final ConcurrentNavigableMap<AttributeScores, Byte> scores;
     private final ConcurrentNavigableMap<AttributeScores, Byte> scoreModBonuses;
     private final ConcurrentNavigableMap<CreatureStats, Integer> vitals;
+    private final ConcurrentNavigableMap<String, String> properties;
 
     protected static ConcreteCreature buildCreature(Examinable.Name name, ItemInventory inventory, Faction faction,
             Map<AttributeScores, Byte> scores, Map<AttributeScores, Byte> scoreModifierBonuses,
-            Map<CreatureStats, Integer> vitals) {
+            Map<CreatureStats, Integer> vitals, Map<String, String> properties) {
         Preconditions.checkNotNull(name, "name should not be null");
         Preconditions.checkNotNull(inventory, "inventory should not be null");
         Preconditions.checkNotNull(scores, "scores may be empty, but must not be null");
         Preconditions.checkNotNull(scoreModifierBonuses, "score modifier bonuses may be empty, but must not be null");
         Preconditions.checkNotNull(vitals, "vitals should not be null");
 
-        return new ConcreteCreature(name, inventory, faction, scores, scoreModifierBonuses, vitals);
+        return new ConcreteCreature(name, inventory, faction, scores, scoreModifierBonuses, vitals, properties);
     }
 
     private ConcreteCreature(Examinable.Name name, ItemInventory inventory, Faction faction,
             Map<AttributeScores, Byte> scores, Map<AttributeScores, Byte> scoreModifierBonuses,
-            Map<CreatureStats, Integer> vitals) {
+            Map<CreatureStats, Integer> vitals, Map<String, String> properties) {
         this.name = name;
         this.inventory = inventory;
         this.faction = faction != null ? faction : Faction.RENEGADE;
@@ -50,7 +52,17 @@ final class ConcreteCreature implements Creature {
         this.vitals = new ConcurrentSkipListMap<>(vitals);
         this.vitals.computeIfAbsent(CreatureStats.MAX_HEALTH, k -> this.vitals.getOrDefault(CreatureStats.HEALTH, 10));
         this.vitals.computeIfAbsent(CreatureStats.HEALTH, k -> this.vitals.getOrDefault(CreatureStats.MAX_HEALTH, 10));
+        this.properties = properties != null ? new ConcurrentSkipListMap<>(properties)
+                : new ConcurrentSkipListMap<>(Creature.BASIC_TAGGABLE_PROPERTIES);
         this.locale = Optional.empty();
+    }
+
+    @Override
+    public ImmutableSortedMap<String, String> properties() {
+        ConcurrentSkipListMap<String, String> collect = new ConcurrentSkipListMap<>(this.properties);
+        collect.put("faction", this.faction().toString());
+        collect.put("healthBucket", this.healthBucket().toString());
+        return ImmutableSortedMap.<String, String>copyOfSorted(collect);
     }
 
     @Override
@@ -166,7 +178,13 @@ final class ConcreteCreature implements Creature {
         case Delta.SetLocale(Optional<IEntityID> locale) -> {
             this.locale = locale != null ? locale : Optional.empty();
         }
-
+        case Delta.SetProperty(String key, String value) -> {
+            if (value == null) {
+                this.properties.remove(key);
+            } else {
+                this.properties.put(key, value);
+            }
+        }
         }
 
     }

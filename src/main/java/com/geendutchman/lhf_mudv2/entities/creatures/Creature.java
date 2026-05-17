@@ -3,6 +3,7 @@ package com.geendutchman.lhf_mudv2.entities.creatures;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.Comparator;
+import java.util.Map.Entry;
 import java.util.Optional;
 
 import com.geendutchman.lhf_mudv2.dice.DiceSet;
@@ -177,6 +178,12 @@ public interface Creature extends Entity, ItemContainer {
             }
         }
 
+        public record SetProperty(String key, String value) implements Delta {
+            public SetProperty {
+                Preconditions.checkNotNull(key, "key must not be null");
+            }
+        }
+
         public static Delta ofFaction(Faction faction) {
             return new SetFactionDelta(faction);
         }
@@ -199,6 +206,10 @@ public interface Creature extends Entity, ItemContainer {
 
         public static Delta ofLocale(Optional<IEntityID> locale) {
             return new SetLocale(locale);
+        }
+
+        public static Delta ofProperty(String key, String value) {
+            return new SetProperty(key, value);
         }
 
     }
@@ -250,6 +261,9 @@ public interface Creature extends Entity, ItemContainer {
         for (AttributeScores score : AttributeScores.values()) {
             byte retrieved = this.getScore(score);
             builder.setScore(score, retrieved);
+        }
+        for (Entry<String, String> propEntry : this.properties().entrySet()) {
+            builder.addProperty(propEntry.getKey(), propEntry.getValue());
         }
         return builder;
     }

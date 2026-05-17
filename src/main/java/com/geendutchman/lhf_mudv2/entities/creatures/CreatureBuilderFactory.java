@@ -22,6 +22,7 @@ import com.geendutchman.lhf_mudv2.entities.item.ItemBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.item.ItemInventory;
 import com.google.auto.value.AutoBuilder;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 @Component
@@ -335,6 +336,16 @@ public final class CreatureBuilderFactory {
             return this.setScoreModifierBonuses(scoreMap);
         }
 
+        private final ImmutableMap.Builder<String, String> propertiesBuilder = ImmutableMap.<String, String>builder()
+                .putAll(Creature.BASIC_TAGGABLE_PROPERTIES);
+
+        protected abstract Builder setProperties(ImmutableMap<String, String> props);
+
+        public Builder addProperty(String key, String value) {
+            this.propertiesBuilder.put(key, value);
+            return this;
+        }
+
         protected abstract ConcreteCreature build();
 
         public final Creature build(CreatureBuilderFactory factory) {
@@ -356,6 +367,7 @@ public final class CreatureBuilderFactory {
             }
             ItemInventory madeInventory = this.inventoryBuilder.build(factory.itemFactory);
             this.setInventory(madeInventory);
+            this.setProperties(this.propertiesBuilder.buildKeepingLast());
             ConcreteCreature built = this.build();
             this.setInventory(ItemInventory.builder().build(factory.itemFactory)); // undo
 
