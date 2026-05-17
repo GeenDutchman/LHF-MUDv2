@@ -20,13 +20,13 @@ public record Difficulty<E extends Enum<E>>(ImmutableSortedMap<E, Integer> dcs, 
         implements Predicate<RollSet<E>>, Taggable {
 
     /**
-     * @see Taggable#produceBasicTagAttributes
+     * @see Taggable#produceBasicTagProperties
      */
-    public final static NavigableMap<String, String> BASIC_ATTRIBUTES = Taggable.produceBasicTagAttributes();
+    public final static NavigableMap<String, String> BASIC_PROPERTIES = Taggable.produceBasicTagProperties();
 
     @Override
-    public ImmutableSortedMap<String, String> attributes() {
-        return ImmutableSortedMap.copyOf(Difficulty.BASIC_ATTRIBUTES);
+    public ImmutableSortedMap<String, String> properties() {
+        return ImmutableSortedMap.copyOf(Difficulty.BASIC_PROPERTIES);
     }
 
     /**

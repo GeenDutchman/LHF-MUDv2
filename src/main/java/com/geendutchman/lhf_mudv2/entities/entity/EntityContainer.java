@@ -53,7 +53,7 @@ public interface EntityContainer extends Examinable {
     }
 
     @Override
-    public abstract ImmutableSortedMap<String, String> attributes();
+    public abstract ImmutableSortedMap<String, String> properties();
 
     /**
      * Returns an immutable map that only holds the results of the query

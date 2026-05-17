@@ -76,7 +76,7 @@ public final class CreatureRepository implements CreatureContainer {
     }
 
     @Override
-    public ImmutableSortedMap<String, String> attributes() {
+    public ImmutableSortedMap<String, String> properties() {
         return ImmutableSortedMap.of();
     }
 

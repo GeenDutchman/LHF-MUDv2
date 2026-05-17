@@ -11,7 +11,7 @@ public class RichOutputTest {
         final String second = "second";
         RichOutput output = RichOutput.builder().addString(first)
                 .addTaggable(
-                        new BasicTaggable(new Taggable.Tag("literal"), "before", Taggable.BASIC_TAGGABLE_ATTRIBUTES))
+                        new BasicTaggable(new Taggable.Tag("literal"), "before", Taggable.BASIC_TAGGABLE_PROPERTIES))
                 .addString(second).build();
         RichOutputSubject.assertThat(output).plainString().contains(second);
     }

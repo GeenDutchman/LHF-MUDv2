@@ -95,8 +95,8 @@ public interface Room extends Entity, ItemContainer, CreatureContainer {
     public abstract ImmutableSortedMap<Directions, Doorway> doorways();
 
     @Override
-    public default ImmutableSortedMap<String, String> attributes() {
-        return ImmutableSortedMap.<String, String>naturalOrder().putAll(Entity.super.attributes()).build();
+    public default ImmutableSortedMap<String, String> properties() {
+        return ImmutableSortedMap.<String, String>naturalOrder().putAll(Entity.super.properties()).build();
     }
 
     @Override

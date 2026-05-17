@@ -48,7 +48,7 @@ public interface CreatureContainer extends Examinable {
     }
 
     @Override
-    public abstract ImmutableSortedMap<String, String> attributes();
+    public abstract ImmutableSortedMap<String, String> properties();
 
     public default CreatureContainer queryCreatures(IEntityQuery<? super Creature> query) {
         ImmutableSortedMap.Builder<CreatureID, Creature> builder = ImmutableSortedMap.naturalOrder();
@@ -81,7 +81,7 @@ public interface CreatureContainer extends Examinable {
             }
 
             @Override
-            public ImmutableSortedMap<String, String> attributes() {
+            public ImmutableSortedMap<String, String> properties() {
                 return ImmutableSortedMap.of();
             }
 

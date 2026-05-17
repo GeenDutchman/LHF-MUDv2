@@ -11,7 +11,7 @@ import com.google.common.collect.ImmutableSortedMap;
  * A basic unit of display.
  * 
  * It has a tag string and a content string, as well as a map of string to
- * string of attributes
+ * string of properties
  */
 public interface Taggable {
 
@@ -75,15 +75,15 @@ public interface Taggable {
     public String content();
 
     /**
-     * The attributes of the tag like {@code
+     * The properties of the tag like {@code
      * 
     <p colored="true">
      * }
      * 
-     * @return attributes
+     * @return properties
      */
-    public default ImmutableSortedMap<String, String> attributes() {
-        return Taggable.BASIC_TAGGABLE_ATTRIBUTES;
+    public default ImmutableSortedMap<String, String> properties() {
+        return Taggable.BASIC_TAGGABLE_PROPERTIES;
     }
 
     /**
@@ -92,14 +92,14 @@ public interface Taggable {
      * 
      * @return
      */
-    public static NavigableMap<String, String> produceBasicTagAttributes() {
-        NavigableMap<String, String> tagAttributes = new TreeMap<>();
-        tagAttributes.put("colored", "true");
-        return tagAttributes;
+    public static NavigableMap<String, String> produceBasicTagProperties() {
+        NavigableMap<String, String> tagProperties = new TreeMap<>();
+        tagProperties.put("colored", "true");
+        return tagProperties;
     }
 
-    public final static ImmutableSortedMap<String, String> BASIC_TAGGABLE_ATTRIBUTES = ImmutableSortedMap
-            .copyOf(Taggable.produceBasicTagAttributes());
+    public final static ImmutableSortedMap<String, String> BASIC_TAGGABLE_PROPERTIES = ImmutableSortedMap
+            .copyOf(Taggable.produceBasicTagProperties());
 
     /**
      * Transform the taggable into an immutable unit
@@ -107,7 +107,7 @@ public interface Taggable {
      * @return
      */
     public default BasicTaggable basicTaggable() {
-        return new BasicTaggable(this.tag(), this.content(), this.attributes());
+        return new BasicTaggable(this.tag(), this.content(), this.properties());
     }
 
     /**
@@ -115,21 +115,21 @@ public interface Taggable {
      * 
      * @param tag
      * @param content
-     * @param attributes
+     * @param properties
      */
-    static void taggablepreconditions(Tag tag, String content, NavigableMap<String, String> attributes) {
+    static void taggablepreconditions(Tag tag, String content, NavigableMap<String, String> properties) {
         Preconditions.checkNotNull(tag, "tag must not be null");
         Preconditions.checkArgument(!content.isEmpty(), "content must not be empty");
-        Preconditions.checkArgument(attributes != null, "attributes must not be null");
+        Preconditions.checkArgument(properties != null, "properties must not be null");
     }
 
     /**
      * A concretion of Taggable
      */
-    public static record BasicTaggable(Tag tag, String content, ImmutableSortedMap<String, String> attributes)
+    public static record BasicTaggable(Tag tag, String content, ImmutableSortedMap<String, String> properties)
             implements Taggable, Serializable {
         public BasicTaggable {
-            Taggable.taggablepreconditions(tag, content, attributes);
+            Taggable.taggablepreconditions(tag, content, properties);
         }
 
         @Override

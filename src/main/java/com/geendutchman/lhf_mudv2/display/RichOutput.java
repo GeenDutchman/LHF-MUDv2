@@ -53,12 +53,12 @@ public abstract class RichOutput implements Serializable {
     public abstract Optional<Taggable.Tag> tag();
 
     /**
-     * What attributes does this output have
+     * What properties does this output have
      * 
-     * @see Taggable#attributes()
+     * @see Taggable#properties()
      * @return
      */
-    public abstract ImmutableSortedMap<String, String> attributes();
+    public abstract ImmutableSortedMap<String, String> properties();
 
     /**
      * What should be displayed if this has no elements?
@@ -113,10 +113,10 @@ public abstract class RichOutput implements Serializable {
             return this.setTag(Optional.ofNullable(ttag));
         }
 
-        abstract ImmutableSortedMap.Builder<String, String> attributesBuilder();
+        abstract ImmutableSortedMap.Builder<String, String> propertiesBuilder();
 
-        public final Builder putAttribute(String key, String value) {
-            attributesBuilder().put(key, value);
+        public final Builder putProperty(String key, String value) {
+            propertiesBuilder().put(key, value);
             return this;
         }
 

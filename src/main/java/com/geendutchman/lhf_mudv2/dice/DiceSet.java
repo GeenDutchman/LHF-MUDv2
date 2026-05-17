@@ -25,11 +25,11 @@ import com.google.common.collect.TreeBasedTable;
 @AutoValue
 public abstract class DiceSet<E extends Enum<E>> implements Taggable {
 
-    final static NavigableMap<String, String> BASIC_ATTRIBUTES = Taggable.produceBasicTagAttributes();
+    final static NavigableMap<String, String> BASIC_PROPERTIES = Taggable.produceBasicTagProperties();
 
     @Override
-    public ImmutableSortedMap<String, String> attributes() {
-        return ImmutableSortedMap.copyOf(BASIC_ATTRIBUTES);
+    public ImmutableSortedMap<String, String> properties() {
+        return ImmutableSortedMap.copyOf(BASIC_PROPERTIES);
     }
 
     /**

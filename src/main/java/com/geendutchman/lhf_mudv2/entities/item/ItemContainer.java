@@ -49,7 +49,7 @@ public interface ItemContainer extends Examinable {
     }
 
     @Override
-    public abstract ImmutableSortedMap<String, String> attributes();
+    public abstract ImmutableSortedMap<String, String> properties();
 
     public default ItemContainer queryItems(IEntityQuery<? super Item> query) {
         ImmutableSortedMap.Builder<ItemID, Item> builder = ImmutableSortedMap.naturalOrder();
@@ -80,7 +80,7 @@ public interface ItemContainer extends Examinable {
             }
 
             @Override
-            public ImmutableSortedMap<String, String> attributes() {
+            public ImmutableSortedMap<String, String> properties() {
                 return ImmutableSortedMap.of();
             }
 

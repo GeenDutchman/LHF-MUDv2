@@ -77,7 +77,7 @@ public final class ItemRepository implements ItemContainer {
     }
 
     @Override
-    public ImmutableSortedMap<String, String> attributes() {
+    public ImmutableSortedMap<String, String> properties() {
         return ImmutableSortedMap.of();
     }
 

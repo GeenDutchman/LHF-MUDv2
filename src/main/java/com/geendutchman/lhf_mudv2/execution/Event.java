@@ -198,7 +198,7 @@ public sealed interface Event extends Message, Comparable<Event> {
                 RichOutput.Builder creaturesBuilder = RichOutput.builder().setSequenceName("Creatures")
                         .setTag("Creatures-list");
                 ListMultimap<String, BasicTaggable> creatureMapping = this.creatures.stream()
-                        .collect(Multimaps.toMultimap(t -> t.attributes().getOrDefault("faction", "UNKNOWN"), t -> t,
+                        .collect(Multimaps.toMultimap(t -> t.properties().getOrDefault("faction", "UNKNOWN"), t -> t,
                                 MultimapBuilder.treeKeys().arrayListValues()::build));
                 for (Entry<String, Collection<BasicTaggable>> entry : creatureMapping.asMap().entrySet()) {
                     Collection<BasicTaggable> entities = entry.getValue();

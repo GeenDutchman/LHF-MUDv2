@@ -228,8 +228,8 @@ public final class MessageContext
     }
 
     @Override
-    public ImmutableSortedMap<String, String> attributes() {
-        return Examinable.BASIC_TAGGABLE_ATTRIBUTES;
+    public ImmutableSortedMap<String, String> properties() {
+        return Examinable.BASIC_TAGGABLE_PROPERTIES;
     }
 
     @Override

@@ -89,17 +89,17 @@ public interface Examinable extends Taggable {
      * @return
      */
     public default BasicExaminable basicExaminable() {
-        return new BasicExaminable(this.name(), this.description(), this.attributes(), this.content(), this.tag());
+        return new BasicExaminable(this.name(), this.description(), this.properties(), this.content(), this.tag());
     }
 
     /**
      * A concretion of Examinable
      */
     public static record BasicExaminable(Name name, Optional<RichOutput> description,
-            ImmutableSortedMap<String, String> attributes, String content, Tag tag)
+            ImmutableSortedMap<String, String> properties, String content, Tag tag)
             implements Examinable, Serializable {
         public BasicExaminable {
-            Taggable.taggablepreconditions(tag, content, attributes);
+            Taggable.taggablepreconditions(tag, content, properties);
             Preconditions.checkNotNull(name, "examinable name must not be null");
         }
 

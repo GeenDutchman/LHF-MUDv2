@@ -45,7 +45,7 @@ public interface RoomContainer extends Examinable, SuccessorsFunction<Room> {
     }
 
     @Override
-    public abstract ImmutableSortedMap<String, String> attributes();
+    public abstract ImmutableSortedMap<String, String> properties();
 
     public default Optional<Room> queryOneRoom(IEntityQuery<? super Room> query) {
         return this.rooms().stream().sequential().filter(room -> query != null ? query.test(room) : room != null)
@@ -91,7 +91,7 @@ public interface RoomContainer extends Examinable, SuccessorsFunction<Room> {
             }
 
             @Override
-            public ImmutableSortedMap<String, String> attributes() {
+            public ImmutableSortedMap<String, String> properties() {
                 return ImmutableSortedMap.of();
             }
 

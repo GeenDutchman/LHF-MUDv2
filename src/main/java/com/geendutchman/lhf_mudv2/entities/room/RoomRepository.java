@@ -83,7 +83,7 @@ public final class RoomRepository implements RoomContainer {
     }
 
     @Override
-    public ImmutableSortedMap<String, String> attributes() {
+    public ImmutableSortedMap<String, String> properties() {
         return ImmutableSortedMap.of();
     }
 

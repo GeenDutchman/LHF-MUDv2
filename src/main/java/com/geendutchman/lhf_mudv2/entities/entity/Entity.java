@@ -21,8 +21,8 @@ public interface Entity extends Examinable, Serializable {
     public Optional<IEntityID> locale();
 
     @Override
-    public default ImmutableSortedMap<String, String> attributes() {
-        return ImmutableSortedMap.<String, String>naturalOrder().putAll(Examinable.super.attributes())
+    public default ImmutableSortedMap<String, String> properties() {
+        return ImmutableSortedMap.<String, String>naturalOrder().putAll(Examinable.super.properties())
                 .put("identifier", this.identifier().uri().toString()).build();
     }
 

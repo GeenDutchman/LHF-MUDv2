@@ -118,7 +118,7 @@ public final class XMLVisitor implements RichOutputElementVisitor {
                     String.format("Error appending child text node for Taggable %s", taggable.content()), e);
         }
 
-        for (final Entry<String, String> entry : taggable.attributes().entrySet()) {
+        for (final Entry<String, String> entry : taggable.properties().entrySet()) {
             try {
                 myElement.setAttribute(entry.getKey(), entry.getValue());
             } catch (DOMException e) {
@@ -145,7 +145,7 @@ public final class XMLVisitor implements RichOutputElementVisitor {
 
         if (!examined.name().toString().equals(examined.content())) {
             final TaggableElement nameTaggable = new TaggableElement(
-                    new BasicTaggable(new Tag("name"), examined.name().toString(), Taggable.BASIC_TAGGABLE_ATTRIBUTES));
+                    new BasicTaggable(new Tag("name"), examined.name().toString(), Taggable.BASIC_TAGGABLE_PROPERTIES));
             try {
                 Element temp = this.current;
                 this.current = myElement;
@@ -178,7 +178,7 @@ public final class XMLVisitor implements RichOutputElementVisitor {
             }
         }
 
-        for (final Entry<String, String> entry : examined.attributes().entrySet()) {
+        for (final Entry<String, String> entry : examined.properties().entrySet()) {
             try {
                 myElement.setAttribute(entry.getKey(), entry.getValue());
             } catch (DOMException e) {
@@ -206,7 +206,7 @@ public final class XMLVisitor implements RichOutputElementVisitor {
             if (output.sequenceName().isPresent()) {
                 final TaggableElement sequenceTaggable = new TaggableElement(
                         new BasicTaggable(new Taggable.Tag(tag.value() + "-title"), output.sequenceName().get().value(),
-                                Taggable.BASIC_TAGGABLE_ATTRIBUTES));
+                                Taggable.BASIC_TAGGABLE_PROPERTIES));
                 Element temp = this.current;
                 this.current = nroot;
                 this.visit(sequenceTaggable);
@@ -219,7 +219,7 @@ public final class XMLVisitor implements RichOutputElementVisitor {
                     output.sequenceName()), e);
         }
 
-        for (final Entry<String, String> entry : output.attributes().entrySet()) {
+        for (final Entry<String, String> entry : output.properties().entrySet()) {
             final String key = entry.getKey();
             final String value = entry.getValue();
             if (key != null && value != null) {

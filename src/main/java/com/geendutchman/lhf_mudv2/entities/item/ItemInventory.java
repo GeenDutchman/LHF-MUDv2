@@ -107,8 +107,8 @@ public final class ItemInventory implements ItemContainer {
     private final LinkedHashMap<ItemID, Item> cargo = new LinkedHashMap<>();
 
     @Override
-    public ImmutableSortedMap<String, String> attributes() {
-        return ItemInventory.BASIC_TAGGABLE_ATTRIBUTES;
+    public ImmutableSortedMap<String, String> properties() {
+        return ItemInventory.BASIC_TAGGABLE_PROPERTIES;
     }
 
     @Override

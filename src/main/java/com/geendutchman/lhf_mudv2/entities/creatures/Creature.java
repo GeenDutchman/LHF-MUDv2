@@ -95,8 +95,8 @@ public interface Creature extends Entity, ItemContainer {
     }
 
     @Override
-    public default ImmutableSortedMap<String, String> attributes() {
-        return ImmutableSortedMap.<String, String>naturalOrder().putAll(Entity.super.attributes())
+    public default ImmutableSortedMap<String, String> properties() {
+        return ImmutableSortedMap.<String, String>naturalOrder().putAll(Entity.super.properties())
                 .put("faction", this.faction().toString()).put("healthBucket", this.healthBucket().toString()).build();
     }
 
