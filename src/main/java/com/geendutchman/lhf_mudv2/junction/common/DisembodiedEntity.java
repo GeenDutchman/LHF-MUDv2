@@ -13,6 +13,7 @@ import com.geendutchman.lhf_mudv2.entities.entity.Entity;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID;
 import com.geendutchman.lhf_mudv2.entities.entity.IEntityID.EntityID;
 import com.github.f4b6a3.tsid.TsidFactory;
+import com.google.common.base.Preconditions;
 
 /**
  * The DisembodiedEntity is deliberately not in the 'entity' packages or related
@@ -31,7 +32,12 @@ public class DisembodiedEntity<ExternalKey extends Comparable<ExternalKey>> impl
     private Optional<IEntityID> locale;
     private final ConcurrentNavigableMap<String, String> notes;
 
-    private DisembodiedEntity(EntityID disembodiedId, Name name, ExternalKey externalKey, Map<String, String> notes) {
+    protected DisembodiedEntity(EntityID disembodiedId, Name name, ExternalKey externalKey, Map<String, String> notes) {
+        Preconditions.checkNotNull(disembodiedId, "ID should not be null");
+        Preconditions.checkArgument(disembodiedId.entityClass().toString().contains(ENTITY_CLASS_DISEMBODIED),
+                "ID should specify that it is %s", ENTITY_CLASS_DISEMBODIED);
+        Preconditions.checkNotNull(name, "Name must not be null");
+        Preconditions.checkNotNull(externalKey, "External key must not be null");
         this.disembodiedId = disembodiedId;
         this.name = name;
         this.externalKey = externalKey;

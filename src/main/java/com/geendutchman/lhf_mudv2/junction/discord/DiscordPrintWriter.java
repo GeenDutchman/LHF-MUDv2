@@ -1,4 +1,4 @@
-package com.geendutchman.lhf_mudv2.junction;
+package com.geendutchman.lhf_mudv2.junction.discord;
 
 import java.io.BufferedWriter;
 import java.io.IOException;

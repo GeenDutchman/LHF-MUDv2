@@ -1,6 +1,7 @@
 package com.geendutchman.lhf_mudv2.execution.controllers;
 
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.springframework.boot.test.context.TestComponent;
@@ -41,6 +42,8 @@ public class TestCreatureController extends CreatureController {
     EventPredicate<RoomChangedEvent> roomChangedHook;
     EventPredicate<RoomSeenEvent> roomSeenHook;
     EventPredicate<SpokenEvent> spokenHook;
+    BiFunction<MessageBus, MessageContext, CommandLine> testCliGenerator;
+    Function<CommandLine, CommandLine> cliTransformer;
 
     public TestCreatureController(MessageBus bus, BiFunction<MessageBus, MessageContext, CommandLine> generator) {
         super(bus, generator);
@@ -58,6 +61,24 @@ public class TestCreatureController extends CreatureController {
     @Override
     protected ItemizedBehavior itemizedEventBehavior(Creature creature) {
         return new TestItemizedBehavior(creature);
+    }
+
+    @Override
+    protected CommandLine generateCommandLine(MessageContext context) {
+        CommandLine generated = null;
+        if (this.testCliGenerator != null) {
+            generated = this.testCliGenerator.apply(bus, context);
+        }
+        if (generated == null) {
+            generated = super.generateCommandLine(context);
+        }
+        if (generated != null && this.cliTransformer != null) {
+            CommandLine transformed = this.cliTransformer.apply(generated);
+            if (transformed != null) {
+                return transformed;
+            }
+        }
+        return generated;
     }
 
     public class TestItemizedBehavior extends CreatureController.ItemizedBehavior {
@@ -192,6 +213,14 @@ public class TestCreatureController extends CreatureController {
 
     public void setSpokenHook(EventPredicate<SpokenEvent> spokenHook) {
         this.spokenHook = spokenHook;
+    }
+
+    public void setTestCliGenerator(BiFunction<MessageBus, MessageContext, CommandLine> testCliGenerator) {
+        this.testCliGenerator = testCliGenerator;
+    }
+
+    public void setCliTransformer(Function<CommandLine, CommandLine> cliTransformer) {
+        this.cliTransformer = cliTransformer;
     }
 
 }

@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
+import com.geendutchman.lhf_mudv2.display.LogWriter;
 import com.geendutchman.lhf_mudv2.display.Examinable.Name;
 import com.geendutchman.lhf_mudv2.entities.creature.CreatureContainerSubject;
 import com.geendutchman.lhf_mudv2.entities.creature.CreatureSubject;
@@ -45,7 +46,6 @@ import com.geendutchman.lhf_mudv2.entities.room.RoomBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.room.RoomSubject;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
 import com.geendutchman.lhf_mudv2.execution.controllers.TestCreatureController;
-import com.geendutchman.lhf_mudv2.junction.LogWriter;
 import com.github.f4b6a3.tsid.Tsid;
 import com.google.common.truth.Truth;
 import com.google.common.util.concurrent.UncheckedTimeoutException;

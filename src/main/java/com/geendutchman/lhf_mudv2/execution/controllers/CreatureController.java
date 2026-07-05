@@ -41,7 +41,7 @@ public class CreatureController implements MessageProcessor {
 
     protected final Logger logger;
 
-    CreatureController(@Autowired MessageBus bus,
+    protected CreatureController(@Autowired MessageBus bus,
             @Autowired BiFunction<MessageBus, MessageContext, CommandLine> generator) {
         Preconditions.checkNotNull(bus, "message bus should not be null");
         Preconditions.checkNotNull(generator, "Command line generator should not be null");
@@ -71,6 +71,22 @@ public class CreatureController implements MessageProcessor {
     @Override
     public final MessageProcessorID messageProcessorID() {
         return this.processorID;
+    }
+
+    protected CommandLine generateCommandLine(final MessageContext context) {
+        CommandLine generated = null;
+        BiFunction<MessageBus, MessageContext, CommandLine> effectiveGen = this.getGenerator();
+        if (effectiveGen != null) {
+            generated = effectiveGen.apply(bus, context);
+        }
+        if (generated == null && this.generator != null) {
+            generated = this.generator.apply(bus, context);
+        }
+        return generated;
+    }
+
+    protected BiFunction<MessageBus, MessageContext, CommandLine> getGenerator() {
+        return generator;
     }
 
     @Override
@@ -153,8 +169,7 @@ public class CreatureController implements MessageProcessor {
             };
         }
         case LHFCommand.LineCommand lc -> {
-            CommandLine line = this.generator.apply(bus, context);
-            // TODO deal with stdout and stderr
+            CommandLine line = this.generateCommandLine(context);
             if (line == null) {
                 yield MessageProcessingResult.Failed("Could not produce a command line");
             }
