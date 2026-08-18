@@ -31,10 +31,7 @@ import picocli.CommandLine.ParseResult;
 
 @Component
 public class CreatureController implements MessageProcessor {
-    @Autowired
     protected final MessageBus bus;
-
-    @Autowired
     protected final CreatureCommandLineGenerator generator;
 
     private final MessageProcessorID processorID;

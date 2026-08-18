@@ -11,9 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
-import com.geendutchman.lhf_mudv2.execution.MessageBus;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -25,13 +25,11 @@ public abstract class CommandHandler implements Callable<MessageProcessingResult
     @Spec
     protected CommandSpec spec;
 
-    @Autowired
     protected final MessageBus bus;
 
     protected final MessageContext context;
 
-    @Autowired
-    protected CommandHandler(MessageBus messbus, MessageContext context) {
+    protected CommandHandler(@Autowired MessageBus messbus, MessageContext context) {
         this.bus = messbus;
         this.context = context;
     }
@@ -140,8 +138,7 @@ public abstract class CommandHandler implements Callable<MessageProcessingResult
     @Command(name = "ping", description = "Tests connectivity", subcommands = { HelpCommand.class })
     public final static class PingCommandHandler extends CommandHandler {
 
-        @Autowired
-        protected PingCommandHandler(MessageBus messbus, MessageContext context) {
+        protected PingCommandHandler(@Autowired MessageBus messbus, MessageContext context) {
             super(messbus, context);
         }
 

@@ -63,7 +63,6 @@ public abstract class ACommandLineGenerator {
     @Component
     @Scope("singleton")
     public final class CommandLineGenerator extends ACommandLineGenerator {
-        @Autowired
         private final IFactory factory;
 
         protected CommandLineGenerator(@Autowired IFactory fact) {

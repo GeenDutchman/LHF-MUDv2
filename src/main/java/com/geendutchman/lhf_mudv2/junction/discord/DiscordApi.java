@@ -23,10 +23,10 @@ public class DiscordApi {
 
     private JDA api;
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    @Autowired
+
     private final DiscordEntityRepository repo;
 
-    public DiscordApi(DiscordEntityRepository repository) throws Exception {
+    public DiscordApi(@Autowired DiscordEntityRepository repository) throws Exception {
         this.repo = repository;
         ClassLoader classLoader = this.getClass().getClassLoader();
 

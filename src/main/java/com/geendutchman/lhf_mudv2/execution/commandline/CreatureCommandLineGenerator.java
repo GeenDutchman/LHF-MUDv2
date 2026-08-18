@@ -20,14 +20,13 @@ import com.google.common.base.Preconditions;
 @Scope("prototype")
 public class CreatureCommandLineGenerator extends ACommandLineGenerator {
 
-    @Autowired
     protected final CommandLineGenerator base;
     protected final ItemRepository itemRepository;
     protected final CreatureRepository creatureRepository;
     protected final RoomRepository roomRepository;
 
-    public CreatureCommandLineGenerator(@Autowired CommandLineGenerator base, ItemRepository itemRepository,
-            CreatureRepository creatureRepository, RoomRepository roomRepository) {
+    public CreatureCommandLineGenerator(@Autowired CommandLineGenerator base, @Autowired ItemRepository itemRepository,
+            @Autowired CreatureRepository creatureRepository, @Autowired RoomRepository roomRepository) {
         Preconditions.checkNotNull(base, "base command line generator should not be null");
         this.base = base;
         this.itemRepository = itemRepository;

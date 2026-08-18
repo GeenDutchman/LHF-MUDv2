@@ -26,10 +26,10 @@ import net.dv8tion.jda.api.entities.User;
 @Component
 public class DiscordCreatureController extends CreatureController {
     private final static Examinable.Name NAME = new Examinable.Name("Discord Creature Controller");
-    @Autowired
     private final DiscordApi api;
 
-    DiscordCreatureController(MessageBus bus, CreatureCommandLineGenerator generator, DiscordApi discord) {
+    DiscordCreatureController(@Autowired MessageBus bus, @Autowired CreatureCommandLineGenerator generator,
+            @Autowired DiscordApi discord) {
         super(bus, generator);
         this.api = discord;
     }

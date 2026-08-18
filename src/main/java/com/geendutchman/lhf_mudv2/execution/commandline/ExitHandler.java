@@ -17,9 +17,9 @@ import com.geendutchman.lhf_mudv2.entities.room.Room;
 import com.geendutchman.lhf_mudv2.entities.room.RoomRepository;
 import com.geendutchman.lhf_mudv2.execution.Event;
 import com.geendutchman.lhf_mudv2.execution.Event.PlainEvent;
-import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
+import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
@@ -28,15 +28,12 @@ import picocli.CommandLine.HelpCommand;
 @Scope("prototype")
 @Command(name = "exit", description = "Lets you leave Ibaif", subcommands = { HelpCommand.class })
 public final class ExitHandler extends SwitchedHandler {
-    @Autowired
     private final ItemRepository itemRepository;
-    @Autowired
     private final CreatureRepository creatureRepository;
-    @Autowired
     private final RoomRepository roomRepository;
 
-    public ExitHandler(MessageBus bus, MessageContext context, ItemRepository itemRepository,
-            CreatureRepository creatureRepository, RoomRepository roomRepository) {
+    public ExitHandler(@Autowired MessageBus bus, MessageContext context, @Autowired ItemRepository itemRepository,
+            @Autowired CreatureRepository creatureRepository, @Autowired RoomRepository roomRepository) {
         super(bus, context);
         this.itemRepository = itemRepository;
         this.creatureRepository = creatureRepository;

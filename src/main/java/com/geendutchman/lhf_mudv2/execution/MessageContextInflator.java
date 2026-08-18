@@ -79,7 +79,6 @@ public interface MessageContextInflator {
 
     @Service
     public static final class ContextInflator implements MessageContextInflator {
-        @Autowired
         private final EntityResolver resolver;
 
         protected ContextInflator(@Autowired EntityResolver resolver) {

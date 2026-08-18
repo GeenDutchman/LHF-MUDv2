@@ -24,7 +24,6 @@ import jakarta.annotation.PostConstruct;
 @Component
 public class ItemController implements MessageProcessor {
 
-    @Autowired
     protected final MessageBus bus;
 
     private final MessageProcessorID processorID = new MessageProcessorID(new Examinable.Name("Item Controller"),

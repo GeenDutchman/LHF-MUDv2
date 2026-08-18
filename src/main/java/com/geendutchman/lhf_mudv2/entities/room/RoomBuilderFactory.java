@@ -120,9 +120,8 @@ public final class RoomBuilderFactory {
     private final ItemBuilderFactory itemFactory;
     private final RoomRepository repository;
 
-    @Autowired
-    public RoomBuilderFactory(CreatureBuilderFactory creatureFactory, ItemBuilderFactory itemFactory,
-            RoomRepository repository) {
+    public RoomBuilderFactory(@Autowired CreatureBuilderFactory creatureFactory,
+            @Autowired ItemBuilderFactory itemFactory, @Autowired RoomRepository repository) {
         this.creatureFactory = creatureFactory;
         this.itemFactory = itemFactory;
         this.repository = repository;

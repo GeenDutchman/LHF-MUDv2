@@ -28,10 +28,7 @@ import jakarta.annotation.PostConstruct;
 @Component
 public class RoomController implements MessageProcessor {
 
-    @Autowired
     protected final MessageBus bus;
-
-    @Autowired
     protected final RoomRepository roomRepository;
 
     private final MessageProcessorID processorID = new MessageProcessorID(new Examinable.Name("Room Controller"),

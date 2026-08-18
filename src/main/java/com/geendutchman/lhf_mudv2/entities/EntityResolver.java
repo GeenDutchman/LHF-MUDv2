@@ -8,7 +8,6 @@ import java.util.SortedSet;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiFunction;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.server.PathContainer;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.pattern.PathPattern;
@@ -99,7 +98,7 @@ public interface EntityResolver {
 
         private final transient SortedMap<PathPattern, BiFunction<PathPattern.PathRemainingMatchInfo, URI, SortedSet<Entity>>> routes;
 
-        @Autowired(required = true)
+        // @Autowired(required = true) // uncomment if any other constructors
         public DefaultEntityResolver(QueryCodec.Factory queryCodecFactory, ItemRepository items,
                 CreatureRepository creatures, RoomRepository rooms) {
             this.queryCodecFactory = queryCodecFactory;

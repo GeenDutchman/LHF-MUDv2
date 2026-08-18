@@ -74,7 +74,6 @@ public interface MessageBus {
 
         @Autowired
         private Duration timing;
-        @Autowired
         private final MessageContextInflator inflator;
 
         protected AbstractMessageBus(@Autowired Duration timing, @Autowired MessageContextInflator inflator) {

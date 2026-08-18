@@ -34,10 +34,7 @@ public class ItemFactoryController implements MessageProcessor {
             .newInstance1024(Math.abs("creatureFactory".hashCode() % 1024));
     private final Tsid tsid;
 
-    @Autowired
     private final ItemBuilderFactory factory;
-
-    @Autowired
     private final MessageBus bus;
 
     private final IEntityID.EntityID id;

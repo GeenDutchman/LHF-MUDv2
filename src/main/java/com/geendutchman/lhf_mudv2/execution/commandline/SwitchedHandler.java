@@ -1,5 +1,7 @@
 package com.geendutchman.lhf_mudv2.execution.commandline;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
 import com.geendutchman.lhf_mudv2.entities.item.Item;
 import com.geendutchman.lhf_mudv2.entities.room.Room;
@@ -9,7 +11,7 @@ import com.geendutchman.lhf_mudv2.execution.MessageBus;
 
 abstract class SwitchedHandler extends UserCommandHandler {
 
-    protected SwitchedHandler(MessageBus messbus, MessageContext context) {
+    protected SwitchedHandler(@Autowired MessageBus messbus, MessageContext context) {
         super(messbus, context);
     }
 

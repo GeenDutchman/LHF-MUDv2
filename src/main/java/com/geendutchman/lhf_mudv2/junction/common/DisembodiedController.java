@@ -24,7 +24,6 @@ import picocli.CommandLine.ParseResult;
 public class DisembodiedController implements MessageProcessor {
     protected static final Examinable.Name NAME = new Examinable.Name("Disembodied Controller");
 
-    @Autowired
     protected final MessageBus bus;
 
     private final MessageProcessorID processorID;

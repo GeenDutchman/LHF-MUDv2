@@ -108,8 +108,7 @@ public final class ItemBuilderFactory {
 
     private final ItemRepository repository;
 
-    @Autowired
-    public ItemBuilderFactory(ItemRepository repository) {
+    public ItemBuilderFactory(@Autowired ItemRepository repository) {
         this.repository = repository;
     }
 

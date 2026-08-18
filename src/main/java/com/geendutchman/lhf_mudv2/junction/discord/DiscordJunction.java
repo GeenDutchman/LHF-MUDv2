@@ -20,9 +20,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 @Service
 public class DiscordJunction extends ListenerAdapter {
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    @Autowired
     private final DiscordEntityRepository repo;
-    @Autowired
     private final MessageBus bus;
 
     public DiscordJunction(@Autowired DiscordEntityRepository repository, @Autowired MessageBus messageBus)

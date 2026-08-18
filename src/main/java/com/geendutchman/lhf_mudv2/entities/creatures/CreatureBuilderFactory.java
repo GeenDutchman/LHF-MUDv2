@@ -215,8 +215,7 @@ public final class CreatureBuilderFactory {
         }
     }
 
-    @Autowired
-    public CreatureBuilderFactory(ItemBuilderFactory itemFactory, CreatureRepository repository) {
+    public CreatureBuilderFactory(@Autowired ItemBuilderFactory itemFactory, @Autowired CreatureRepository repository) {
         this.itemFactory = itemFactory;
         this.repository = repository;
     }
