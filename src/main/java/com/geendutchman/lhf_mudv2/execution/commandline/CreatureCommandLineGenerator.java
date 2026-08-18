@@ -1,5 +1,6 @@
 package com.geendutchman.lhf_mudv2.execution.commandline;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -17,14 +18,15 @@ import com.google.common.base.Preconditions;
 
 @Component(value = "commandline")
 @Scope("prototype")
-public class CreatureCommandLineGenerator extends ICommandLineGenerator {
+public class CreatureCommandLineGenerator extends ACommandLineGenerator {
 
+    @Autowired
     protected final CommandLineGenerator base;
     protected final ItemRepository itemRepository;
     protected final CreatureRepository creatureRepository;
     protected final RoomRepository roomRepository;
 
-    public CreatureCommandLineGenerator(CommandLineGenerator base, ItemRepository itemRepository,
+    public CreatureCommandLineGenerator(@Autowired CommandLineGenerator base, ItemRepository itemRepository,
             CreatureRepository creatureRepository, RoomRepository roomRepository) {
         Preconditions.checkNotNull(base, "base command line generator should not be null");
         this.base = base;

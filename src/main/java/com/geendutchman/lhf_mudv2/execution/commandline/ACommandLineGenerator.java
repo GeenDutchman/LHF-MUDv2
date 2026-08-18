@@ -22,7 +22,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.HelpCommand;
 import picocli.CommandLine.IFactory;
 
-public abstract class ICommandLineGenerator {
+public abstract class ACommandLineGenerator {
 
     @Command(name = "mud", description = "The base of all commands to do things here.", subcommands = {
             HelpCommand.class })
@@ -39,17 +39,15 @@ public abstract class ICommandLineGenerator {
      */
     public static class MudCommandLine extends CommandLine {
         private final InjectedFactory injectedFactory;
-        private final MessageContext context;
 
         private static MudCommandLine create(Object command, IFactory factory, MessageContext ctx) {
             final InjectedFactory injectFactory = new InjectedFactory(factory, ctx);
-            return new MudCommandLine(command, injectFactory, ctx);
+            return new MudCommandLine(command, injectFactory);
         }
 
-        private MudCommandLine(Object command, InjectedFactory factory, MessageContext ctx) {
+        private MudCommandLine(Object command, InjectedFactory factory) {
             super(command, factory);
             this.injectedFactory = factory;
-            this.context = ctx;
         }
 
         public InjectedFactory getInjectedFactory() {
@@ -57,14 +55,14 @@ public abstract class ICommandLineGenerator {
         }
 
         public MessageContext getContext() {
-            return context;
+            return this.injectedFactory.getContext();
         }
 
     }
 
     @Component
     @Scope("singleton")
-    public final class CommandLineGenerator extends ICommandLineGenerator {
+    public final class CommandLineGenerator extends ACommandLineGenerator {
         @Autowired
         private final IFactory factory;
 
@@ -103,4 +101,5 @@ public abstract class ICommandLineGenerator {
     public MudCommandLine start(final MessageBus bus, final MessageContext t) {
         return this.base().trueStart(bus, t);
     }
+
 }

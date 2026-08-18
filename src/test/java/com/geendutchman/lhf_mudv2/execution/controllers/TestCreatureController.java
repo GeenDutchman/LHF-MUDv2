@@ -19,6 +19,7 @@ import com.geendutchman.lhf_mudv2.execution.Event.RoomChangedEvent;
 import com.geendutchman.lhf_mudv2.execution.Event.RoomSeenEvent;
 import com.geendutchman.lhf_mudv2.execution.Event.SpokenEvent;
 import com.geendutchman.lhf_mudv2.execution.LHFCommand.ChangeEntityCommand.ChangeCreatureCommand;
+import com.geendutchman.lhf_mudv2.execution.commandline.CreatureCommandLineGenerator;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
 
@@ -45,7 +46,7 @@ public class TestCreatureController extends CreatureController {
     BiFunction<MessageBus, MessageContext, CommandLine> testCliGenerator;
     Function<CommandLine, CommandLine> cliTransformer;
 
-    public TestCreatureController(MessageBus bus, BiFunction<MessageBus, MessageContext, CommandLine> generator) {
+    public TestCreatureController(MessageBus bus, CreatureCommandLineGenerator generator) {
         super(bus, generator);
     }
 

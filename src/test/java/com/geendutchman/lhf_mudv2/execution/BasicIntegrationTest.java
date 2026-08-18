@@ -9,7 +9,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Assertions;
@@ -25,8 +24,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
-import com.geendutchman.lhf_mudv2.display.LogWriter;
 import com.geendutchman.lhf_mudv2.display.Examinable.Name;
+import com.geendutchman.lhf_mudv2.display.LogWriter;
 import com.geendutchman.lhf_mudv2.entities.creature.CreatureContainerSubject;
 import com.geendutchman.lhf_mudv2.entities.creature.CreatureSubject;
 import com.geendutchman.lhf_mudv2.entities.creatures.Creature;
@@ -45,6 +44,7 @@ import com.geendutchman.lhf_mudv2.entities.room.Room.RoomID;
 import com.geendutchman.lhf_mudv2.entities.room.RoomBuilderFactory;
 import com.geendutchman.lhf_mudv2.entities.room.RoomSubject;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
+import com.geendutchman.lhf_mudv2.execution.commandline.CreatureCommandLineGenerator;
 import com.geendutchman.lhf_mudv2.execution.controllers.TestCreatureController;
 import com.github.f4b6a3.tsid.Tsid;
 import com.google.common.truth.Truth;
@@ -60,7 +60,7 @@ public class BasicIntegrationTest {
     @Autowired
     CreatureRepository creatureRepository;
     @Autowired
-    BiFunction<MessageBus, MessageContext, CommandLine> generator;
+    CreatureCommandLineGenerator generator;
     @Autowired
     Duration duration;
 
@@ -82,7 +82,7 @@ public class BasicIntegrationTest {
         Logger logger = LoggerFactory.getLogger(getClass());
         MessageContext ctx = MessageContext.builder().setSenderId(IEntityID.BLANK_ID)
                 .setDestinationId(IEntityID.BLANK_ID).build();
-        CommandLine built = generator.apply(bus, ctx);
+        CommandLine built = generator.start(bus, ctx);
         built.setOut(new PrintWriter(new LogWriter(logger)));
         built.setErr(new PrintWriter(new LogWriter(logger, Level.ERROR)));
         built.usage(built.getOut());

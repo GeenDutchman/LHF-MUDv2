@@ -2,7 +2,6 @@ package com.geendutchman.lhf_mudv2.execution.controllers;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiFunction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +21,7 @@ import com.geendutchman.lhf_mudv2.execution.Message;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor;
+import com.geendutchman.lhf_mudv2.execution.commandline.CreatureCommandLineGenerator;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
@@ -35,14 +35,13 @@ public class CreatureController implements MessageProcessor {
     protected final MessageBus bus;
 
     @Autowired
-    protected final BiFunction<MessageBus, MessageContext, CommandLine> generator;
+    protected final CreatureCommandLineGenerator generator;
 
     private final MessageProcessorID processorID;
 
     protected final Logger logger;
 
-    protected CreatureController(@Autowired MessageBus bus,
-            @Autowired BiFunction<MessageBus, MessageContext, CommandLine> generator) {
+    protected CreatureController(@Autowired MessageBus bus, @Autowired CreatureCommandLineGenerator generator) {
         Preconditions.checkNotNull(bus, "message bus should not be null");
         Preconditions.checkNotNull(generator, "Command line generator should not be null");
         Examinable.Name name = this.name();
@@ -75,17 +74,17 @@ public class CreatureController implements MessageProcessor {
 
     protected CommandLine generateCommandLine(final MessageContext context) {
         CommandLine generated = null;
-        BiFunction<MessageBus, MessageContext, CommandLine> effectiveGen = this.getGenerator();
+        CreatureCommandLineGenerator effectiveGen = this.getGenerator();
         if (effectiveGen != null) {
-            generated = effectiveGen.apply(bus, context);
+            generated = effectiveGen.start(bus, context);
         }
         if (generated == null && this.generator != null) {
-            generated = this.generator.apply(bus, context);
+            generated = this.generator.start(bus, context);
         }
         return generated;
     }
 
-    protected BiFunction<MessageBus, MessageContext, CommandLine> getGenerator() {
+    protected CreatureCommandLineGenerator getGenerator() {
         return generator;
     }
 

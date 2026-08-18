@@ -1,7 +1,5 @@
 package com.geendutchman.lhf_mudv2.junction.discord;
 
-import java.util.function.BiFunction;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -20,10 +18,10 @@ import com.geendutchman.lhf_mudv2.execution.Event.RoomSeenEvent;
 import com.geendutchman.lhf_mudv2.execution.Event.SpokenEvent;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
+import com.geendutchman.lhf_mudv2.execution.commandline.CreatureCommandLineGenerator;
 import com.geendutchman.lhf_mudv2.execution.controllers.CreatureController;
 
 import net.dv8tion.jda.api.entities.User;
-import picocli.CommandLine;
 
 @Component
 public class DiscordCreatureController extends CreatureController {
@@ -31,8 +29,7 @@ public class DiscordCreatureController extends CreatureController {
     @Autowired
     private final DiscordApi api;
 
-    DiscordCreatureController(MessageBus bus, BiFunction<MessageBus, MessageContext, CommandLine> generator,
-            DiscordApi discord) {
+    DiscordCreatureController(MessageBus bus, CreatureCommandLineGenerator generator, DiscordApi discord) {
         super(bus, generator);
         this.api = discord;
     }
