@@ -24,10 +24,10 @@ public class DiscordApi {
     private JDA api;
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final DiscordEntityRepository repo;
+    private final DiscordJunction junction;
 
-    public DiscordApi(@Autowired DiscordEntityRepository repository) throws Exception {
-        this.repo = repository;
+    public DiscordApi(@Autowired DiscordJunction junction) throws Exception {
+        this.junction = junction;
         ClassLoader classLoader = this.getClass().getClassLoader();
 
         try (InputStream inputStream = classLoader.getResourceAsStream("discord/token.secret")) {
@@ -37,7 +37,7 @@ public class DiscordApi {
             this.api = JDABuilder.createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT,
                     GatewayIntent.GUILD_MEMBERS, GatewayIntent.DIRECT_MESSAGES).build();
             logger.atInfo().log("Adding event listener...");
-            this.api.addEventListener(this);
+            this.api.addEventListener(this.junction);
             logger.atInfo().log("Waiting until ready...");
             this.api.awaitReady();
             logger.atInfo().log("Ready!!");
@@ -57,7 +57,11 @@ public class DiscordApi {
     }
 
     public Optional<User> getUser(IEntityID id) {
-        return this.repo.otherId(id).map(l -> this.api.getUserById(l));
+        DiscordEntityRepository repo = this.junction.repository();
+        if (repo == null) {
+            return Optional.empty();
+        }
+        return repo.otherId(id).map(l -> this.api.getUserById(l));
     }
 
     public Optional<User> getUser(Long id) {

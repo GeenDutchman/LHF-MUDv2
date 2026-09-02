@@ -56,4 +56,8 @@ public class DiscordJunction extends ListenerAdapter {
 
     }
 
+    public final DiscordEntityRepository repository() {
+        return this.repo;
+    }
+
 }

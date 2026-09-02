@@ -16,7 +16,7 @@ import com.geendutchman.lhf_mudv2.execution.MessageContext;
 import com.geendutchman.lhf_mudv2.execution.commandline.CommandHandler.PingCommandHandler;
 import com.google.common.base.Preconditions;
 
-@Component(value = "commandline")
+@Component()
 @Scope("prototype")
 public class CreatureCommandLineGenerator extends ACommandLineGenerator {
 
