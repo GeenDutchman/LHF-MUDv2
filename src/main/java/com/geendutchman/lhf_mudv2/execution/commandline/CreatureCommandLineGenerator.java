@@ -13,7 +13,6 @@ import com.geendutchman.lhf_mudv2.entities.item.ItemRepository;
 import com.geendutchman.lhf_mudv2.entities.room.RoomRepository;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
-import com.geendutchman.lhf_mudv2.execution.commandline.CommandHandler.PingCommandHandler;
 import com.google.common.base.Preconditions;
 
 @Component()
@@ -43,8 +42,6 @@ public class CreatureCommandLineGenerator extends ACommandLineGenerator {
     public MudCommandLine start(final MessageBus bus, final MessageContext t) {
 
         final MudCommandLine line = this.base.start(bus, t);
-        PingCommandHandler ping = new PingCommandHandler(bus, t);
-        line.addSubcommand(ping);
         ExitHandler exit = new ExitHandler(bus, t, this.itemRepository, this.creatureRepository, this.roomRepository);
         line.addSubcommand(exit);
         DropCommand drop = new DropCommand(bus, t);
