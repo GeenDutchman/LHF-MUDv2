@@ -14,6 +14,7 @@ import com.geendutchman.lhf_mudv2.execution.Message;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor;
+import com.geendutchman.lhf_mudv2.execution.commandline.ACommandLineGenerator.CommandLineGenerator;
 import com.google.common.base.Preconditions;
 
 import jakarta.annotation.PostConstruct;
@@ -30,14 +31,18 @@ public class DisembodiedController implements MessageProcessor {
 
     protected final Logger logger;
 
-    protected DisembodiedController(@Autowired MessageBus bus) {
+    protected final CommandLineGenerator base;
+
+    protected DisembodiedController(@Autowired MessageBus bus, @Autowired CommandLineGenerator base) {
         Preconditions.checkNotNull(bus, "message bus should not be null");
+        Preconditions.checkNotNull(base, "Command line generator should not be null");
         Examinable.Name name = this.name();
         if (name == null) {
             name = DisembodiedController.NAME;
         }
         this.processorID = new MessageProcessorID(name, MessageProcessor.messageProcessorTsidFactory.create());
         this.bus = bus;
+        this.base = base;
         this.logger = LoggerFactory.getLogger(String.format("%s.%s", this.getClass().getName(), name));
 
     }
@@ -60,9 +65,20 @@ public class DisembodiedController implements MessageProcessor {
         return this.processorID;
     }
 
-    protected CommandLine generateCommandLine(final MessageBus bus, final MessageContext context) {
-        // TODO: make this up
-        throw new UnsupportedOperationException("Unimplemented method 'generateCommandLine'");
+    protected CommandLineGenerator getGenerator() {
+        return this.base;
+    }
+
+    protected CommandLine generateCommandLine(final MessageContext context) {
+        CommandLine generated = null;
+        CommandLineGenerator effectiveGen = this.getGenerator();
+        if (effectiveGen != null) {
+            generated = effectiveGen.start(this.bus, context);
+        }
+        if (generated == null && this.base != null) {
+            generated = this.base.start(this.bus, context);
+        }
+        return generated;
     }
 
     @Override
@@ -104,7 +120,7 @@ public class DisembodiedController implements MessageProcessor {
             };
         }
         case LHFCommand.LineCommand lc -> {
-            CommandLine line = this.generateCommandLine(bus, context);
+            CommandLine line = this.generateCommandLine(context);
             if (line == null) {
                 yield MessageProcessingResult.Failed("Could not produce a command line");
             }

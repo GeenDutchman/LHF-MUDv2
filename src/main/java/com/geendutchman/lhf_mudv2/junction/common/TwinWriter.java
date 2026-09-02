@@ -1,4 +1,4 @@
-package com.geendutchman.lhf_mudv2.junction;
+package com.geendutchman.lhf_mudv2.junction.common;
 
 import java.io.IOException;
 import java.io.Writer;
