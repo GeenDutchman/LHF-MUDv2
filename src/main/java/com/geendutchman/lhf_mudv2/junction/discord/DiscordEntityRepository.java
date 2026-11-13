@@ -56,8 +56,7 @@ public class DiscordEntityRepository implements Serializable {
         synchronized (this.lookups) {
             final EntityID entityId = DiscordEntity.idFromUser(user);
             return Optional.ofNullable(this.discordEntities.getOrDefault(entityId, null)).or(() -> {
-                final DiscordEntity entity = new DiscordEntity(entityId, new Examinable.Name(user.getId()),
-                        user.getId(), Map.of("DiscordTag", user.getAsTag()));
+                final DiscordEntity entity = new DiscordEntity(user);
                 this.discordEntities.put(entity.identifier(), entity);
                 this.lookups.put(entity.identifier(), user.getIdLong());
                 return Optional.of(entity);
