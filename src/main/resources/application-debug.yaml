@@ -1,0 +1,4 @@
+logging:
+  level:
+    com.geendutchman: TRACE
+    org.springframework: WARN
