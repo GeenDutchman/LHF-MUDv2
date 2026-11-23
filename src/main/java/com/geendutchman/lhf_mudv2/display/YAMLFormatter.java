@@ -1,5 +1,6 @@
 package com.geendutchman.lhf_mudv2.display;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,6 +15,9 @@ import org.springframework.boot.logging.structured.StructuredLoggingJsonMembersC
 import org.springframework.core.env.Environment;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.nodes.Node;
+import org.yaml.snakeyaml.nodes.Tag;
+import org.yaml.snakeyaml.representer.Representer;
 import org.yaml.snakeyaml.DumperOptions.NonPrintableStyle;
 
 import ch.qos.logback.classic.pattern.ThrowableProxyConverter;
@@ -30,11 +34,40 @@ public record YAMLFormatter(Environment environment, StackTracePrinter stackTrac
     public YAMLFormatter {
     }
 
+    private static final class RecordRepresenter extends Representer {
+
+        public RecordRepresenter(DumperOptions options) {
+            super(options);
+            this.multiRepresenters.put(Record.class, this::representRecord);
+            this.multiRepresenters.put(
+                    Object.class,
+                    value -> representScalar(Tag.STR, value.toString()));
+        }
+
+        private Node representRecord(Object value) {
+            Map<String, Object> properties = new LinkedHashMap<>();
+
+            try {
+                for (var component : value.getClass().getRecordComponents()) {
+                    properties.put(
+                            component.getName(),
+                            component.getAccessor().invoke(value));
+                }
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new IllegalArgumentException("Could not read record components", e);
+            }
+
+            return representMapping(Tag.MAP, properties, DumperOptions.FlowStyle.AUTO);
+        }
+
+    }
+
     @Override
     public String format(ILoggingEvent event) {
         DumperOptions dumpOpts = new DumperOptions();
         dumpOpts.setNonPrintableStyle(NonPrintableStyle.ESCAPE);
-        final Yaml yaml = new Yaml(dumpOpts);
+        dumpOpts.setAllowReadOnlyProperties(true);
+        final Yaml yaml = new Yaml(new RecordRepresenter(dumpOpts), dumpOpts);
         final Map<String, Object> collected = this.eventAsMap(event);
         final String asString = yaml.dump(List.of(collected));
         return asString;

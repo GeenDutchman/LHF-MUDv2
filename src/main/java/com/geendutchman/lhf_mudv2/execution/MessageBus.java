@@ -106,6 +106,8 @@ public interface MessageBus {
             if (entityClass != null) {
                 this.entityClassDefaults.put(entityClass, processor.messageProcessorID());
             }
+            logger.atTrace().addKeyValue("processor", processor.messageProcessorID())
+                    .addKeyValue("entityClass", entityClass).log("registered processor as default for entity class");
 
         }
 
@@ -115,6 +117,7 @@ public interface MessageBus {
                 throw new NullPointerException("Cannot register null processor");
             }
             this.processorIDToProcessor.put(processor.messageProcessorID(), processor);
+            logger.atTrace().addKeyValue("processor", processor.messageProcessorID()).log("registered processor");
         }
 
         @Override
