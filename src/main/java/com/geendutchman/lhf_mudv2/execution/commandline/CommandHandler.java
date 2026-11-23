@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import com.geendutchman.lhf_mudv2.display.RichOutput;
+import com.geendutchman.lhf_mudv2.execution.Event;
 import com.geendutchman.lhf_mudv2.execution.MessageBus;
 import com.geendutchman.lhf_mudv2.execution.MessageContext;
 import com.geendutchman.lhf_mudv2.execution.MessageProcessor.MessageProcessingResult;
@@ -145,7 +147,13 @@ public abstract class CommandHandler implements Callable<MessageProcessingResult
         @Override
         public MessageProcessingResult call() {
             this.spec.commandLine().getOut().println("pong");
-            return MessageProcessingResult.HANDLED;
+
+            return this.bus.publish(
+                    MessageContext.builder().setSender(context.sender()).setDestinationId(context.sender().baseId())
+                            .build(),
+                    Event.PlainEvent.asDescribed(
+                            RichOutput.builder().addTaggable(context.sender().baseId()).addString("says pong").build())
+                            .plain());
         }
 
     }

@@ -1,5 +1,7 @@
 package com.geendutchman.lhf_mudv2.junction.common;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -8,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.geendutchman.lhf_mudv2.display.Examinable;
+import com.geendutchman.lhf_mudv2.display.RichOutput;
 import com.geendutchman.lhf_mudv2.execution.Event;
 import com.geendutchman.lhf_mudv2.execution.LHFCommand;
 import com.geendutchman.lhf_mudv2.execution.Message;
@@ -93,9 +96,9 @@ public class DisembodiedController implements MessageProcessor {
             return MessageProcessingResult.Failed("cannot handle null message");
         }
         return switch (message) {
-        case LHFCommand c -> this.process(context, c);
-        case Event e -> this.process(context, e);
-        default -> MessageProcessingResult.Failed("unknown message type");
+            case LHFCommand c -> this.process(context, c);
+            case Event e -> this.process(context, e);
+            default -> MessageProcessingResult.Failed("unknown message type");
         };
     }
 
@@ -106,34 +109,74 @@ public class DisembodiedController implements MessageProcessor {
         }
 
         return switch (lhfCommand) {
-        case LHFCommand.ReassignProcessor rp -> MessageProcessingResult.Failed("cannot handle processor reassignment");
-        case LHFCommand.BuilderFactoryCommand bfc -> MessageProcessingResult
-                .Failed("disembodied entity cannot build anything");
-        case LHFCommand.ChangeEntityCommand cec -> {
-            yield switch (cec) {
-            case LHFCommand.ChangeEntityCommand.ChangeItemCommand cic -> MessageProcessingResult
-                    .Failed("disembodied entity cannot change items");
-            case LHFCommand.ChangeEntityCommand.ChangeRoomCommand crc -> MessageProcessingResult
-                    .Failed("disembodied entity cannot change room");
-            case LHFCommand.ChangeEntityCommand.ChangeCreatureCommand ccc -> MessageProcessingResult
-                    .Failed("disembodied entity cannot change creature");
-            };
-        }
-        case LHFCommand.LineCommand lc -> {
-            CommandLine line = this.generateCommandLine(context);
-            if (line == null) {
-                yield MessageProcessingResult.Failed("Could not produce a command line");
+            case LHFCommand.ReassignProcessor rp ->
+                MessageProcessingResult.Failed("cannot handle processor reassignment");
+            case LHFCommand.BuilderFactoryCommand bfc -> MessageProcessingResult
+                    .Failed("disembodied entity cannot build anything");
+            case LHFCommand.ChangeEntityCommand cec -> {
+                yield switch (cec) {
+                    case LHFCommand.ChangeEntityCommand.ChangeItemCommand cic -> MessageProcessingResult
+                            .Failed("disembodied entity cannot change items");
+                    case LHFCommand.ChangeEntityCommand.ChangeRoomCommand crc -> MessageProcessingResult
+                            .Failed("disembodied entity cannot change room");
+                    case LHFCommand.ChangeEntityCommand.ChangeCreatureCommand ccc -> MessageProcessingResult
+                            .Failed("disembodied entity cannot change creature");
+                };
             }
-            line.execute(lc.commandArray());
-            ParseResult parseResult = line.getParseResult();
-            List<CommandLine> cmdlist = parseResult.asCommandLineList();
-            Object result = cmdlist.getLast().getExecutionResult();
-            if (result instanceof MessageProcessingResult mpr) {
-                yield mpr;
-            } else {
-                yield MessageProcessingResult.Failed(String.format("Unknown result -> '%s'", result));
+            case LHFCommand.LineCommand lc -> {
+                CommandLine line = this.generateCommandLine(context);
+                if (line == null) {
+                    yield MessageProcessingResult.Failed("Could not produce a command line");
+                }
+
+                StringWriter sOut = new StringWriter();
+                StringWriter sErr = new StringWriter();
+                line.setOut(new PrintWriter(sOut)).setErr(new PrintWriter(sErr));
+
+                int executionCode = line.execute(lc.commandArray());
+                ParseResult parseResult = line.getParseResult();
+                List<CommandLine> cmdlist = parseResult.asCommandLineList();
+                logger.atTrace().addKeyValue("matched commands", cmdlist.stream()
+                        .map(cl -> String.format("%s -> %s", cl.getCommandName(), cl.getExecutionResult())).toList())
+                        .addKeyValue("args", lc.commandArray())
+                        .log("executed command");
+
+                RichOutput.Builder builder = null;
+                String sOutString = sOut.toString();
+                if (sOutString != null && sOutString.length() > 0) {
+                    RichOutput sub = RichOutput.builder().setSequenceName("Command Line Output").addString(sOutString)
+                            .build();
+                    builder = RichOutput.builder().setSequenceName("Command Line").addOutput(sub);
+                    this.logger.atTrace().addKeyValue("stdout", sOutString)
+                            .log("Encountered command line stdout");
+                }
+                sOutString = sErr.toString();
+                if (sOutString != null && sOutString.length() > 0) {
+                    RichOutput sub = RichOutput.builder().setSequenceName("Command Line Error").addString(sOutString)
+                            .build();
+                    if (builder == null) {
+                        builder = RichOutput.builder().setSequenceName("Command Line");
+                    }
+                    builder.addOutput(sub);
+                    this.logger.atError().addKeyValue("stderr", sOutString)
+                            .log("Encountered command line error");
+                }
+
+                if (builder != null) {
+                    this.bus.publish(
+                            MessageContext.builder().setDestination(context.sender()).setSender(context.sender())
+                                    .build(),
+                            Event.PlainEvent.asDescribed(builder.build()).plain());
+                }
+
+                Object result = cmdlist.getLast().getExecutionResult();
+                if (result instanceof MessageProcessingResult mpr) {
+                    yield mpr;
+                } else {
+                    yield MessageProcessingResult
+                            .Failed(String.format("Execution code: %d, Unknown result -> '%s'", executionCode, result));
+                }
             }
-        }
 
         };
     }
